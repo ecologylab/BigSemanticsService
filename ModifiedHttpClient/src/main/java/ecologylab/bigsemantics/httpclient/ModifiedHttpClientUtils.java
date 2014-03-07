@@ -3,7 +3,6 @@ package ecologylab.bigsemantics.httpclient;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +78,9 @@ public class ModifiedHttpClientUtils
         int epos = params[i].indexOf('=');
         String name = params[i].substring(0, epos);
         String value = params[i].substring(epos + 1);
-        ub.addParameter(name, URLEncoder.encode(value, "UTF-8"));
+        // URIBuilder.addParameter() handles URL encoding automatically, no need to do it here.
+        // ub.addParameter(name, URLEncoder.encode(value, "UTF-8"));
+        ub.addParameter(name, value);
       }
     }
     return ub;

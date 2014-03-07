@@ -143,9 +143,10 @@ public class Controller extends Routine implements ControllerConfigNames
       });
       return;
     }
-    task.setState(State.WAITING);
     logger.info("enqueuing task " + task);
     waitingTasks.add(task);
+    task.addEvent(new Event("queued"));
+    task.setState(State.WAITING);
   }
 
   /**
@@ -175,6 +176,7 @@ public class Controller extends Routine implements ControllerConfigNames
       if (req.accept(t.getPurl()))
       {
         tasks.add(t);
+        t.addEvent(new Event("matched with a request"));
         t.setState(State.ONGOING);
       }
       else
@@ -200,6 +202,7 @@ public class Controller extends Routine implements ControllerConfigNames
    */
   private void moveToWaitingTask(Task ongoingTask)
   {
+    ongoingTask.addEvent(new Event("queued"));
     ongoingTask.setState(State.WAITING);
     waitingTasks.offer(ongoingTask);
   }
@@ -243,6 +246,7 @@ public class Controller extends Routine implements ControllerConfigNames
       {
         if (t.getAttempts() >= t.getMaxAttempts())
         {
+          t.addEvent(new Event("terminated"));
           t.setState(State.TERMINATED);
           tasksByUri.remove(t.getUri());
           t.notifyObservers();
@@ -250,6 +254,7 @@ public class Controller extends Routine implements ControllerConfigNames
         }
         else
         {
+          t.addEvent(new Event("attempt failed"));
           t.setState(State.ATTEMPT_FAILED);
           t.resetTimer();
           moveToWaitingTask(t);
@@ -269,9 +274,17 @@ public class Controller extends Routine implements ControllerConfigNames
     Task task = getTask(taskId);
     if (task != null)
     {
-      task.setResult(result);
-      tasksByUri.remove(task.getUri());
-      task.setState(State.RESPONDED);
+      if (result != null)
+      {
+        task.setResult(result);
+        tasksByUri.remove(task.getUri());
+        task.addEvent(new Event("downloaded"));
+        task.setState(State.RESPONDED);
+      }
+      else
+      {
+        task.addEvent(new Event("null download result"));
+      }
     }
   }
 

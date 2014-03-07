@@ -38,6 +38,11 @@
     <artifact:dependencies filesetId="maven-deps" pomRefId="pom" />
 
     <target name="copy-dependencies">
+        <ant dir="${basedir}/../DownloaderPoolMessages"
+          useNativeBasedir="true" target="main" inheritAll="false" />
+        <ant dir="${basedir}/../ModifiedHttpClient"
+          useNativeBasedir="true" target="main" inheritAll="false" />
+
         <mkdir dir="${dist.lib.dir}" />
 
         <!-- lib jars -->
@@ -95,6 +100,6 @@
         </one-jar>
     </target>
 
-    <target name="main" depends="war,downloader-jar" />
+    <target name="main" depends="clean,war,downloader-jar" />
 
 </project>

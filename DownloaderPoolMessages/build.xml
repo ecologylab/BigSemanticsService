@@ -8,10 +8,12 @@
 	<property name="jar.dir" value="${build.dir}/jar" />
 	<property name="jar.file" value="${jar.dir}/${ant.project.name}.jar" />
 
+	<property name="lib.dir" value="${basedir}/../lib" />
+
 	<taskdef resource="org/apache/maven/artifact/ant/antlib.xml"
     		 uri="antlib:org.apache.maven.artifact.ant">
 		<classpath>
-			<pathelement location="${basedir}/../lib/maven-ant-tasks-2.1.1.jar" />
+			<pathelement location="${lib.dir}/maven-ant-tasks-2.1.1.jar" />
 		</classpath>
 	</taskdef>
 
@@ -24,18 +26,20 @@
 	</target>
 
 	<path id="classpath">
-		<fileset dir="${basedir}/../lib/" includes="simpl*.jar" />
+		<fileset dir="${lib.dir}" includes="simpl*.jar" />
 		<fileset refid="maven-deps" />
 	</path>
 
 	<target name="compile">
 		<mkdir dir="${classes.dir}" />
-		<javac srcdir="${src.dir}" destdir="${classes.dir}" source="1.6" target="1.6" classpathref="classpath" />
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" fork="yes"
+		  source="1.6" target="1.6" classpathref="classpath" />
 	</target>
 
 	<target name="jar" depends="compile">
 		<mkdir dir="${jar.dir}" />
 		<jar destfile="${jar.file}" basedir="${classes.dir}" />
+	  <copy file="${jar.file}" todir="${lib.dir}" />
 	</target>
 
 	<target name="main" depends="clean,jar" />

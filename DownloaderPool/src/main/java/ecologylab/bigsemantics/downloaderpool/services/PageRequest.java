@@ -21,6 +21,7 @@ import ecologylab.bigsemantics.downloaderpool.MessageScope;
 import ecologylab.bigsemantics.downloaderpool.Task;
 import ecologylab.bigsemantics.downloaderpool.Task.ObservableEventType;
 import ecologylab.bigsemantics.downloaderpool.Task.State;
+import ecologylab.bigsemantics.downloaderpool.Event;
 import ecologylab.generic.StringBuilderBaseUtils;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.formatenums.StringFormat;
@@ -80,9 +81,12 @@ public class PageRequest extends RequestHandlerForController
     task.setFailRegex(failPattern);
     task.setBanRegex(banPattern);
     
-    logger.info("Downloading request from [{}]: {}, download interval: {}, user agent: [{}]",
+    task.addEvent(new Event("created"));
+    
+    logger.info("Download request from [{}]: {}, url: {}, download interval: {}, user agent: [{}]",
                 remoteIp,
                 task,
+                url,
                 interval,
                 userAgent);
 
@@ -139,7 +143,13 @@ public class PageRequest extends RequestHandlerForController
     }
 
     DownloaderResult result = task.getResult();
-    logger.info("Task[" + task.getId() + "] responded, result = " + result);
+    logger.info("Task[" + task.getId() + "] responded or terminated, result = " + result);
+    if (result != null)
+    {
+      Event e = new Event("success");
+      e.addParam("downloader IP: " + remoteIp);
+      task.addEvent(e);
+    }
     return result;
   }
 
@@ -260,10 +270,10 @@ public class PageRequest extends RequestHandlerForController
                 result == null ? -1 : result.getHttpRespCode(),
                 content == null ? 0 : content.length());
 
+    Controller ctrl = getController();
+    ctrl.report(taskId, result);
     if (result != null)
     {
-      Controller ctrl = getController();
-      ctrl.report(taskId, result);
       return Response.ok("Task[" + taskId + "] received.").build();
     }
     else

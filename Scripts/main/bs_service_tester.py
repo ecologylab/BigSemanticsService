@@ -11,6 +11,7 @@ class ServiceTester:
     if config is None:
       config = tester_config
     self.config = config
+    self.timeout_seconds = config["timeout_seconds"]
     self.tests = config["tests"]
 
   def test_service(self):
@@ -59,7 +60,7 @@ class ServiceTester:
     content = None
     error = None
     try:
-      f = urllib2.urlopen(url)
+      f = urllib2.urlopen(url, None, self.timeout_seconds)
       code = f.getcode()
       content = u'\n'.join(f.readlines())
     except Exception as e:

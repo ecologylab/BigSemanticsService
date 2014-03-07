@@ -1,11 +1,14 @@
 package ecologylab.bigsemantics.downloaderpool;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.net.ParsedURL;
+import ecologylab.serialization.annotations.simpl_collection;
 import ecologylab.serialization.annotations.simpl_composite;
 import ecologylab.serialization.annotations.simpl_scalar;
 
@@ -16,7 +19,7 @@ import ecologylab.serialization.annotations.simpl_scalar;
  * @author quyin
  * 
  */
-public class Task extends Observable
+public class Task extends Observable implements Cloneable
 {
 
   private static final int DEFAULT_ATTEMPT_TIME = 60 * 1000;
@@ -165,6 +168,11 @@ public class Task extends Observable
   private Object           lockState;
 
   private Object           lockResult;
+
+  @simpl_collection("event")
+  private List<Event>  events;
+
+  private Object           lockEvents  = new Object();
 
   /**
    * (for simpl)
@@ -361,6 +369,47 @@ public class Task extends Observable
   public String toString()
   {
     return String.format("Task[%s](%s)", id, state);
+  }
+
+  public List<Event> getEvents()
+  {
+    return events;
+  }
+
+  public void addEvent(Event event)
+  {
+    if (events == null)
+    {
+      synchronized (lockEvents)
+      {
+        if (events == null)
+        {
+          events = new ArrayList<Event>();
+        }
+      }
+    }
+    if (events != null)
+    {
+      events.add(event);
+    }
+  }
+
+  public void setEvents(List<Event> events)
+  {
+    this.events = events;
+  }
+  
+  public Object clone()
+  {
+    try
+    {
+      return super.clone();
+    }
+    catch (CloneNotSupportedException e)
+    {
+      logger.error("Cannot clone task: " + this, e);
+    }
+    return this;
   }
 
 }

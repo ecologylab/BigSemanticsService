@@ -43,7 +43,8 @@
            classpathref="classpath"
            debug="yes"
            debuglevel="lines,vars,source"
-           verbose="yes" />
+           verbose="yes"
+           fork="yes" />
 
     <copy todir="${classes.dir}">
       <fileset dir="${resources.dir}" includes="*" />
@@ -56,6 +57,6 @@
     <copy file="${jar.file}" todir="${lib.dir}" /> 
   </target>
 
-  <target name="main" depends="jar" />
+  <target name="main" depends="clean,jar" />
 
 </project>

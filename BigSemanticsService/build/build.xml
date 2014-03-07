@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="BigSemanticsService"
+<project name="BigSemanticsService" basedir="."
          default="buildwar"
          xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
@@ -17,12 +17,6 @@
   <property name="distclasses.dir" value="${dist.dir}/WEB-INF/classes" />
   <property name="distmetainf.dir" value="${dist.dir}/META-INF" />
 
-  <!-- deployment server credentials used with the deploy rule -->
-  <property name="sftp.host" value="ecoarray0" />
-  <property name="sftp.user" value="ecologylab" />
-  <property name="sftp.port" value="2022" />
-  <property name="jetty.dir" value="/bigsemantics-service/jetty-dist" />
-
   <!-- declare maven -->
   <path id="maven-ant-tasks.classpath"
         path="${basedir}/antlib/maven-ant-tasks-2.1.1.jar" />
@@ -30,9 +24,21 @@
            uri="antlib:org.apache.maven.artifact.ant"
            classpathref="maven-ant-tasks.classpath" />
 
-  <path id="classpath">
-    <fileset dir="${distlib.dir}" includes="**/*.jar" />
-  </path>
+  <fileset id="lib-deps" dir="${lib.dir}">
+      <include name="jsr166-1.7.0.jar" />
+      <include name="simplCore.jar" />
+      <include name="simplSunSpecifics.jar" />
+      <include name="cyberneko.jar" />
+      <include name="xercesMinimal.jar" />
+      <include name="DownloaderPoolMessages.jar" />
+      <include name="ModifiedHttpClient.jar" />
+      <include name="BigSemanticsCore.jar" />
+      <include name="BigSemanticsSunSpecifics.jar" />
+      <include name="BigSemanticsCybernekoWrapper.jar" />
+      <include name="BigSemanticsWrappers.jar" />
+      <include name="BigSemanticsGeneratedClassesJava.jar" />
+      <include name="imageMetadataExtractor.jar" />
+  </fileset>
 
   <target name="clean">
     <echo>cleaning: emptying ${dist.dir}</echo>
@@ -41,6 +47,11 @@
   </target>
 
   <target name="copy-dependencies" depends="clean">
+    <ant dir="${service.dir}/../DownloaderPoolMessages"
+      useNativeBasedir="true" target="main" inheritAll="false" />
+    <ant dir="${service.dir}/../ModifiedHttpClient"
+      useNativeBasedir="true" target="main" inheritAll="false" />
+
     <mkdir dir="${distlib.dir}" />
     <mkdir dir="${distmetainf.dir}" />
 
@@ -76,7 +87,8 @@
     <echo>...done.</echo>
   </target>
 
-  <target name="build-service">
+  <target name="compile" depends="copy-dependencies">
+    <mkdir dir="${distclasses.dir}" />
     <javac classpathref="classpath"
            srcdir="${source.dir}"
            destdir="${distclasses.dir}"
@@ -85,16 +97,13 @@
            fork="yes"
            includeantruntime="true">
     </javac>
-  </target>
-
-  <target name="compile" depends="copy-dependencies">
-    <mkdir dir="${distclasses.dir}" />
-
-    <antcall target="build-service" />
-
     <copy file="${resources.dir}/service.properties" todir="${distclasses.dir}" />
     <copy file="${resources.dir}/log4j.properties" todir="${distclasses.dir}" />
   </target>
+
+  <path id="classpath">
+    <fileset dir="${distlib.dir}" includes="**/*.jar" />
+  </path>
 
   <target name="buildwar" depends="compile">
     <war basedir="${dist.dir}"
@@ -103,74 +112,5 @@
       <webinf dir="${dist.dir}/WEB-INF/" />
       <metainf dir="${dist.dir}/META-INF/" />
     </war>
-  </target>
-
-  <target name="deploy" depends="buildwar">
-    <antform>
-      <textProperty label="Please enter sftp password for ${sftp.user}:"
-                    password="true"
-                    property="sftp.password" />
-    </antform>
-
-    <var name="sftp.upload" value="true" />
-    <var name="sftp.exists" value="true" />
-    <trycatch>
-      <try>
-        <sshexec host="${sftp.host}"
-                 port="${sftp.port}"
-                 username="${sftp.user}"
-                 password="${sftp.password}"
-                 trust="true"
-                 command="ls ${jetty.dir}/webapps/${ant.project.name}.war" />
-      </try>
-      <catch>
-        <var name="sftp.exists" value="false" />
-      </catch>
-      <finally>
-        <if>
-          <istrue value="${sftp.exists}" />
-          <then>
-            <input message="${ant.project.name}.war already exists. Overwrite?"
-                   validargs="yes,no"
-                   addproperty="sftp.overwrite" />
-            <if>
-              <equals arg1="yes" arg2="${sftp.overwrite}" />
-              <then>
-                <sshexec host="${sftp.host}"
-                         port="${sftp.port}"
-                         username="${sftp.user}"
-                         password="${sftp.password}"
-                         trust="true"
-                         command="rm ${jetty.dir}/webapps/${ant.project.name}.war" />
-                <var name="sftp.upload" value="true" />
-              </then>
-              <else>
-                <var name="sftp.upload" value="false" />
-              </else>
-            </if>
-          </then>
-        </if>
-        <if>
-          <istrue value="${sftp.upload}" />
-          <then>
-            <echo>Deploying on ecoarray...</echo>
-
-            <echo>deploying war</echo>
-            <scp port="${sftp.port}"
-                 file="${basedir}/${ant.project.name}.war"
-                 todir="${sftp.user}:${sftp.password}@${sftp.host}:${jetty.dir}/webapps/"
-                 trust="true" />
-            <echo>...done</echo>
-
-            <echo>deploying context</echo>
-            <scp port="${sftp.port}"
-                 file="${context.dir}/${ant.project.name}.xml"
-                 todir="${sftp.user}:${sftp.password}@${sftp.host}:${jetty.dir}/contexts/"
-                 trust="true" />
-            <echo>...done</echo>
-          </then>
-        </if>
-      </finally>
-    </trycatch>
   </target>
 </project>

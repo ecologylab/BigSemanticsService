@@ -12,12 +12,17 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import ecologylab.bigsemantics.downloaderpool.AssignedTasks;
 import ecologylab.bigsemantics.downloaderpool.Controller;
 import ecologylab.bigsemantics.downloaderpool.DownloaderRequest;
+import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
+import ecologylab.bigsemantics.downloaderpool.Event;
 import ecologylab.bigsemantics.downloaderpool.Task;
 import ecologylab.bigsemantics.downloaderpool.DPoolUtils;
 import ecologylab.serialization.formatenums.StringFormat;
@@ -31,12 +36,15 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class TaskRequest extends RequestHandlerForController
 {
   
+  private static Logger heartBeatLogger;
+  
   private static String EMPTY_ASSIGNMENT_XML;
 
   private static String EMPTY_ASSIGNMENT_JSON;
   
   static
   {
+    heartBeatLogger = LoggerFactory.getLogger("dpool_downloader_heart_beat");
     EMPTY_ASSIGNMENT_XML = DPoolUtils.serialize(AssignedTasks.EMPTY_ASSIGNMENT, StringFormat.XML);
     EMPTY_ASSIGNMENT_JSON = DPoolUtils.serialize(AssignedTasks.EMPTY_ASSIGNMENT, StringFormat.JSON);
   }
@@ -55,11 +63,11 @@ public class TaskRequest extends RequestHandlerForController
                               String blacklist,
                               int maxTaskCount)
   {
-    logger.debug("Downloader[{}]@{} asks for tasks; blacklist: {}; count: {}.",
-                 workerId,
-                 remoteIp,
-                 blacklist,
-                 maxTaskCount);
+    heartBeatLogger.debug("Downloader[{}]@{} asks for tasks; blacklist: {}; count: {}.",
+                          workerId,
+                          remoteIp,
+                          blacklist,
+                          maxTaskCount);
     Controller ctrl = getController();
 
     DownloaderRequest req = new DownloaderRequest();
@@ -78,16 +86,19 @@ public class TaskRequest extends RequestHandlerForController
     int n = tasks == null ? 0 : tasks.size();
     if (n > 0)
     {
-      logger.info("{} task(s) will be assigned to Downloader[{}]@{}, blacklist: [{}], max: {}",
-                  n,
-                  workerId,
-                  remoteIp,
-                  blacklist,
-                  maxTaskCount);
-    }
-    else
-    {
-      logger.debug("{} task(s) will be assigned to Downloader[{}]@{}.", n, workerId, remoteIp);
+      logger.debug("{} task(s) will be assigned to Downloader[{}]@{}, blacklist: [{}], max: {}.",
+                   n,
+                   workerId,
+                   remoteIp,
+                   blacklist,
+                   maxTaskCount);
+      for (Task task : tasks)
+      {
+        logger.info("{} will be assigned to Downloader[{}]@{}", task, workerId, remoteIp);
+        Event e = new Event("assigned");
+        e.addParam("downloader IP: " + remoteIp);
+        task.addEvent(e);
+      }
     }
 
     AssignedTasks result = AssignedTasks.EMPTY_ASSIGNMENT;
@@ -176,10 +187,23 @@ public class TaskRequest extends RequestHandlerForController
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response viewJson(@QueryParam("id") String id,
-                           @QueryParam("url") String url)
+                           @QueryParam("url") String url,
+                           @QueryParam("with_result") boolean withResult)
   {
     Task t = find(id, url);
-    return generateResponse(t, StringFormat.JSON, MediaType.APPLICATION_JSON, "Cannot Find Task.");
+    Task t1 = (Task) t.clone();
+    DownloaderResult dResult = t1.getResult();
+    if (!withResult)
+    {
+      t1.setResult(null);
+    }
+    Response result =
+        generateResponse(t1, StringFormat.JSON, MediaType.APPLICATION_JSON, "Cannot Find Task.");
+    if (!withResult)
+    {
+      t1.setResult(dResult);
+    }
+    return result;
   }
 
   /**
@@ -193,10 +217,23 @@ public class TaskRequest extends RequestHandlerForController
   @GET
   @Produces(MediaType.APPLICATION_XML)
   public Response viewXml(@QueryParam("id") String id,
-                          @QueryParam("url") String url)
+                          @QueryParam("url") String url,
+                          @QueryParam("with_result") boolean withResult)
   {
     Task t = find(id, url);
-    return generateResponse(t, StringFormat.XML, MediaType.APPLICATION_XML, "Cannot Find Task.");
+    Task t1 = (Task) t.clone();
+    DownloaderResult dResult = t1.getResult();
+    if (!withResult)
+    {
+      t1.setResult(null);
+    }
+    Response result =
+        generateResponse(t1, StringFormat.XML, MediaType.APPLICATION_XML, "Cannot Find Task.");
+    if (!withResult)
+    {
+      t1.setResult(dResult);
+    }
+    return result;
   }
 
 }

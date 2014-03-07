@@ -87,16 +87,18 @@ class ServiceBuilder:
     files = listdir(self.war_archive_dir)
     archives = [f for f in files if f.startswith("BigSemanticsService.war.")]
     if len(archives) > self.max_war_archives:
-      archives = sorted(arthives)
+      archives = sorted(archives)
       remove(join(self.war_archive_dir, archives[0]))
 
   def release_to_prod(self):
+    # copy the war file
     war_file = "BigSemanticsService.war"
     dest_dir = "{0}@{1}:{2}".format(self.prod_user,
                                     self.prod_host,
                                     self.prod_webapps_dir)
     cmds = ["scp", "-i", self.prod_login_id, war_file, dest_dir]
     check_call(cmds, wd = self.webapps_dir)
+    # copy the generated visualization file
     onto_vis_dir = join(self.wrapper_proj, "OntoViz")
     onto_vis_data_file = "mmd_repo.json"
     dest_static_html_dir = join(self.prod_webapps_dir, "root")
@@ -104,6 +106,13 @@ class ServiceBuilder:
                                     self.prod_host,
                                     dest_static_html_dir)
     cmds = ["scp", "-i", self.prod_login_id, onto_vis_data_file, dest_dir]
+    check_call(cmds, wd = onto_vis_dir)
+    # generate and copy the example table data file
+    example_table_script = "generate_domain_example_table.py"
+    example_table_data_file = "domain_type_examples.json"
+    cmds = ["python", example_table_script, "--out", example_table_data_file]
+    check_call(cmds, wd = onto_vis_dir)
+    cmds = ["scp", "-i", self.prod_login_id, example_table_data_file, dest_dir]
     check_call(cmds, wd = onto_vis_dir)
 
 

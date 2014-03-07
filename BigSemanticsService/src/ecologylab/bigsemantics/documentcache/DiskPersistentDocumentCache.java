@@ -71,11 +71,12 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
 
   public boolean configure(String cacheBaseDir)
   {
-    cacheBaseDir = cacheBaseDir.replaceFirst("\\$HOME", System.getProperty("user.home"));
+    cacheBaseDir = expandHomeDir(cacheBaseDir);
+    logger.info("cache base dir: " + cacheBaseDir);
     File baseDir = new File(cacheBaseDir);
     if (mkdirsIfNeeded(baseDir))
     {
-      logger.info("Cache directory: " + baseDir);
+      logger.info("Cache directory: " + baseDir.getAbsolutePath());
       metadataDir = new File(baseDir, "metadata");
       rawDocDir = new File(baseDir, "raw");
       docDir = new File(baseDir, "semantics");
@@ -86,6 +87,12 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
       logger.warn("Cannot create cache directory at: " + baseDir);
     }
     return false;
+  }
+  
+  static String expandHomeDir(String dir)
+  {
+    String homeDir = System.getProperty("user.home");
+    return dir.replaceFirst("\\$HOME", homeDir.replace("\\", "/"));
   }
   
   /**

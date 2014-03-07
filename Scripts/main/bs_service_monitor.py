@@ -22,5 +22,10 @@ def test_service():
 
 
 if __name__ == '__main__':
-  test_service()
+  try:
+    test_service()
+  except Exception as e:
+    err_msg = "Error testing the service: " + e.message
+    print err_msg
+    send_bot_email_to_maintainers("Error testing BigSemantics service", err_msg)
 

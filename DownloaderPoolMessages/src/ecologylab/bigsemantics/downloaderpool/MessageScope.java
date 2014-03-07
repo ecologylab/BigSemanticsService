@@ -14,11 +14,12 @@ public class MessageScope
 
   public static final Class[] CLASSES = {
       Task.class,
+      Event.class,
       DownloaderRequest.class,
       AssignedTasks.class,
       BasicResponse.class,
       DownloaderResult.class,
-                                      };
+  };
 
   public static SimplTypesScope get()
   {
