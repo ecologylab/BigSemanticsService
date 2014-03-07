@@ -2,12 +2,6 @@
     <wb-module deploy-name="BigSemanticsService">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/resources"/>
-        <dependent-module archiveName="DownloaderPoolMessages.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/DownloaderPoolMessages/DownloaderPoolMessages">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
-        <dependent-module archiveName="ModifiedHttpClient.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/ModifiedHttpClient/ModifiedHttpClient">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
         <property name="java-output-path" value="/BigSemanticsService/build/classes"/>
         <property name="context-root" value="BigSemanticsService"/>
     </wb-module>

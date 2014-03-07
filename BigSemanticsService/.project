@@ -3,8 +3,6 @@
 	<name>BigSemanticsService</name>
 	<comment></comment>
 	<projects>
-		<project>DownloaderPoolMessages</project>
-		<project>ModifiedHttpClient</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
