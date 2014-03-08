@@ -18,4 +18,6 @@ public interface DownloaderConfigNames
 
   static String MAX_CONNECTIONS_FOR_DOWNLOADER = "downloader.max_connections";
 
+  static String MAX_ERROR                      = "downloader.max_error";
+
 }

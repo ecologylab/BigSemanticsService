@@ -60,6 +60,9 @@ public class Downloader extends Routine implements DownloaderConfigNames
   public Downloader(Configuration configs)
   {
     super();
+    
+    int maxError = configs.getInt(MAX_ERROR, 50);
+    setMaxError(maxError);
 
     this.name = configs.getString(NAME, null);
     String[] baseUrls = configs.getStringArray(CONTROLLER_BASE_URL);
@@ -138,8 +141,9 @@ public class Downloader extends Routine implements DownloaderConfigNames
    * the same website too frequently.
    * 
    * @return The list of retrieved tasks. If failed, null.
+   * @throws IOException 
    */
-  public List<Task> requestTasks()
+  public List<Task> requestTasks() throws IOException
   {
     DownloaderRequest req = formRequest();
 
@@ -177,14 +181,14 @@ public class Downloader extends Routine implements DownloaderConfigNames
     catch (ClientProtocolException e)
     {
       logger.error("Exception when accessing " + get.getURI(), e);
-      e.printStackTrace();
       get.abort();
+      throw e;
     }
     catch (IOException e)
     {
       logger.error("Exception when accessing " + get.getURI(), e);
-      e.printStackTrace();
       get.abort();
+      throw e;
     }
     finally
     {
@@ -212,7 +216,7 @@ public class Downloader extends Routine implements DownloaderConfigNames
     return req;
   }
 
-  public void routineBody()
+  public void routineBody() throws IOException
   {
     if (downloadMonitor.toDownloadSize() <= 0)
     {
