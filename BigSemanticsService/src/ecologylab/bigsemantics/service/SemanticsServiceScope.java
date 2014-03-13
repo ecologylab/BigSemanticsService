@@ -9,7 +9,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ecologylab.bigsemantics.actions.SemanticActionsKeyWords;
+import ecologylab.bigsemantics.actions.SemanticsConstants;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
@@ -131,7 +131,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
       // This will disable content body recognization and image-text clipping derivation on the
       // service.
-      DocumentParser.register(SemanticActionsKeyWords.HTML_IMAGE_DOM_TEXT_PARSER,
+      DocumentParser.register(SemanticsConstants.HTML_IMAGE_DOM_TEXT_PARSER,
                               DefaultHTMLDOMParser.class);
     }
     return THE_SERVICE_SCOPE;
