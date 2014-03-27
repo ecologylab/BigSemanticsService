@@ -14,6 +14,7 @@
     <property name="dist.classes.dir" value="${dist.dir}/WEB-INF/classes" />
     <property name="dist.lib.dir" value="${dist.dir}/WEB-INF/lib" />
     <property name="downloader-jar.file" value="Downloader.jar" />
+    <property name="runner-jar.file" value="LoggedRunner.jar" />
 
     <taskdef resource="org/apache/maven/artifact/ant/antlib.xml"
              uri="antlib:org.apache.maven.artifact.ant">
@@ -36,7 +37,7 @@
 
     <artifact:pom id="pom" file="${basedir}/pom.xml" />
     <artifact:dependencies filesetId="maven-deps" pomRefId="pom" />
-
+  
     <target name="copy-dependencies">
         <ant dir="${basedir}/../DownloaderPoolMessages"
           useNativeBasedir="true" target="main" inheritAll="false" />
@@ -99,7 +100,31 @@
             <fileset dir="${resources.dir}" includes="one-jar.properties" />
         </one-jar>
     </target>
+  
+    <target name="runner-jar" depends="compile">
+        <echo message="maven deps: ${toString:maven-deps}" />
+        <one-jar destfile="${build.dir}/${runner-jar.file}">
+            <manifest>
+                <attribute
+                    name="One-Jar-Main-Class"
+                    value="ecologylab.bigsemantics.tools.LoggedRunner" />
+            </manifest>
+            <main>
+                <fileset dir="${dist.classes.dir}">
+                    <include name="**/LoggedRunner*" />
+                    <include name="log4j.properties" />
+                </fileset>
+            </main>
+            <lib>
+                <fileset dir="${dist.lib.dir}">
+                    <include name="log4j*" />
+                    <include name="slf4j*" />
+                </fileset>
+            </lib>
+            <fileset dir="${resources.dir}" includes="one-jar.properties" />
+        </one-jar>
+    </target>
 
-    <target name="main" depends="clean,war,downloader-jar" />
+    <target name="main" depends="clean,war,downloader-jar,runner-jar" />
 
 </project>
