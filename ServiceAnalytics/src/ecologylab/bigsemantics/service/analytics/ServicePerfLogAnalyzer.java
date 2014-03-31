@@ -118,7 +118,8 @@ public class ServicePerfLogAnalyzer extends Debug
 				float latency = logRecord.getMsTotal();
 				avgLatency += latency;
 
-				ArrayList<Long> queuePeekIntervals = logRecord.getQueuePeekIntervals();
+//				ArrayList<Long> queuePeekIntervals = logRecord.getQueuePeekIntervals();
+				ArrayList<Long> queuePeekIntervals = new ArrayList<Long>();
 				if (queuePeekIntervals.size() > 0)
 					avgLatencyWoQueuedWait += (latency - queuePeekIntervals
 							.get(queuePeekIntervals.size() - 1));

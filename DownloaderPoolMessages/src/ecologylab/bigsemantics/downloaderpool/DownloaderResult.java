@@ -1,5 +1,7 @@
 package ecologylab.bigsemantics.downloaderpool;
 
+import ecologylab.logging.LogPost;
+import ecologylab.serialization.annotations.simpl_composite;
 import ecologylab.serialization.annotations.simpl_inherit;
 import ecologylab.serialization.annotations.simpl_scalar;
 
@@ -58,20 +60,23 @@ public class DownloaderResult extends BasicResponse
    * Used to associate the result with a task.
    */
   @simpl_scalar
-  private String taskId;
+  private String  taskId;
 
   /**
    * The state of the result.
    */
   @simpl_scalar
-  private State  state;
+  private State   state;
 
   /**
    * Extra description of the content, e.g. how page content is compressed (e.g. zipped or not)
    * and/or encoded (e.g. bse64 or not).
    */
   @simpl_scalar
-  private String contentDescription;
+  private String  contentDescription;
+
+  @simpl_composite
+  private LogPost logPost;
 
   public String getTaskId()
   {
@@ -101,6 +106,16 @@ public class DownloaderResult extends BasicResponse
   public void setContentDescription(String contentDescription)
   {
     this.contentDescription = contentDescription;
+  }
+
+  public LogPost getLogPost()
+  {
+    return logPost;
+  }
+
+  public void setLogPost(LogPost logPost)
+  {
+    this.logPost = logPost;
   }
 
 }

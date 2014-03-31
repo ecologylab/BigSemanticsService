@@ -2,7 +2,9 @@ package ecologylab.bigsemantics.service.logging;
 
 import java.util.Date;
 
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolEventTypeScope;
 import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
+import ecologylab.logging.LogEventTypeScope;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.annotations.simpl_inherit;
 import ecologylab.serialization.annotations.simpl_scalar;
@@ -10,7 +12,7 @@ import ecologylab.serialization.annotations.simpl_scalar;
 @simpl_inherit
 public class ServiceLogRecord extends DocumentLogRecord
 {
-
+  
   @simpl_scalar
   private String    requesterIp;
 
@@ -101,6 +103,8 @@ public class ServiceLogRecord extends DocumentLogRecord
 
   static
   {
+    DpoolEventTypeScope.init();
+    LogEventTypeScope.addEventClass(DpoolServiceError.class);
     DUMMY = new ServiceLogRecord();
   }
 

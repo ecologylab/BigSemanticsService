@@ -156,10 +156,7 @@ public class TestMetadataServiceHelper
     assertTrue(log.getMsExtraction() > 0);
     assertTrue(log.getMsSerialization() > 0);
     
-    assertNotNull(log.getQueuePeekIntervals());
-    assertTrue(log.getQueuePeekIntervals().size() > 0);
-    assertTrue(log.getEnQueueTimestamp() > 0);
-    assertNotNull(log.getUrlHash());
+    assertNotNull(log.getId());
     
     // for easier debugging:
     System.out.println();

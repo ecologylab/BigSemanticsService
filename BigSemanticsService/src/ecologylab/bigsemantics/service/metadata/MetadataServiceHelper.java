@@ -126,10 +126,22 @@ public class MetadataServiceHelper extends Debug
 
     if (resp == null)
     {
+      String respBody = "<error>" + INTERNAL_ERROR + "</error>";
+      if (document != null)
+      {
+        try
+        {
+          respBody = SimplTypesScope.serialize(document, StringFormat.XML).toString();
+        }
+        catch (SIMPLTranslationException e)
+        {
+          logger.error("Exception while serializing " + document, e);
+        }
+      }
       resp = Response
           .status(Status.INTERNAL_SERVER_ERROR)
-          .entity(INTERNAL_ERROR)
-          .type(MediaType.TEXT_PLAIN)
+          .entity(respBody)
+          .type(MediaType.APPLICATION_XML)
           .build();
     }
 
@@ -170,10 +182,6 @@ public class MetadataServiceHelper extends Debug
     {
       logger.error("DocumentClosure is null for " + purl);
       return null;
-    }
-    if (closure != null)
-    {
-      closure.setLogRecord(perfLogRecord);
     }
     switch (docStatus)
     {

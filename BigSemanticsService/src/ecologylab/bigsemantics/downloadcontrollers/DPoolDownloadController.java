@@ -28,6 +28,7 @@ import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.service.logging.DpoolServiceError;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.concurrent.DownloadableLogRecord;
 import ecologylab.net.ParsedURL;
@@ -108,7 +109,7 @@ public class DPoolDownloadController implements DownloadController
     {
       logRecord = (ServiceLogRecord) downloadableLogRecord;
     }
-    logRecord.setUrlHash(DiskPersistentDocumentCache.getDocId(location.toString()));
+    logRecord.setId(DiskPersistentDocumentCache.getDocId(location.toString()));
 
     PersistentDocumentCache pCache = semanticsScope.getPersistentDocumentCache();
     if (location.isFile())
@@ -172,12 +173,19 @@ public class DPoolDownloadController implements DownloadController
 
     result = downloadPage(site, location, userAgent);
 
+    DpoolServiceError e = new DpoolServiceError();
+
     if (result == null)
     {
+      e.setMessage("Dpool service null response.");
+      logRecord.logPost().addEventNow(e);
       logger.error("Failed to download {}: null result from downloadPage()", location);
       return false;
     }
-    else if (result.getHttpRespCode() == HttpStatus.SC_OK)
+
+    logRecord.logPost().addEvents(result.getLogPost());
+
+    if (result.getHttpRespCode() == HttpStatus.SC_OK)
     {
       content = result.getContent();
 
@@ -196,6 +204,8 @@ public class DPoolDownloadController implements DownloadController
     }
     else
     {
+      e.setMessage("Dpool service failed to download " + location);
+      logRecord.logPost().addEventNow(e);
       logger.error("Failed to download {}: {}", location, result.getHttpRespCode());
       return false;
     }

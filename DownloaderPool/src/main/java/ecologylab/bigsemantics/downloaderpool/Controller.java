@@ -17,6 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.downloaderpool.Task.State;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolEventTypeScope;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskFailed;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskMatched;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskQueued;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskReported;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskTerminated;
+import ecologylab.logging.LogEvent;
 
 /**
  * The central controller that works with a set of downloaders. The controller accepts requests from
@@ -29,6 +36,11 @@ public class Controller extends Routine implements ControllerConfigNames
 {
 
   private static Logger                   logger = LoggerFactory.getLogger(Controller.class);
+  
+  static
+  {
+    DpoolEventTypeScope.init();
+  }
 
   /**
    * The maximum length of the task ID. Default: 11.
@@ -145,7 +157,7 @@ public class Controller extends Routine implements ControllerConfigNames
     }
     logger.info("enqueuing task " + task);
     waitingTasks.add(task);
-    task.addEvent(new Event("queued"));
+    task.getLogPost().addEventNow(new DpoolTaskQueued());
     task.setState(State.WAITING);
   }
 
@@ -176,7 +188,7 @@ public class Controller extends Routine implements ControllerConfigNames
       if (req.accept(t.getPurl()))
       {
         tasks.add(t);
-        t.addEvent(new Event("matched with a request"));
+        t.getLogPost().addEventNow(new DpoolTaskMatched());
         t.setState(State.ONGOING);
       }
       else
@@ -202,7 +214,7 @@ public class Controller extends Routine implements ControllerConfigNames
    */
   private void moveToWaitingTask(Task ongoingTask)
   {
-    ongoingTask.addEvent(new Event("queued"));
+    ongoingTask.getLogPost().addEventNow(new DpoolTaskQueued());
     ongoingTask.setState(State.WAITING);
     waitingTasks.offer(ongoingTask);
   }
@@ -246,7 +258,7 @@ public class Controller extends Routine implements ControllerConfigNames
       {
         if (t.getAttempts() >= t.getMaxAttempts())
         {
-          t.addEvent(new Event("terminated"));
+          t.getLogPost().addEventNow(new DpoolTaskTerminated());
           t.setState(State.TERMINATED);
           tasksByUri.remove(t.getUri());
           t.notifyObservers();
@@ -254,7 +266,7 @@ public class Controller extends Routine implements ControllerConfigNames
         }
         else
         {
-          t.addEvent(new Event("attempt failed"));
+          t.getLogPost().addEventNow(new DpoolTaskFailed());
           t.setState(State.ATTEMPT_FAILED);
           t.resetTimer();
           moveToWaitingTask(t);
@@ -278,12 +290,13 @@ public class Controller extends Routine implements ControllerConfigNames
       {
         task.setResult(result);
         tasksByUri.remove(task.getUri());
-        task.addEvent(new Event("downloaded"));
+        LogEvent e = new DpoolTaskReported();
+        task.getLogPost().addEventNow(e);
         task.setState(State.RESPONDED);
       }
       else
       {
-        task.addEvent(new Event("null download result"));
+        logger.error("DownloaderResult is null!");
       }
     }
   }

@@ -20,11 +20,11 @@ import com.google.common.collect.Lists;
 
 import ecologylab.bigsemantics.downloaderpool.AssignedTasks;
 import ecologylab.bigsemantics.downloaderpool.Controller;
+import ecologylab.bigsemantics.downloaderpool.DPoolUtils;
 import ecologylab.bigsemantics.downloaderpool.DownloaderRequest;
 import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
-import ecologylab.bigsemantics.downloaderpool.Event;
 import ecologylab.bigsemantics.downloaderpool.Task;
-import ecologylab.bigsemantics.downloaderpool.DPoolUtils;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskAssigned;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -95,9 +95,9 @@ public class TaskRequest extends RequestHandlerForController
       for (Task task : tasks)
       {
         logger.info("{} will be assigned to Downloader[{}]@{}", task, workerId, remoteIp);
-        Event e = new Event("assigned");
-        e.addParam("downloader IP: " + remoteIp);
-        task.addEvent(e);
+        DpoolTaskAssigned e = new DpoolTaskAssigned();
+        e.setDownloaderId(remoteIp);
+        task.getLogPost().addEventNow(e);
       }
     }
 
