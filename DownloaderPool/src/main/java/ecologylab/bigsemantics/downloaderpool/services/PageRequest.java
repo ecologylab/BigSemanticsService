@@ -21,8 +21,10 @@ import ecologylab.bigsemantics.downloaderpool.MessageScope;
 import ecologylab.bigsemantics.downloaderpool.Task;
 import ecologylab.bigsemantics.downloaderpool.Task.ObservableEventType;
 import ecologylab.bigsemantics.downloaderpool.Task.State;
-import ecologylab.bigsemantics.downloaderpool.Event;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskCreated;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskSuccess;
 import ecologylab.generic.StringBuilderBaseUtils;
+import ecologylab.logging.LogEvent;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.formatenums.StringFormat;
 
@@ -81,7 +83,7 @@ public class PageRequest extends RequestHandlerForController
     task.setFailRegex(failPattern);
     task.setBanRegex(banPattern);
     
-    task.addEvent(new Event("created"));
+    task.getLogPost().addEventNow(new DpoolTaskCreated());
     
     logger.info("Download request from [{}]: {}, url: {}, download interval: {}, user agent: [{}]",
                 remoteIp,
@@ -146,9 +148,14 @@ public class PageRequest extends RequestHandlerForController
     logger.info("Task[" + task.getId() + "] responded or terminated, result = " + result);
     if (result != null)
     {
-      Event e = new Event("success");
-      e.addParam("downloader IP: " + remoteIp);
-      task.addEvent(e);
+      String content = result.getContent();
+      int len = content == null ? 0 : content.length();
+      DpoolTaskSuccess e = new DpoolTaskSuccess();
+      e.setDownloaderId(remoteIp);
+      e.setContentLength(len);
+      task.getLogPost().addEventNow(e);
+      
+      result.setLogPost(task.getLogPost());
     }
     return result;
   }
