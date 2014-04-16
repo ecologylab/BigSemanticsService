@@ -41,9 +41,11 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   static Logger                       logger = LoggerFactory.getLogger(SemanticsServiceScope.class);
 
   private DiskPersistentDocumentCache persistentDocCache;
+  
+  private Configuration               configs;
 
   private String                      dpoolServiceUrl;
-
+  
   private SemanticsServiceScope(SimplTypesScope metadataTScope,
                                 Class<? extends IDOMProvider> domProviderClass)
   {
@@ -52,6 +54,11 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   }
 
   public void configure(Configuration configs)
+  {
+    this.configs = configs;
+  }
+  
+  private void configureDpoolServiceUrl()
   {
     String cacheBaseDir = configs.getString("cache-dir", "cache");
     if (!persistentDocCache.configure(cacheBaseDir))
@@ -64,7 +71,6 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     {
       String msg = "Cannot locate DPool service!";
       logger.error(msg);
-      throw new RuntimeException(msg);
     }
   }
 
@@ -83,6 +89,10 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   @Override
   public DownloadController createDownloadController(DocumentClosure closure)
   {
+    while (dpoolServiceUrl == null)
+    {
+      configureDpoolServiceUrl();
+    }
     DPoolDownloadController result = new DPoolDownloadController(this, dpoolServiceUrl);
     result.setDocumentClosure(closure);
     return result;

@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
+import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.formatenums.StringFormat;
 
@@ -37,6 +38,8 @@ public class MMDJSONPService
 {
 
   static Logger logger = LoggerFactory.getLogger(MMDJSONPService.class);
+  
+  static SemanticsServiceScope serviceScope = SemanticsServiceScope.get();
 
   // request specific UriInfo object to get absolute query path
   @Context
