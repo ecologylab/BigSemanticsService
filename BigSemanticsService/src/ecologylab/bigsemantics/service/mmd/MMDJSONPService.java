@@ -30,7 +30,7 @@ import ecologylab.serialization.formatenums.StringFormat;
 @Path("/mmd.jsonp")
 @Component
 @Scope("singleton")
-public class MMDJSONPService
+public class MMDJSONPService implements MMDServiceParamNames
 {
 
   static Logger                logger       = LoggerFactory.getLogger(MMDJSONPService.class);
@@ -43,15 +43,21 @@ public class MMDJSONPService
 
   @GET
   @Produces("text/plain")
-  public Response getMmd(@QueryParam("url") String url,
-                         @QueryParam("name") String name,
-                         @QueryParam("callback") String callback)
+  public Response getMmd(@QueryParam(URL) String url,
+                         @QueryParam(NAME) String name,
+                         @QueryParam(CALLBACK) String callback,
+                         @QueryParam(WITH_URL) String withUrl)
   {
     NDC.push("format: jsonp | url:" + url + " | name:" + name);
     long requestTime = System.currentTimeMillis();
     logger.debug("Requested at: " + (new Date(requestTime)));
 
-    Response resp = MMDServiceHelper.getMmdResponse(url, name, callback, uriInfo, StringFormat.JSON);
+    Response resp = MMDServiceHelper.getMmdResponse(url,
+                                                    name,
+                                                    callback,
+                                                    withUrl,
+                                                    uriInfo,
+                                                    StringFormat.JSON);
 
     logger.debug("Time taken (ms): " + (System.currentTimeMillis() - requestTime));
     NDC.remove();

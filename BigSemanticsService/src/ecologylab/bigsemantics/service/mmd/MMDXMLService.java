@@ -29,7 +29,7 @@ import ecologylab.serialization.formatenums.StringFormat;
 @Path("/mmd.xml")
 @Component
 @Scope("singleton")
-public class MMDXMLService
+public class MMDXMLService implements MMDServiceParamNames
 {
 
   static Logger logger = LoggerFactory.getLogger(MMDXMLService.class);
@@ -40,13 +40,19 @@ public class MMDXMLService
 
   @GET
   @Produces("application/xml")
-  public Response getMmd(@QueryParam("url") String url, @QueryParam("name") String name)
+  public Response getMmd(@QueryParam(URL) String url,
+                         @QueryParam(NAME) String name)
   {
     NDC.push("format: xml | url:" + url + " | name:" + name);
     long requestTime = System.currentTimeMillis();
     logger.debug("Requested at: " + (new Date(requestTime)));
 
-    Response resp = MMDServiceHelper.getMmdResponse(url, name, null, uriInfo, StringFormat.XML);
+    Response resp = MMDServiceHelper.getMmdResponse(url,
+                                                    name,
+                                                    null,
+                                                    null,
+                                                    uriInfo,
+                                                    StringFormat.XML);
 
     logger.debug("Time taken (ms): " + (System.currentTimeMillis() - requestTime));
 

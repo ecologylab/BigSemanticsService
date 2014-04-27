@@ -28,7 +28,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * 
  * @author ajit
  */
-public class MMDServiceHelper
+public class MMDServiceHelper implements MMDServiceParamNames
 {
 
   public static final int                       MAX_CACHED_URL        = 1000;
@@ -54,6 +54,7 @@ public class MMDServiceHelper
   public static Response getMmdResponse(String url,
                                         String name,
                                         String callback,
+                                        String withUrl,
                                         UriInfo uriInfo,
                                         StringFormat format)
   {
@@ -66,10 +67,17 @@ public class MMDServiceHelper
         MetaMetadata mmd = getMmdByUrl(purl);
         if (mmd != null)
         {
-          UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder().queryParam("name", mmd.getName());
+          UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder().queryParam(NAME, mmd.getName());
           if (callback != null)
           {
-            uriBuilder = uriBuilder.queryParam("callback", callback);
+            uriBuilder = uriBuilder.queryParam(CALLBACK, callback);
+            if (withUrl != null)
+            {
+              // Here, note that whatever the value of withurl is, in the redirection we use the
+              // real URL. in this way you don't need to repeat the URL, since it is already
+              // available through the url parameter.
+              uriBuilder = uriBuilder.queryParam(WITH_URL, url);
+            }
           }
           URI nameURI = uriBuilder.build();
           resp = Response.status(Status.SEE_OTHER).location(nameURI).build();
@@ -85,7 +93,12 @@ public class MMDServiceHelper
         String respString = mmdJson;
         if (callback != null)
         {
-          respString = callback + "(" + mmdJson + ");";
+          String locParam = "";
+          if (withUrl != null)
+          {
+            locParam = "\"" + withUrl + "\", ";
+          }
+          respString = callback + "(" + locParam + mmdJson + ");";
         }
         resp = Response.status(Status.OK).entity(respString).build();
       }
