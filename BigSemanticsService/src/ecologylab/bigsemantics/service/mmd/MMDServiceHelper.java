@@ -4,11 +4,13 @@
 package ecologylab.bigsemantics.service.mmd;
 
 import java.net.URI;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.slf4j.Logger;
@@ -17,9 +19,8 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
+import ecologylab.bigsemantics.service.ServiceUtils;
 import ecologylab.net.ParsedURL;
-import ecologylab.serialization.SIMPLTranslationException;
-import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -30,112 +31,119 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class MMDServiceHelper
 {
 
-  static Logger                        logger;
+  public static final int                       MAX_CACHED_URL        = 1000;
 
-  static SemanticsServiceScope         semanticsServiceScope = SemanticsServiceScope.get();
+  static Logger                                 logger;
 
-  // url to name mapping
-  static HashMap<ParsedURL, String>    purlNameMap           = new HashMap<ParsedURL, String>();
+  static SemanticsServiceScope                  semanticsServiceScope = SemanticsServiceScope.get();
 
-  // name to mmd maaping
-  static HashMap<String, MetaMetadata> mmdCache              = new HashMap<String, MetaMetadata>();
+  static LinkedHashMap<ParsedURL, MetaMetadata> mmdByUrl;
 
   static
   {
     logger = LoggerFactory.getLogger(MMDServiceHelper.class);
+    mmdByUrl = new LinkedHashMap<ParsedURL, MetaMetadata>(MAX_CACHED_URL + 1)
+    {
+      public boolean removeEldestEntry(Map.Entry eldestEntry)
+      {
+        return this.size() > MAX_CACHED_URL;
+      }
+    };
+  }
+  
+  public static Response getMmdResponse(String url,
+                                        String name,
+                                        String callback,
+                                        UriInfo uriInfo,
+                                        StringFormat format)
+  {
+    Response resp = null;
+    if (url != null)
+    {
+      ParsedURL purl = ParsedURL.getAbsolute(url);
+      if (purl != null)
+      {
+        MetaMetadata mmd = getMmdByUrl(purl);
+        if (mmd != null)
+        {
+          UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder().queryParam("name", mmd.getName());
+          if (callback != null)
+          {
+            uriBuilder = uriBuilder.queryParam("callback", callback);
+          }
+          URI nameURI = uriBuilder.build();
+          resp = Response.status(Status.SEE_OTHER).location(nameURI).build();
+        }
+      }
+    }
+    else if (name != null)
+    {
+      MetaMetadata mmd = getMmdByName(name);
+      if (mmd != null)
+      {
+        String mmdJson = ServiceUtils.serialize(mmd, format);
+        String respString = mmdJson;
+        if (callback != null)
+        {
+          respString = callback + "(" + mmdJson + ");";
+        }
+        resp = Response.status(Status.OK).entity(respString).build();
+      }
+    }
+    else
+    {
+      resp = Response
+          .status(Status.BAD_REQUEST)
+          .entity(SemanticServiceErrorMessages.BAD_REQUEST)
+          .type(MediaType.TEXT_PLAIN)
+          .build();
+    }
+
+    if (resp == null)
+    {
+      resp = Response
+          .status(Status.NOT_FOUND)
+          .entity(SemanticServiceErrorMessages.METAMETADATA_NOT_FOUND)
+          .type(MediaType.TEXT_PLAIN)
+          .build();
+    }
+    
+    return resp;
   }
 
-  public static Response redirectToMmdByName(ParsedURL url, UriInfo uriInfo)
+  public static MetaMetadata getMmdByName(String mmdName)
   {
-    ParsedURL thatPurl = url; // ParsedURL.getAbsolute(url);
-    String mmdName;
-    MetaMetadata docMM;
+    MetaMetadata docMM = semanticsServiceScope.getMetaMetadataRepository().getMMByName(mmdName);
+    return docMM;
+  }
+
+  public static MetaMetadata getMmdByUrl(ParsedURL url)
+  {
+    MetaMetadata docMM = null;
 
     // TODO: implement a selector based purlNameMap lookup?
 
     // check in cache
-    if (purlNameMap.containsKey(thatPurl))
+    if (mmdByUrl.containsKey(url))
     {
-      mmdName = purlNameMap.get(thatPurl);
+      docMM = mmdByUrl.get(url);
     }
     else
     {
-      docMM = semanticsServiceScope.getMetaMetadataRepository().getDocumentMM(thatPurl);
-
+      docMM = semanticsServiceScope.getMetaMetadataRepository().getDocumentMM(url);
       if (docMM != null)
       {
         // cache the mmd
-        mmdName = docMM.getName();
-        purlNameMap.put(thatPurl, mmdName);
-
-        // probably, condition not required if selector based URL lookup implemented
-        if (!mmdCache.containsKey(mmdName))
-          mmdCache.put(mmdName, docMM);
-      }
-      else
-      {
-        mmdName = null;
+        synchronized (mmdByUrl)
+        {
+          // it's fine to put the same mmd twice, but we want to sync all put operations to
+          // prevent concurrent modification.
+          mmdByUrl.put(url, docMM);
+        }
       }
     }
-
-    // redirect to name based url
-    if (mmdName != null)
-    {
-      URI nameURI = uriInfo.getAbsolutePathBuilder().queryParam("name", mmdName).build();
-      return Response.status(Status.SEE_OTHER).location(nameURI).build();
-    }
-    else
-      return Response
-          .status(Status.NOT_FOUND)
-          .entity(SemanticServiceErrorMessages.METAMETADATA_NOT_FOUND)
-          .type(MediaType.TEXT_PLAIN)
-          .build();
-  }
-
-  public static Response getMmdByName(String mmdName, StringFormat format)
-  {
-    MetaMetadata docMM;
-
-    // check in cache
-    if (mmdCache.containsKey(mmdName))
-    {
-      docMM = mmdCache.get(mmdName);
-    }
-    else
-    {
-      docMM = semanticsServiceScope.getMetaMetadataRepository().getMMByName(mmdName);
-
-      if (docMM != null)
-      {
-        // cache the mmd
-        mmdCache.put(mmdName, docMM);
-      }
-    }
-
-    // return json response
-    if (docMM != null)
-    {
-      try
-      {
-        String responseBody = SimplTypesScope.serialize(docMM, format).toString();
-        return Response.status(Status.OK).entity(responseBody).build();
-      }
-      catch (SIMPLTranslationException e)
-      {
-        e.printStackTrace();
-        return Response
-            .status(Status.INTERNAL_SERVER_ERROR)
-            .entity(SemanticServiceErrorMessages.INTERNAL_ERROR)
-            .type(MediaType.TEXT_PLAIN)
-            .build();
-      }
-    }
-    else
-      return Response
-          .status(Status.NOT_FOUND)
-          .entity(SemanticServiceErrorMessages.METAMETADATA_NOT_FOUND)
-          .type(MediaType.TEXT_PLAIN)
-          .build();
+    
+    return docMM;
   }
 
 }

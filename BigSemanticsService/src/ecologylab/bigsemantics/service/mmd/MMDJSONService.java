@@ -10,9 +10,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.log4j.NDC;
@@ -21,8 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
-import ecologylab.net.ParsedURL;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -50,21 +46,8 @@ public class MMDJSONService
     long requestTime = System.currentTimeMillis();
     logger.debug("Requested at: " + (new Date(requestTime)));
 
-    Response resp = null;
-    if (url != null)
-    {
-      ParsedURL purl = ParsedURL.getAbsolute(url);
-      if (purl != null)
-        resp = MMDServiceHelper.redirectToMmdByName(purl, uriInfo);
-    }
-    else if (name != null)
-      resp = MMDServiceHelper.getMmdByName(name, StringFormat.JSON);
-
-    // invalid params
-    if (resp == null)
-      resp = Response.status(Status.BAD_REQUEST).entity(SemanticServiceErrorMessages.BAD_REQUEST)
-          .type(MediaType.TEXT_PLAIN).build();
-
+    Response resp = MMDServiceHelper.getMmdResponse(url, name, null, uriInfo, StringFormat.JSON);
+ 
     logger.debug("Time taken (ms): " + (System.currentTimeMillis() - requestTime));
 
     NDC.remove();
