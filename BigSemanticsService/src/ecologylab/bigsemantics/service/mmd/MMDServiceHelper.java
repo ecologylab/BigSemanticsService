@@ -4,6 +4,7 @@
 package ecologylab.bigsemantics.service.mmd;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -76,7 +77,7 @@ public class MMDServiceHelper implements MMDServiceParamNames
               // Here, note that whatever the value of withurl is, in the redirection we use the
               // real URL. in this way you don't need to repeat the URL, since it is already
               // available through the url parameter.
-              uriBuilder = uriBuilder.queryParam(WITH_URL, url);
+              uriBuilder = uriBuilder.queryParam(WITH_URL, ServiceUtils.urlencode(url));
             }
           }
           URI nameURI = uriBuilder.build();
@@ -96,6 +97,7 @@ public class MMDServiceHelper implements MMDServiceParamNames
           String locParam = "";
           if (withUrl != null)
           {
+            logger.info("withUrl = {}", withUrl);
             locParam = "\"" + withUrl + "\", ";
           }
           respString = callback + "(" + locParam + mmdJson + ");";

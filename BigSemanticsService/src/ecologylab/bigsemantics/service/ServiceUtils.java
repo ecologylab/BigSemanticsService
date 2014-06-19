@@ -1,7 +1,18 @@
 package ecologylab.bigsemantics.service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Charsets;
 
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.SimplTypesScope;
@@ -44,6 +55,19 @@ public class ServiceUtils
     }
 
     return null;
+  }
+
+  public static String urlencode(String content)
+  {
+    try
+    {
+      return URLEncoder.encode(content, "UTF-8");
+    }
+    catch (UnsupportedEncodingException e)
+    {
+      logger.warn("Cannot encode for URL: {}", content);
+      return null;
+    }
   }
 
 }
