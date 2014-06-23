@@ -7,11 +7,11 @@ from subprocess import Popen, PIPE, STDOUT
 DEVNULL = open(os.devnull, "w")
 
 def fork(cmds, wd = None):
-  print "forking " + " ".join(cmds) + "\n  in " + wd
+  print wd + " (fork) $ " + " ".join(cmds)
   p = Popen(cmds, stderr=STDOUT, stdout=DEVNULL, cwd = wd)
 
 def call(cmds, wd = None):
-  print "calling " + " ".join(cmds) + "\n  in " + wd
+  print wd + " (call) $ " + " ".join(cmds)
   p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd = wd)
   (out, err) = p.communicate()
   return (p.returncode, out, err)

@@ -69,6 +69,7 @@ class ServiceBuilder:
 
   def compile_projs(self):
     # compile core
+    # note that we depend on the ant scripts to copy over dependencies.
     check_call(["ant", "clean"], wd=self.bscore_proj)
     check_call(["ant"], wd=self.bscore_proj)
     # compile wrappers
@@ -123,9 +124,9 @@ class ServiceBuilder:
       remove(join(self.archive_dir, archives[0]))
 
   def archive_bins(self):
-    archive(self.webapps_dir, "BigSemanticsService.war")
-    archive(self.webapps_dir, "DownloaderPool.war")
-    archive(self.downloader_dir, "Downloader.jar")
+    self.archive(self.webapps_dir, "BigSemanticsService.war")
+    self.archive(self.webapps_dir, "DownloaderPool.war")
+    self.archive(self.downloader_dir, "Downloader.jar")
 
   def release_file_to_prod(self, file_name, local_dir, remote_dir):
     dest_spec = "{0}@{1}:{2}".format(self.prod_user,
@@ -153,8 +154,6 @@ class ServiceBuilder:
                          # join(self.prod_webapps_dir, "root"))
 
     # generate and copy the example table data file
-    # example_table_script = "generate_domain_example_table.py"
-    # "domain_type_examples.json"
     cmds = ["python", self.example_table_script,
             "--out", self.example_table_data_file]
     check_call(cmds, wd = self.onto_vis_dir)
