@@ -48,7 +48,7 @@ class ServiceBuilder:
     # data:
     self.example_table_script = config["example_table_script"]
     self.example_table_data_file = config["example_table_data_file"]
-    self.max_war_archives = config["max_war_archives"]
+    self.max_archives = config["max_archives"]
     self.prod_host = config["prod_host"]
     self.prod_user = config["prod_user"]
     self.prod_login_id = config["prod_login_id"]
