@@ -20,41 +20,73 @@ class ServiceBuilder:
     if config is None:
       config = builder_config
     self.config = config
-    # paths:
+
+    # code paths:
     self.code_dir = config["code_dir"]
     self.wrapper_repo = join(self.code_dir, "BigSemanticsWrapperRepository")
     self.wrapper_proj = join(self.wrapper_repo, "BigSemanticsWrappers")
+    self.onto_vis_dir = join(self.wrapper_proj, "OntoViz")
     self.service_repo = join(self.code_dir, "BigSemanticsService")
     self.service_proj = join(self.service_repo, "BigSemanticsService")
     self.service_build = join(self.service_proj, "build")
+    self.dpool_proj = join(self.service_repo, "DownloaderPool")
+    self.bsjava_repo = join(self.code_dir, "BigSemanticsJava")
+    self.bscore_proj = join(self.bsjava_repo, "BigSemanticsCore")
+    self.bsjs_repo = join(self.code_dir, "BigSemanticsJavaScript")
+
+    # jetty paths:
     self.jetty_dir = config["jetty_dir"]
     self.webapps_dir = join(self.jetty_dir, "webapps")
+
+    # other paths:
     self.downloader_dir = config["downloader_dir"]
-    self.war_archive_dir = config["war_archive_dir"]
-    self.prod_login_id = config["prod_login_id"]
+    self.archive_dir = config["archive_dir"]
     self.prod_webapps_dir = config["prod_webapps_dir"]
+    self.prod_downloader_dir = config["prod_downloader_dir"]
+    self.prod_static_dir = config["prod_static_dir"]
+
     # data:
+    self.example_table_script = config["example_table_script"]
+    self.example_table_data_file = config["example_table_data_file"]
     self.max_war_archives = config["max_war_archives"]
-    self.prod_user = config["prod_user"]
     self.prod_host = config["prod_host"]
+    self.prod_user = config["prod_user"]
+    self.prod_login_id = config["prod_login_id"]
 
-  def pull_wrappers(self):
+  def git_update_to_latest(self, git_dir):
     # clean local wrapper changes
-    check_call(["git", "checkout", "--", "*"], wd=self.wrapper_repo)
-    check_call(["git", "clean", "-f"], wd=self.wrapper_repo)
-    check_call(["git", "clean", "-f", "-d"], wd=self.wrapper_repo)
+    check_call(["git", "checkout", "--", "*"], wd=git_dir)
+    check_call(["git", "clean", "-f"], wd=git_dir)
+    check_call(["git", "clean", "-f", "-d"], wd=git_dir)
     # pull down latest wrappers
-    check_call(["git", "pull"], wd=self.wrapper_repo)
+    check_call(["git", "pull"], wd=git_dir)
 
-  def compile_wrappers_to_jars(self):
+  def update_projs(self):
+    self.git_update_to_latest(self.wrapper_repo)
+    self.git_update_to_latest(self.bsjava_repo)
+    self.git_update_to_latest(self.service_repo)
+    self.git_update_to_latest(self.bsjs_repo)
+
+  def compile_projs(self):
+    # compile core
+    check_call(["ant", "clean"], wd=self.bscore_proj)
+    check_call(["ant"], wd=self.bscore_proj)
+    # compile wrappers
     check_call(["ant", "clean"], wd=self.wrapper_proj)
     check_call(["ant"], wd=self.wrapper_proj)
-
-  def build_service_war(self):
+    # compile service
     check_call(["ant", "clean"], wd=self.service_build)
     check_call(["ant", "buildwar"], wd=self.service_build)
     shutil.copy2(join(self.service_build, "BigSemanticsService.war"),
                  self.webapps_dir)
+    # compile dpool service and downloader
+    check_call(["ant", "clean"], wd=self.dpool_proj)
+    check_call(["ant", "war"], wd=self.dpool_proj)
+    check_call(["ant", "downloader-jar"], wd=self.dpool_proj)
+    shutil.copy2(join(self.dpool_proj, "build", "DownloaderPool.war"),
+                 self.webapps_dir)
+    shutil.copy2(join(self.dpool_proj, "build", "Downloader.jar"),
+                 self.downloader_dir)
 
   def start_local_service(self):
     fork(["killall", "java"], wd=self.jetty_dir)
@@ -75,54 +107,68 @@ class ServiceBuilder:
           "Build broken:\n  code: {}\n  fatal: {}\n  non_fatal: {}".format(
               code, fatal, non_fatal))
     else:
-      self.archive_war()
+      self.archive_bins()
       self.release_to_prod()
       print "archived and released.\n"
 
-  def archive_war(self):
-    war_file = join(self.webapps_dir, "BigSemanticsService.war")
+  def archive(self, file_dir, file_name):
+    f = join(file_dir, file_name)
     tag = datetime.datetime.now().strftime(".%Y%m%d%H")
-    dest_file = join(self.war_archive_dir, "BigSemanticsService.war" + tag)
-    shutil.copyfile(war_file, dest_file)
-    files = listdir(self.war_archive_dir)
-    archives = [f for f in files if f.startswith("BigSemanticsService.war.")]
-    if len(archives) > self.max_war_archives:
+    dest_file = join(self.archive_dir, file_name + tag)
+    shutil.copyfile(f, dest_file)
+    files = listdir(self.archive_dir)
+    archives = [f for f in files if f.startswith(file_name + ".")]
+    if len(archives) > self.max_archives:
       archives = sorted(archives)
-      remove(join(self.war_archive_dir, archives[0]))
+      remove(join(self.archive_dir, archives[0]))
+
+  def archive_bins(self):
+    archive(self.webapps_dir, "BigSemanticsService.war")
+    archive(self.webapps_dir, "DownloaderPool.war")
+    archive(self.downloader_dir, "Downloader.jar")
+
+  def release_file_to_prod(self, file_name, local_dir, remote_dir):
+    dest_spec = "{0}@{1}:{2}".format(self.prod_user,
+                                     self.prod_host,
+                                     remote_dir)
+    cmds = ["scp", "-i", self.prod_login_id, local_dir, remote_dir]
+    check_call(cmds, wd = local_dir)
 
   def release_to_prod(self):
-    # copy the war file
-    war_file = "BigSemanticsService.war"
-    dest_dir = "{0}@{1}:{2}".format(self.prod_user,
-                                    self.prod_host,
-                                    self.prod_webapps_dir)
-    cmds = ["scp", "-i", self.prod_login_id, war_file, dest_dir]
-    check_call(cmds, wd = self.webapps_dir)
+    # copy the war files
+    release_file_to_prod("BigSemanticsService.war",
+                         self.webapps_dir,
+                         self.prod_webapps_dir)
+    release_file_to_prod("DownloaderPool.war",
+                         self.webapps_dir,
+                         self.prod_webapps_dir)
+    release_file_to_prod("Downloader.jar",
+                         self.downloader_dir,
+                         self.prod_downloader_dir)
+
     # copy the generated visualization file
-    onto_vis_dir = join(self.wrapper_proj, "OntoViz")
-    onto_vis_data_file = "mmd_repo.json"
-    dest_static_html_dir = join(self.prod_webapps_dir, "root")
-    dest_dir = "{0}@{1}:{2}".format(self.prod_user,
-                                    self.prod_host,
-                                    dest_static_html_dir)
-    cmds = ["scp", "-i", self.prod_login_id, onto_vis_data_file, dest_dir]
-    check_call(cmds, wd = onto_vis_dir)
+    release_file_to_prod("mmd_repo.json",
+                         self.onto_vis_dir,
+                         self.prod_static_dir)
+                         # join(self.prod_webapps_dir, "root"))
+
     # generate and copy the example table data file
-    example_table_script = "generate_domain_example_table.py"
-    example_table_data_file = "domain_type_examples.json"
-    cmds = ["python", example_table_script, "--out", example_table_data_file]
-    check_call(cmds, wd = onto_vis_dir)
-    cmds = ["scp", "-i", self.prod_login_id, example_table_data_file, dest_dir]
-    check_call(cmds, wd = onto_vis_dir)
+    # example_table_script = "generate_domain_example_table.py"
+    # "domain_type_examples.json"
+    cmds = ["python", self.example_table_script,
+            "--out", self.example_table_data_file]
+    check_call(cmds, wd = self.onto_vis_dir)
+    release_file_to_prod(self.example_table_data_file,
+                         self.onto_vis_dir,
+                         self.prod_static_dir)
 
 
 
 if __name__ == "__main__":
   builder = ServiceBuilder()
   try:
-    builder.pull_wrappers()
-    builder.compile_wrappers_to_jars()
-    builder.build_service_war()
+    builder.update_projs()
+    builder.compile_projs()
     builder.start_local_service()
     builder.test_local_service_and_release()
     print "everything done."
