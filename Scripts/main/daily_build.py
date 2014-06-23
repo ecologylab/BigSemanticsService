@@ -132,34 +132,33 @@ class ServiceBuilder:
     dest_spec = "{0}@{1}:{2}".format(self.prod_user,
                                      self.prod_host,
                                      remote_dir)
-    cmds = ["scp", "-i", self.prod_login_id, local_dir, remote_dir]
+    cmds = ["scp", "-i", self.prod_login_id, file_name, dest_spec]
     check_call(cmds, wd = local_dir)
 
   def release_to_prod(self):
     # copy the war files
-    release_file_to_prod("BigSemanticsService.war",
-                         self.webapps_dir,
-                         self.prod_webapps_dir)
-    release_file_to_prod("DownloaderPool.war",
-                         self.webapps_dir,
-                         self.prod_webapps_dir)
-    release_file_to_prod("Downloader.jar",
-                         self.downloader_dir,
-                         self.prod_downloader_dir)
+    self.release_file_to_prod("BigSemanticsService.war",
+                              self.webapps_dir,
+                              self.prod_webapps_dir)
+    self.release_file_to_prod("DownloaderPool.war",
+                              self.webapps_dir,
+                              self.prod_webapps_dir)
+    self.release_file_to_prod("Downloader.jar",
+                              self.downloader_dir,
+                              self.prod_downloader_dir)
 
     # copy the generated visualization file
-    release_file_to_prod("mmd_repo.json",
-                         self.onto_vis_dir,
-                         self.prod_static_dir)
-                         # join(self.prod_webapps_dir, "root"))
+    self.release_file_to_prod("mmd_repo.json",
+                              self.onto_vis_dir,
+                              self.prod_static_dir)
 
     # generate and copy the example table data file
     cmds = ["python", self.example_table_script,
             "--out", self.example_table_data_file]
     check_call(cmds, wd = self.onto_vis_dir)
-    release_file_to_prod(self.example_table_data_file,
-                         self.onto_vis_dir,
-                         self.prod_static_dir)
+    self.release_file_to_prod(self.example_table_data_file,
+                              self.onto_vis_dir,
+                              self.prod_static_dir)
 
 
 
