@@ -5,6 +5,8 @@
 	<projects>
 		<project>ModifiedHttpClient</project>
 		<project>DownloaderPoolMessages</project>
+		<project>simplCore</project>
+		<project>simplSunSpecifics</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

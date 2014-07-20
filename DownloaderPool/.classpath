@@ -21,6 +21,11 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/ModifiedHttpClient"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/simplCore"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/simplSunSpecifics"/>
+	<classpathentry kind="lib" path="/core-lib/xercesMinimal.jar">
+		<attributes>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
