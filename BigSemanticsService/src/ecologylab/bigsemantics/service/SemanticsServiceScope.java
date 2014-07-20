@@ -58,15 +58,15 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   public void configure(Configuration configs)
   {
     this.configs = configs;
-  }
-  
-  private void configureDpoolServiceUrl()
-  {
     String cacheBaseDir = configs.getString("cache-dir", "cache");
     if (!persistentDocCache.configure(cacheBaseDir))
     {
       logger.error("Cannot configure cache! Will not cache anything.");
     }
+  }
+  
+  private void configureDpoolServiceUrl()
+  {
     String[] dpoolServices = configs.getStringArray("dpool-service");
     dpoolServiceUrl = DPoolDownloadController.pickDpoolServiceUrl(dpoolServices);
     if (dpoolServiceUrl == null)

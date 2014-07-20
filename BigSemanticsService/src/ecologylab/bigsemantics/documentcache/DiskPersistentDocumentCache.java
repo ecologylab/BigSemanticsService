@@ -169,7 +169,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   private boolean writeDocument(Document document, PersistenceMetaInfo metaInfo)
       throws SIMPLTranslationException
   {
-    String currentHash = document.getMetaMetadata().getHash();
+    String currentHash = document.getMetaMetadata().getHashForExtraction();
     File docFile = getFilePath(docDir, metaInfo.getDocId(), DOC_SUFFIX);
     metaInfo.setMmdHash(currentHash);
     SimplTypesScope.serialize(document, docFile, Format.XML);
@@ -223,23 +223,19 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
     if (metaInfo == null)
     {
       metaInfo = new PersistenceMetaInfo();
-      metaInfo.setDocId(docId);
-      metaInfo.setLocation(location);
-      metaInfo.setMimeType(mimeType);
-      metaInfo.setAccessTime(now);
-      metaInfo.setPersistenceTime(now);
-      metaInfo.setMmdHash(document.getMetaMetadata().getHash());
     }
+    metaInfo.setDocId(docId);
+    metaInfo.setLocation(location);
+    metaInfo.setMimeType(mimeType);
+    metaInfo.setAccessTime(now);
+    metaInfo.setPersistenceTime(now);
+    metaInfo.setMmdHash(document.getMetaMetadata().getHashForExtraction());
 
     try
     {
-      boolean update = false;
-      update |= writeRawPageContent(rawContent, metaInfo);
-      update |= writeDocument(document, metaInfo);
-      if (update)
-      {
-        writeMetaInfo(metaInfo);
-      }
+      writeRawPageContent(rawContent, metaInfo);
+      writeDocument(document, metaInfo);
+      writeMetaInfo(metaInfo);
       return metaInfo;
     }
     catch (Exception e)
@@ -256,7 +252,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
     if (newDoc != null && newDoc.getLocation() != null)
     {
       metaInfo.setPersistenceTime(new Date());
-      metaInfo.setMmdHash(newDoc.getMetaMetadata().getHash());
+      metaInfo.setMmdHash(newDoc.getMetaMetadata().getHashForExtraction());
       try
       {
         writeDocument(newDoc, metaInfo);
