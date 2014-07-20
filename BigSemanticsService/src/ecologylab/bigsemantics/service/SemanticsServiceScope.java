@@ -25,6 +25,7 @@ import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationSc
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SimplTypesScope;
@@ -94,13 +95,13 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     {
       configureDpoolServiceUrl();
     }
-    DPoolDownloadController result = new DPoolDownloadController(this, dpoolServiceUrl);
+    DPoolDownloadController result = new DPoolDownloadController(dpoolServiceUrl);
     result.setDocumentClosure(closure);
     return result;
   }
   
   @Override
-  public ServiceLogRecord createLogRecord()
+  public DocumentLogRecord createLogRecord()
   {
     return new ServiceLogRecord();
   }

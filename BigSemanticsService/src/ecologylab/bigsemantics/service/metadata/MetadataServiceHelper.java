@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.DownloadStatus;
+import ecologylab.bigsemantics.documentcache.PersistenceMetaInfo;
+import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
@@ -261,7 +263,12 @@ public class MetadataServiceHelper extends Debug
   private void removeFromPersistentDocumentCache(ParsedURL docPurl)
   {
     logger.debug("Removing document [{}] from persistent document caches", docPurl);
-    semanticsServiceScope.getPersistentDocumentCache().remove(docPurl);
+    PersistentDocumentCache pCache = semanticsServiceScope.getPersistentDocumentCache();
+    PersistenceMetaInfo metaInfo = pCache.getMetaInfo(docPurl);
+    if (metaInfo != null)
+    {
+      pCache.remove(metaInfo);
+    }
   }
 
 }
