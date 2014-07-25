@@ -28,9 +28,6 @@ public class ServiceLogRecord extends DocumentLogRecord
   @simpl_scalar
   private int       responseCode;
 
-  @simpl_scalar
-  private long      msPageCacheLookup;
-
   public Date getBeginTime()
   {
     return beginTime;
@@ -81,16 +78,6 @@ public class ServiceLogRecord extends DocumentLogRecord
     this.responseCode = responseCode;
   }
 
-  public long getMsPageCacheLookup()
-  {
-    return msPageCacheLookup;
-  }
-
-  public void setMsPageCacheLookup(long msPageCacheLookup)
-  {
-    this.msPageCacheLookup = msPageCacheLookup;
-  }
-
   @Override
   public String toString()
   {
@@ -99,7 +86,7 @@ public class ServiceLogRecord extends DocumentLogRecord
                          requestUrl == null ? "NullLocation" : requestUrl.toString());
   }
 
-  static final public ServiceLogRecord DUMMY;
+  static final public DocumentLogRecord DUMMY;
 
   static
   {

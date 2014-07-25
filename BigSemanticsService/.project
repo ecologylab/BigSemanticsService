@@ -3,6 +3,17 @@
 	<name>BigSemanticsService</name>
 	<comment></comment>
 	<projects>
+		<project>simplCore</project>
+		<project>DownloaderPoolMessages</project>
+		<project>BigSemanticsCore</project>
+		<project>cyberneko</project>
+		<project>simplSunSpecifics</project>
+		<project>BigSemanticsWrappers</project>
+		<project>BigSemanticsSunSpecifics</project>
+		<project>BigSemanticsCybernekoWrapper</project>
+		<project>BigSemanticsGeneratedClassesJava</project>
+		<project>imageMetadataExtractor</project>
+		<project>ModifiedHttpClient</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

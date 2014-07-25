@@ -1,9 +1,6 @@
 package ecologylab.bigsemantics.downloadcontrollers;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,10 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
-import ecologylab.bigsemantics.documentcache.DiskPersistentDocumentCache;
-import ecologylab.bigsemantics.documentcache.PersistenceMetadata;
-import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
-import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
 import ecologylab.bigsemantics.downloaderpool.BasicResponse;
 import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
 import ecologylab.bigsemantics.downloaderpool.MessageScope;
@@ -28,6 +21,7 @@ import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.service.logging.DpoolServiceError;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.concurrent.DownloadableLogRecord;
@@ -40,7 +34,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * 
  * @author quyin
  */
-public class DPoolDownloadController implements DownloadController
+public class DPoolDownloadController extends AbstractDownloadController
 {
 
   private static Logger            logger;
@@ -55,31 +49,14 @@ public class DPoolDownloadController implements DownloadController
 
   public static int                HTTP_DOWNLOAD_REQUEST_TIMEOUT = 60000;
 
-  private SemanticsGlobalScope     semanticsScope;
-
   private String                   dpoolServiceUrl;
-
-  private String                   userAgent;
 
   private DocumentClosure          closure;
 
-  private ParsedURL                location;
-
-  private List<ParsedURL>          redirectedLocations;
-
   private DownloaderResult         result;
 
-  private String                   content;
-
-  private String                   mimeType;
-
-  private boolean                  good;
-
-  private InputStream              inputStream;
-
-  public DPoolDownloadController(SemanticsGlobalScope semanticsScope, String dpoolServiceUrl)
+  public DPoolDownloadController(String dpoolServiceUrl)
   {
-    this.semanticsScope = semanticsScope;
     this.dpoolServiceUrl = dpoolServiceUrl;
   }
 
@@ -89,89 +66,36 @@ public class DPoolDownloadController implements DownloadController
   }
 
   @Override
-  public void setUserAgent(String userAgent)
-  {
-    this.userAgent = userAgent;
-  }
-
-  @Override
   public boolean accessAndDownload(ParsedURL location) throws IOException
   {
-    this.location = location;
+    setLocation(location);
 
     Document document = closure.getDocument();
     SemanticsGlobalScope semanticScope = document.getSemanticsScope();
     SemanticsSite site = document.getSite();
 
-    ServiceLogRecord logRecord = ServiceLogRecord.DUMMY;
-    DownloadableLogRecord downloadableLogRecord = closure.getLogRecord();
-    if (downloadableLogRecord instanceof ServiceLogRecord)
-    {
-      logRecord = (ServiceLogRecord) downloadableLogRecord;
-    }
-    logRecord.setId(DiskPersistentDocumentCache.getDocId(location.toString()));
-
-    PersistentDocumentCache pCache = semanticsScope.getPersistentDocumentCache();
     if (location.isFile())
     {
       logger.error("File URL: " + location);
       return false;
     }
-    else
-    {
-      long t0Lookup = System.currentTimeMillis();
-      PersistenceMetadata pMetadata = pCache.getMetadata(location);
-      content = pCache.retrieveRaw(location);
-      logRecord.setMsPageCacheLookup(System.currentTimeMillis() - t0Lookup);
-
-      if (pMetadata == null || content == null)
-      {
-        if (!doDownload(semanticScope, location, site, logRecord))
-        {
-          return false;
-        }
-      }
-      else
-      {
-        // cached:
-        logger.info("Cached: " + location);
-        logRecord.setHtmlCacheHit(true);
-
-        redirectedLocations = pMetadata.getAdditionalLocations();
-        if (redirectedLocations != null)
-        {
-          for (ParsedURL redirect : redirectedLocations)
-          {
-            handleRedirectLocation(semanticScope, closure, location, redirect);
-          }
-        }
-
-        mimeType = pMetadata.getMimeType();
-      }
-    }
-
-    if (content != null)
-    {
-      if (inputStream == null)
-      {
-        inputStream = new ByteArrayInputStream(content.getBytes());
-      }
-      good = true;
-    }
-
-    return good;
+    setIsGood(doDownload(semanticScope, location, site));
+    return isGood();
   }
 
   private boolean doDownload(SemanticsGlobalScope semanticScope,
                              ParsedURL location,
-                             SemanticsSite site,
-                             ServiceLogRecord logRecord)
+                             SemanticsSite site)
   {
-    // not cached, network download:
-    logger.info("Not cached: " + location);
-    logRecord.setHtmlCacheHit(false);
+    // init log record
+    DocumentLogRecord logRecord = ServiceLogRecord.DUMMY;
+    DownloadableLogRecord downloadableLogRecord = closure.getLogRecord();
+    if (downloadableLogRecord instanceof ServiceLogRecord)
+    {
+      logRecord = (DocumentLogRecord) downloadableLogRecord;
+    }
 
-    result = downloadPage(site, location, userAgent);
+    result = downloadPage(site, location, getUserAgent());
 
     DpoolServiceError e = new DpoolServiceError();
 
@@ -187,7 +111,7 @@ public class DPoolDownloadController implements DownloadController
 
     if (result.getHttpRespCode() == HttpStatus.SC_OK)
     {
-      content = result.getContent();
+      setLocation(ParsedURL.getAbsolute(result.getRequestedUrl()));
 
       // handle other locations (e.g. redirects)
       List<String> otherLocations = result.getOtherLocations();
@@ -199,6 +123,13 @@ public class DPoolDownloadController implements DownloadController
           handleRedirectLocation(semanticScope, closure, location, redirectedLocation);
         }
       }
+      
+      setCharset(result.getCharset());
+      setMimeType(result.getMimeType());
+      setStatus(result.getHttpRespCode());
+      setStatusMessage(result.getHttpRespMsg());
+
+      setContent(result.getContent());
 
       return true;
     }
@@ -278,83 +209,16 @@ public class DPoolDownloadController implements DownloadController
                                       ParsedURL originalPurl,
                                       ParsedURL redirectedLocation)
   {
-    redirectedLocations().add(redirectedLocation);
+    addRedirectedLocation(redirectedLocation);
     Document newDocument = semanticScope.getOrConstructDocument(redirectedLocation);
     newDocument.addAdditionalLocation(originalPurl);
     documentClosure.changeDocument(newDocument);
   }
 
   @Override
-  public boolean isGood()
-  {
-    return good;
-  }
-
-  @Override
-  public int getStatus()
-  {
-    return result == null ? -1 : result.getHttpRespCode();
-  }
-
-  @Override
-  public String getStatusMessage()
-  {
-    return result == null ? null : result.getHttpRespMsg();
-  }
-
-  @Override
-  public ParsedURL getLocation()
-  {
-    return location;
-  }
-
-  private List<ParsedURL> redirectedLocations()
-  {
-    if (redirectedLocations == null)
-    {
-      redirectedLocations = new ArrayList<ParsedURL>();
-    }
-    return redirectedLocations;
-  }
-
-  @Override
-  public List<ParsedURL> getRedirectedLocations()
-  {
-    return redirectedLocations;
-  }
-
-  @Override
-  public String getMimeType()
-  {
-    if (mimeType != null)
-    {
-      return mimeType;
-    }
-    return result == null ? null : result.getMimeType();
-  }
-
-  @Override
-  public String getCharset()
-  {
-    return result == null ? null : result.getCharset();
-  }
-
-  @Override
   public String getHeader(String name)
   {
     throw new RuntimeException("Not implemented.");
-  }
-
-  @Override
-  public InputStream getInputStream()
-  {
-    return isGood() ? inputStream : null;
-  }
-
-  @Override
-  public String getContent() throws IOException
-  {
-    return isGood() ? content : null;
   }
 
   private static String TEST_STR = "TEST_STR";

@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.generic.Debug;
 import ecologylab.net.ParsedURL;
@@ -212,7 +213,7 @@ public class ServicePerfLogAnalyzer extends Debug
                          }
                        });
 
-	    for (ServiceLogRecord logRecord : sorted)
+	    for (DocumentLogRecord logRecord : sorted)
 	    {
 	      System.out.format("%s\t%s\n", logRecord.getDocumentUrl(), logRecord.getMsExtraction());
 	    }

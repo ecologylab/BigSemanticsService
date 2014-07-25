@@ -57,16 +57,11 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
 
   private File                 docDir;
 
-  private long                 repositoryVersion;
-
-  private String               repositoryHash;
-
   public DiskPersistentDocumentCache(SemanticsGlobalScope semanticsScope)
   {
-    metaTScope = SimplTypesScope.get("PersistenceMetadata", PersistenceMetadata.class);
+    metaTScope = SimplTypesScope.get("PersistenceMetadata", PersistenceMetaInfo.class);
     docTScope = RepositoryMetadataTranslationScope.get();
     this.semanticsScope = semanticsScope;
-    repositoryHash = semanticsScope.getMetaMetadataRepositoryHash();
   }
 
   public boolean configure(String cacheBaseDir)
@@ -88,13 +83,13 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
     }
     return false;
   }
-  
+
   static String expandHomeDir(String dir)
   {
     String homeDir = System.getProperty("user.home");
     return dir.replaceFirst("\\$HOME", homeDir.replace("\\", "/"));
   }
-  
+
   /**
    * Do mkdirs(), but returns false only when cannot create those dirs.
    * 
@@ -148,132 +143,135 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   }
 
   /**
-   * Write raw document when it doesn't exist or has expired.
+   * Write raw document.
    * 
-   * @param rawDocument
-   * @param metadata
+   * @param rawPageContent
+   * @param metaInfo
    * @return True if raw document actually written, otherwise false.
    * @throws IOException
    */
-  private boolean writeRawDocumentIfNeeded(String rawDocument, PersistenceMetadata metadata)
+  private boolean writeRawPageContent(String rawPageContent, PersistenceMetaInfo metaInfo)
       throws IOException
   {
-    File rawDocFile = getFilePath(rawDocDir, metadata.getDocId(), RAW_DOC_SUFFIX);
-    if (!rawDocFile.exists())
-    {
-      // TODO Check for cache life.
-      Utils.writeToFile(rawDocFile, rawDocument);
-      return true;
-    }
-    return false;
+    File rawDocFile = getFilePath(rawDocDir, metaInfo.getDocId(), RAW_DOC_SUFFIX);
+    Utils.writeToFile(rawDocFile, rawPageContent);
+    return true;
   }
 
   /**
-   * Write document when it doesn't exist or is stale.
+   * Write document.
    * 
    * @param document
-   * @param metadata
+   * @param metaInfo
    * @return True if docuemnt actually written, otherwise false.
    * @throws SIMPLTranslationException
    */
-  private boolean writeDocumentIfNeeded(Document document, PersistenceMetadata metadata)
+  private boolean writeDocument(Document document, PersistenceMetaInfo metaInfo)
       throws SIMPLTranslationException
   {
-    File docFile = getFilePath(docDir, metadata.getDocId(), DOC_SUFFIX);
-    if (!docFile.exists() || !repositoryHash.equals(metadata.getRepositoryHash()))
-    {
-      metadata.setRepositoryVersion(repositoryVersion);
-      metadata.setRepositoryHash(repositoryHash);
-      SimplTypesScope.serialize(document, docFile, Format.XML);
-      return true;
-    }
-    return false;
+    String currentHash = document.getMetaMetadata().getHashForExtraction();
+    File docFile = getFilePath(docDir, metaInfo.getDocId(), DOC_SUFFIX);
+    metaInfo.setMmdHash(currentHash);
+    SimplTypesScope.serialize(document, docFile, Format.XML);
+    return true;
   }
 
-  private void writeMetadata(PersistenceMetadata metadata) throws SIMPLTranslationException
+  private void writeMetaInfo(PersistenceMetaInfo metadata) throws SIMPLTranslationException
   {
     File metadataFile = getFilePath(metadataDir, metadata.getDocId(), METADATA_SUFFIX);
     SimplTypesScope.serialize(metadata, metadataFile, Format.XML);
   }
 
   @Override
-  public boolean store(Document document, String rawDocument, PersistenceMetadata pMetadata)
+  public PersistenceMetaInfo getMetaInfo(ParsedURL location)
+  {
+    String docId = getDocId(location);
+    File metadataFile = getFilePath(metadataDir, docId, METADATA_SUFFIX);
+    if (metadataFile.exists() && metadataFile.isFile())
+    {
+      PersistenceMetaInfo metaInfo = null;
+      try
+      {
+        metaInfo = (PersistenceMetaInfo) metaTScope.deserialize(metadataFile, Format.XML);
+      }
+      catch (SIMPLTranslationException e)
+      {
+        logger.error("Cannot load metadata from " + metadataFile, e);
+      }
+      return metaInfo;
+    }
+    return null;
+  }
+
+  @Override
+  public PersistenceMetaInfo store(Document document,
+                                   String rawContent,
+                                   String charset,
+                                   String mimeType,
+                                   String mmdHash)
   {
     if (document == null || document.getLocation() == null)
     {
-      return false;
+      return null;
     }
 
-    ParsedURL purl = document.getLocation();
-    String docId = getDocId(purl);
+    ParsedURL location = document.getLocation();
+    String docId = getDocId(location);
     Date now = new Date();
 
-    PersistenceMetadata metadata = getMetadata(purl);
-    if (metadata == null)
+    PersistenceMetaInfo metaInfo = getMetaInfo(location);
+    if (metaInfo == null)
     {
-      metadata = new PersistenceMetadata();
-      metadata.setDocId(docId);
-      metadata.setLocation(purl);
-      metadata.setMimeType(pMetadata.getMimeType());
-      metadata.setAccessTime(now);
-      metadata.setPersistenceTime(now);
-      metadata.setRepositoryVersion(repositoryVersion);
-      metadata.setRepositoryHash(repositoryHash);
+      metaInfo = new PersistenceMetaInfo();
     }
+    metaInfo.setDocId(docId);
+    metaInfo.setLocation(location);
+    metaInfo.setMimeType(mimeType);
+    metaInfo.setAccessTime(now);
+    metaInfo.setPersistenceTime(now);
+    metaInfo.setMmdHash(document.getMetaMetadata().getHashForExtraction());
 
     try
     {
-      boolean update = false;
-      update |= writeRawDocumentIfNeeded(rawDocument, metadata);
-      update |= writeDocumentIfNeeded(document, metadata);
-      if (update)
-      {
-        writeMetadata(metadata);
-      }
-      return true;
+      writeRawPageContent(rawContent, metaInfo);
+      writeDocument(document, metaInfo);
+      writeMetaInfo(metaInfo);
+      return metaInfo;
     }
     catch (Exception e)
     {
       logger.error("Cannot store " + document + ", doc_id=" + docId, e);
     }
 
-    return false;
-  }
-
-  @Override
-  public PersistenceMetadata getMetadata(String docId)
-  {
-    File metadataFile = getFilePath(metadataDir, docId, METADATA_SUFFIX);
-    if (metadataFile.exists() && metadataFile.isFile())
-    {
-      PersistenceMetadata metadata = null;
-      try
-      {
-        metadata = (PersistenceMetadata) metaTScope.deserialize(metadataFile, Format.XML);
-      }
-      catch (SIMPLTranslationException e)
-      {
-        logger.error("Cannot load metadata from " + metadataFile, e);
-      }
-      return metadata;
-    }
     return null;
   }
 
   @Override
-  public PersistenceMetadata getMetadata(ParsedURL location)
+  public boolean updateDoc(PersistenceMetaInfo metaInfo, Document newDoc)
   {
-    return getMetadata(getDocId(location));
+    if (newDoc != null && newDoc.getLocation() != null)
+    {
+      metaInfo.setPersistenceTime(new Date());
+      metaInfo.setMmdHash(newDoc.getMetaMetadata().getHashForExtraction());
+      try
+      {
+        writeDocument(newDoc, metaInfo);
+        writeMetaInfo(metaInfo);
+        return true;
+      }
+      catch (SIMPLTranslationException e)
+      {
+        logger.error("Cannot store " + newDoc + ", doc_id=" + metaInfo.getDocId(), e);
+      }
+    }
+
+    return false;
   }
 
   @Override
-  public Document retrieve(String docId)
+  public Document retrieveDoc(PersistenceMetaInfo metaInfo)
   {
-    if (getMetadata(docId) == null)
-    {
-      return null;
-    }
-
+    String docId = metaInfo.getDocId();
     File docFile = getFilePath(docDir, docId, DOC_SUFFIX);
     if (docFile.exists() && docFile.isFile())
     {
@@ -303,19 +301,9 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   }
 
   @Override
-  public Document retrieve(ParsedURL location)
+  public String retrieveRawContent(PersistenceMetaInfo metaInfo)
   {
-    return retrieve(getDocId(location));
-  }
-
-  @Override
-  public String retrieveRaw(String docId)
-  {
-    if (getMetadata(docId) == null)
-    {
-      return null;
-    }
-
+    String docId = metaInfo.getDocId();
     File rawDocFile = getFilePath(rawDocDir, docId, RAW_DOC_SUFFIX);
     if (rawDocFile.exists() && rawDocFile.isFile())
     {
@@ -335,24 +323,13 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   }
 
   @Override
-  public String retrieveRaw(ParsedURL location)
+  public boolean remove(PersistenceMetaInfo metaInfo)
   {
-    return retrieveRaw(getDocId(location));
-  }
-
-  @Override
-  public boolean remove(String docId)
-  {
+    String docId = metaInfo.getDocId();
     File metadataFile = getFilePath(metadataDir, docId, METADATA_SUFFIX);
     File docFile = getFilePath(docDir, docId, DOC_SUFFIX);
     File rawDocFile = getFilePath(rawDocDir, docId, RAW_DOC_SUFFIX);
     return metadataFile.delete() && docFile.delete() && rawDocFile.delete();
-  }
-
-  @Override
-  public boolean remove(ParsedURL location)
-  {
-    return remove(getDocId(location));
   }
 
 }

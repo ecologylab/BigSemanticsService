@@ -4,17 +4,17 @@
 	<classpathentry kind="src" path="resources"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/BigSemanticsService"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/BigSemanticsCore"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/BigSemanticsCybernekoWrapper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/BigSemanticsGeneratedClassesJava"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/BigSemanticsSunSpecifics"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/cyberneko"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/imageMetadataExtractor"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/simplCore"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/simplSunSpecifics"/>
+	<classpathentry kind="lib" path="/bscore-lib/xercesMinimal.jar"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="/lib/BigSemanticsCore.jar"/>
-	<classpathentry kind="lib" path="/lib/BigSemanticsCybernekoWrapper.jar"/>
-	<classpathentry kind="lib" path="/lib/BigSemanticsGeneratedClassesJava.jar"/>
-	<classpathentry kind="lib" path="/lib/BigSemanticsSunSpecifics.jar"/>
-	<classpathentry kind="lib" path="/lib/cyberneko.jar"/>
-	<classpathentry kind="lib" path="/lib/imageMetadataExtractor.jar"/>
-	<classpathentry kind="lib" path="/lib/simplCore.jar"/>
-	<classpathentry kind="lib" path="/lib/simplSunSpecifics.jar"/>
-	<classpathentry kind="lib" path="/lib/xercesMinimal.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
