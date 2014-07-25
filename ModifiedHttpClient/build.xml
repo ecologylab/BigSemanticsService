@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="ModifiedHttpClient" basedir="." default="jar"
+<project name="ModifiedHttpClient" basedir="." default="main"
          xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
   <!-- dependent project -->
@@ -7,6 +7,6 @@
     <pathelement path="../DownloaderPoolMessages" />
   </path>
   
-  <import file="../../BigSemanticsJava/lib/build-common.xml" />
+  <import file="../../BigSemanticsJava/lib/bs-build-common.xml" />
 
 </project>

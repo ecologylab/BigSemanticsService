@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="BigSemanticsService" basedir="." default="war"
+<project name="BigSemanticsService" basedir="." default="main"
          xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
   <!-- dependent project -->
@@ -17,7 +17,7 @@
     <pathelement path="../ModifiedHttpClient" />
   </path>
   
-  <import file="../../BigSemanticsJava/lib/build-common.xml" />
+  <import file="../../BigSemanticsJava/lib/bs-build-common.xml" />
 
   <property name="service.dir" value="${basedir}" />
   <property name="context.dir" value="${service.dir}/context" />
@@ -27,24 +27,32 @@
   <property name="distclasses.dir" value="${dist.dir}/WEB-INF/classes" />
   <property name="distmetainf.dir" value="${dist.dir}/META-INF" />
 
-  <target name="copy-dependencies" depends="build-deps">
+  <target name="copy-dependencies">
     <mkdir dir="${distlib.dir}" />
     <mkdir dir="${distmetainf.dir}" />
 
-    <echo>adding maven dependencies</echo>
+    <echo>adding dependent project as libs ...</echo>
+    <path id="dep_proj_jars">
+      <filelist dir="/" files="${dep_jars}" />
+    </path>
+    <copy todir="${distlib.dir}" flatten="true">
+      <path refid="dep_proj_jars" />
+    </copy>
+    <echo>...done.</echo>
+
+    <echo>adding maven dependencies ...</echo>
     <copy todir="${distlib.dir}" flatten="true">
       <fileset refid="maven_deps" />
     </copy>
     <echo>...done.</echo>
 
-    <echo>adding additional jar(s)</echo>
+    <echo>adding additional jar(s) ...</echo>
     <copy todir="${distlib.dir}">
       <fileset dir="${lib.dir}" includes="xercesMinimal.jar" />
-      <filelist files="${dep_jars}" />
     </copy>
     <echo>...done.</echo>
 
-    <echo>adding metainf</echo>
+    <echo>adding metainf ...</echo>
     <copy todir="${distmetainf.dir}">
       <fileset dir="${webcontent.dir}/META-INF" />
     </copy>
@@ -67,6 +75,10 @@
       <webinf dir="${dist.dir}/WEB-INF/" />
       <metainf dir="${dist.dir}/META-INF/" />
     </war>
+  </target>
+
+  <target name="main">
+    <antcall target="depend.${ant.project.name}" />
   </target>
 
 </project>
