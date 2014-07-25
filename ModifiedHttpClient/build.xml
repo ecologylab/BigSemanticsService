@@ -4,6 +4,8 @@
 
   <!-- dependent project -->
   <path id="dep_projs">
+    <pathelement path="../../simplJava/simplCore" />
+  	<pathelement path="../../simplJava/simplSunSpecifics" />
     <pathelement path="../DownloaderPoolMessages" />
   </path>
   
