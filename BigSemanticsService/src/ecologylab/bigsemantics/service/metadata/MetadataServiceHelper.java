@@ -16,6 +16,7 @@ import ecologylab.bigsemantics.documentcache.PersistenceMetaInfo;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
@@ -52,17 +53,17 @@ public class MetadataServiceHelper extends Debug
 
   private Document                     document;
 
-  private ServiceLogRecord             perfLogRecord;
+//  private ServiceLogRecord             serviceLogRecord;
 
   public MetadataServiceHelper()
   {
-    this.perfLogRecord = new ServiceLogRecord();
+//    this.serviceLogRecord = new ServiceLogRecord();
   }
 
-  ServiceLogRecord getServiceLogRecord()
-  {
-    return perfLogRecord;
-  }
+//  ServiceLogRecord getServiceLogRecord()
+//  {
+//    return serviceLogRecord;
+//  }
 
   /**
    * The entry method that accepts a URL and returns a Response with extracted metadata.
@@ -77,9 +78,9 @@ public class MetadataServiceHelper extends Debug
                                       StringFormat format,
                                       boolean reload)
   {
-    perfLogRecord.setRequesterIp(requesterIp);
-    perfLogRecord.setRequestUrl(purl);
-    perfLogRecord.setBeginTime(new Date());
+    long t0 = System.currentTimeMillis();
+    ServiceLogRecord logRecord = ServiceLogRecord.DUMMY;
+
     Response resp = null;
 
     document = null;
@@ -95,6 +96,15 @@ public class MetadataServiceHelper extends Debug
     }
     else
     {
+      DocumentLogRecord docLogRecord = document.getLogRecord();
+      if (docLogRecord instanceof ServiceLogRecord)
+      {
+        logRecord = (ServiceLogRecord) docLogRecord;
+      }
+      logRecord.setRequesterIp(requesterIp);
+      logRecord.setRequestUrl(purl);
+      logRecord.setBeginTime(new Date(t0));
+      
       DownloadStatus docStatus = document.getDownloadStatus();
       switch (docStatus)
       {
@@ -108,9 +118,10 @@ public class MetadataServiceHelper extends Debug
         try
         {
           logger.info("{} downloaded and parsed, generating response", document);
-          long t0 = System.currentTimeMillis();
+          logRecord.setMsTotal(System.currentTimeMillis() - t0);
+          long t1 = System.currentTimeMillis();
           String responseBody = SimplTypesScope.serialize(document, format).toString();
-          perfLogRecord.setMsSerialization(System.currentTimeMillis() - t0);
+          logRecord.setMsSerialization(System.currentTimeMillis() - t1);
           resp = Response.status(Status.OK).entity(responseBody).build();
         }
         catch (SIMPLTranslationException e)
@@ -147,10 +158,9 @@ public class MetadataServiceHelper extends Debug
           .build();
     }
 
-    perfLogRecord.setMsTotal(System.currentTimeMillis() - perfLogRecord.getBeginTime().getTime());
-    perfLogRecord.setResponseCode(resp.getStatus());
-    perfLogger.info(Utils.serializeToString(perfLogRecord, StringFormat.JSON));
-
+    logRecord.setResponseCode(200);
+    perfLogger.info(Utils.serializeToString(logRecord, StringFormat.JSON));
+    
     return resp;
   }
 
@@ -164,18 +174,18 @@ public class MetadataServiceHelper extends Debug
     }
 
     ParsedURL docPurl = document.getLocation();
-    perfLogRecord.setDocumentUrl(document.getLocation());
     if (!docPurl.equals(purl))
     {
       logger.info("Normalizing {} to {}", purl, docPurl);
     }
+    document.setLogRecord(new ServiceLogRecord());
 
     DownloadStatus docStatus = document.getDownloadStatus();
     logger.debug("Download status of {}: {}", document, docStatus);
-    if (!reload && docStatus == DownloadStatus.DOWNLOAD_DONE)
+    if (docStatus == DownloadStatus.DOWNLOAD_DONE)
     {
       logger.info("{} found in service in-mem document cache", document);
-      perfLogRecord.setInMemDocumentCacheHit(true);
+      document.getLogRecord().setInMemDocumentCacheHit(true);
     }
 
     // take actions based on the status of the document

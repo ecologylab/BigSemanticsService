@@ -16,12 +16,12 @@ import ecologylab.bigsemantics.collecting.SemanticsSite;
 import ecologylab.bigsemantics.downloaderpool.BasicResponse;
 import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
 import ecologylab.bigsemantics.downloaderpool.MessageScope;
+import ecologylab.bigsemantics.downloaderpool.logging.DpoolEventTypeScope;
 import ecologylab.bigsemantics.httpclient.BasicResponseHandler;
 import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
-import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.service.logging.DpoolServiceError;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.concurrent.DownloadableLogRecord;
@@ -45,6 +45,7 @@ public class DPoolDownloadController extends AbstractDownloadController
   {
     logger = LoggerFactory.getLogger(DPoolDownloadController.class);
     httpClientFactory = new HttpClientFactory();
+    DpoolEventTypeScope.init();
   }
 
   public static int                HTTP_DOWNLOAD_REQUEST_TIMEOUT = 60000;
@@ -88,11 +89,11 @@ public class DPoolDownloadController extends AbstractDownloadController
                              SemanticsSite site)
   {
     // init log record
-    DocumentLogRecord logRecord = ServiceLogRecord.DUMMY;
+    ServiceLogRecord logRecord = ServiceLogRecord.DUMMY;
     DownloadableLogRecord downloadableLogRecord = closure.getLogRecord();
     if (downloadableLogRecord instanceof ServiceLogRecord)
     {
-      logRecord = (DocumentLogRecord) downloadableLogRecord;
+      logRecord = (ServiceLogRecord) downloadableLogRecord;
     }
 
     result = downloadPage(site, location, getUserAgent());

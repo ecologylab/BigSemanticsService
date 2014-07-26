@@ -86,7 +86,7 @@ public class ServiceLogRecord extends DocumentLogRecord
                          requestUrl == null ? "NullLocation" : requestUrl.toString());
   }
 
-  static final public DocumentLogRecord DUMMY;
+  static final public ServiceLogRecord DUMMY;
 
   static
   {

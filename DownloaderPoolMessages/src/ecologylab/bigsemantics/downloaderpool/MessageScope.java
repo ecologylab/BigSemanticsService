@@ -1,5 +1,6 @@
 package ecologylab.bigsemantics.downloaderpool;
 
+import ecologylab.logging.LogEventTypeScope;
 import ecologylab.serialization.SimplTypesScope;
 
 /**
@@ -22,7 +23,7 @@ public class MessageScope
 
   public static SimplTypesScope get()
   {
-    return SimplTypesScope.get(NAME, CLASSES);
+    return SimplTypesScope.get(NAME, LogEventTypeScope.get(), CLASSES);
   }
 
 }

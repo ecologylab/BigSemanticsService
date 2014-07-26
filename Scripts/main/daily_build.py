@@ -6,7 +6,7 @@ import time
 import datetime
 from copy import copy
 from os import listdir, remove
-from os.path import dirname, join
+from os.path import dirname, join, expanduser
 
 from simple_config import load_config
 from bot_email import send_bot_email_to_maintainers
@@ -22,25 +22,31 @@ class ServiceBuilder:
     self.config = config
 
     # code paths:
-    self.code_dir = config["code_dir"]
-    self.wrapper_repo = join(self.code_dir, "BigSemanticsWrapperRepository")
-    self.wrapper_proj = join(self.wrapper_repo, "BigSemanticsWrappers")
-    self.onto_vis_dir = join(self.wrapper_proj, "OntoViz")
-    self.service_repo = join(self.code_dir, "BigSemanticsService")
+    self.home_dir = expanduser('~')
+    self.code_dir = join(self.home_dir, config["code_dir"])
+    self.bs_base_dir = join(self.home_dir, config["bs_base_dir"])
+    
+    # bs code paths:
+    self.bs_repo = join(self.code_dir, "BigSemantics")
+
+    self.bsjava_repo = join(self.bs_repo, "BigSemanticsJava")
+
+    self.service_repo = join(self.bs_repo, "BigSemanticsService")
     self.service_proj = join(self.service_repo, "BigSemanticsService")
     self.service_build = join(self.service_proj, "build")
     self.dpool_proj = join(self.service_repo, "DownloaderPool")
-    self.bsjava_repo = join(self.code_dir, "BigSemanticsJava")
-    self.bscore_proj = join(self.bsjava_repo, "BigSemanticsCore")
-    self.bsjs_repo = join(self.code_dir, "BigSemanticsJavaScript")
 
-    # jetty paths:
-    self.jetty_dir = config["jetty_dir"]
+    self.wrapper_repo = join(self.bs_repo, "BigSemanticsWrapperRepository")
+    self.wrapper_proj = join(self.wrapper_repo, "BigSemanticsWrappers")
+    self.onto_vis_dir = join(self.wrapper_proj, "OntoViz")
+
+    self.bsjs_repo = join(self.bs_repo, "BigSemanticsJavaScript")
+
+    # deployment related paths:
+    self.jetty_dir = join(self.bs_base_dir, "jetty-dist")
     self.webapps_dir = join(self.jetty_dir, "webapps")
-
-    # other paths:
-    self.downloader_dir = config["downloader_dir"]
-    self.archive_dir = config["archive_dir"]
+    self.downloader_dir = join(self.bs_base_dir, "downloader")
+    self.archive_dir = join(self.bs_base_dir, "archives")
     self.prod_webapps_dir = config["prod_webapps_dir"]
     self.prod_downloader_dir = config["prod_downloader_dir"]
     self.prod_static_dir = config["prod_static_dir"]
@@ -51,39 +57,33 @@ class ServiceBuilder:
     self.max_archives = config["max_archives"]
     self.prod_host = config["prod_host"]
     self.prod_user = config["prod_user"]
-    self.prod_login_id = config["prod_login_id"]
+    self.prod_login_id = join(self.home_dir, config["prod_login_id"])
 
   def git_update_to_latest(self, git_dir):
-    # clean local wrapper changes
+    # clean local changes
     check_call(["git", "checkout", "--", "*"], wd=git_dir)
     check_call(["git", "clean", "-f"], wd=git_dir)
     check_call(["git", "clean", "-f", "-d"], wd=git_dir)
-    # pull down latest wrappers
+    # pull down latest code
     check_call(["git", "pull"], wd=git_dir)
+    # update submodules
+    check_call(["git", "submodule", "foreach", "git checkout -- *"], wd=git_dir)
+    check_call(["git", "submodule", "foreach", "git clean -f"], wd=git_dir)
+    check_call(["git", "submodule", "foreach", "git clean -f -d"], wd=git_dir)
+    check_call(["git", "submodule", "update"], wd=git_dir)
 
   def update_projs(self):
-    self.git_update_to_latest(self.wrapper_repo)
-    self.git_update_to_latest(self.bsjava_repo)
-    self.git_update_to_latest(self.service_repo)
-    self.git_update_to_latest(self.bsjs_repo)
+    self.git_update_to_latest(self.bs_repo)
 
   def compile_projs(self):
-    # compile core
-    # note that we depend on the ant scripts to copy over dependencies.
-    check_call(["ant", "clean"], wd=self.bscore_proj)
-    check_call(["ant"], wd=self.bscore_proj)
-    # compile wrappers
-    check_call(["ant", "clean"], wd=self.wrapper_proj)
-    check_call(["ant"], wd=self.wrapper_proj)
     # compile service
-    check_call(["ant", "clean"], wd=self.service_build)
-    check_call(["ant", "buildwar"], wd=self.service_build)
+    check_call(["ant", "clean"], wd=self.service_proj)
+    check_call(["ant", "main"], wd=self.service_proj)
     shutil.copy2(join(self.service_build, "BigSemanticsService.war"),
                  self.webapps_dir)
     # compile dpool service and downloader
     check_call(["ant", "clean"], wd=self.dpool_proj)
-    check_call(["ant", "war"], wd=self.dpool_proj)
-    check_call(["ant", "downloader-jar"], wd=self.dpool_proj)
+    check_call(["ant", "main"], wd=self.dpool_proj)
     shutil.copy2(join(self.dpool_proj, "build", "DownloaderPool.war"),
                  self.webapps_dir)
     shutil.copy2(join(self.dpool_proj, "build", "Downloader.jar"),
@@ -173,5 +173,6 @@ if __name__ == "__main__":
   except Exception as e:
     import sys
     sys.stderr.write("dev build failed! see email notification.")
-    send_bot_email_to_maintainers("Dev build failed.", str(e))
+    # send_bot_email_to_maintainers("Dev build failed.", str(e))
+    print "error:", e
 

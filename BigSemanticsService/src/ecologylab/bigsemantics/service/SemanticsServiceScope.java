@@ -25,6 +25,7 @@ import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationSc
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.metadata.builtins.DocumentLogRecordScope;
 import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.net.ParsedURL;
@@ -146,6 +147,8 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
       THE_SERVICE_SCOPE = new SemanticsServiceScope(RepositoryMetadataTranslationScope.get(),
                                                     CybernekoWrapper.class);
       THE_SERVICE_SCOPE.configure(configs);
+      
+      DocumentLogRecordScope.addType(ServiceLogRecord.class);
 
       // This will disable content body recognization and image-text clipping derivation on the
       // service.
