@@ -23,8 +23,8 @@ class ServiceBuilder:
 
     # code paths:
     self.home_dir = expanduser('~')
-    self.code_dir = join(home_dir, config["code_dir"])
-    self.bs_base_dir = join(home_dir, config["bs_base_dir"])
+    self.code_dir = join(self.home_dir, config["code_dir"])
+    self.bs_base_dir = join(self.home_dir, config["bs_base_dir"])
     
     # bs code paths:
     self.bs_repo = join(self.code_dir, "BigSemantics")
@@ -43,7 +43,7 @@ class ServiceBuilder:
     self.bsjs_repo = join(self.bs_repo, "BigSemanticsJavaScript")
 
     # deployment related paths:
-    self.jetty_dir = join(self.bs_base_dir, "jetty_dist")
+    self.jetty_dir = join(self.bs_base_dir, "jetty-dist")
     self.webapps_dir = join(self.jetty_dir, "webapps")
     self.downloader_dir = join(self.bs_base_dir, "downloader")
     self.archive_dir = join(self.bs_base_dir, "archives")
@@ -57,7 +57,7 @@ class ServiceBuilder:
     self.max_archives = config["max_archives"]
     self.prod_host = config["prod_host"]
     self.prod_user = config["prod_user"]
-    self.prod_login_id = config["prod_login_id"]
+    self.prod_login_id = join(self.home_dir, config["prod_login_id"])
 
   def git_update_to_latest(self, git_dir):
     # clean local changes
@@ -173,5 +173,6 @@ if __name__ == "__main__":
   except Exception as e:
     import sys
     sys.stderr.write("dev build failed! see email notification.")
-    send_bot_email_to_maintainers("Dev build failed.", str(e))
+    # send_bot_email_to_maintainers("Dev build failed.", str(e))
+    print "error:", e
 
