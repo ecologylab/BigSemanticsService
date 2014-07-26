@@ -173,6 +173,5 @@ if __name__ == "__main__":
   except Exception as e:
     import sys
     sys.stderr.write("dev build failed! see email notification.")
-    # send_bot_email_to_maintainers("Dev build failed.", str(e))
-    print "error:", e
+    send_bot_email_to_maintainers("Dev build failed.", str(e))
 
