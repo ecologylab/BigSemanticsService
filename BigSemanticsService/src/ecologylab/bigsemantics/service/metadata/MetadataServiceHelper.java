@@ -215,6 +215,7 @@ public class MetadataServiceHelper extends Debug
         removeFromPersistentDocumentCache(docPurl);
         // redownload and parse document
         document.resetRecycleStatus();
+        closure = document.getOrConstructClosure();
         closure.reset();
         download(closure);
       }

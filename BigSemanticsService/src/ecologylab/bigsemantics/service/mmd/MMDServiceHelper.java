@@ -4,7 +4,6 @@
 package ecologylab.bigsemantics.service.mmd;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -17,7 +16,10 @@ import javax.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ecologylab.bigsemantics.collecting.DownloadStatus;
+import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
+import ecologylab.bigsemantics.metametadata.MetaMetadataCompositeField;
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.ServiceUtils;
@@ -136,24 +138,39 @@ public class MMDServiceHelper implements MMDServiceParamNames
   {
     MetaMetadata docMM = null;
 
-    // TODO: implement a selector based purlNameMap lookup?
-
-    // check in cache
     if (mmdByUrl.containsKey(url))
     {
+      // check in cache
       docMM = mmdByUrl.get(url);
     }
     else
     {
-      docMM = semanticsServiceScope.getMetaMetadataRepository().getDocumentMM(url);
-      if (docMM != null)
+      // check if we already have a Document associated with this URL. if so, we want to use the
+      // meta-metadata for that Document, because it may get changed when we make the HTTP
+      // connection.
+      Document doc = semanticsServiceScope.getOrConstructDocument(url);
+      if (doc != null && doc.getDownloadStatus() == DownloadStatus.DOWNLOAD_DONE)
       {
-        // cache the mmd
-        synchronized (mmdByUrl)
+        MetaMetadataCompositeField docMMComposite = doc.getMetaMetadata();
+        if (docMMComposite instanceof MetaMetadata)
         {
-          // it's fine to put the same mmd twice, but we want to sync all put operations to
-          // prevent concurrent modification.
-          mmdByUrl.put(url, docMM);
+          docMM = (MetaMetadata) docMMComposite;
+        }
+      }
+
+      if (docMM == null)
+      {
+        // if no downloaded Document found, we can only use the URL to find a meta-metadata.
+        docMM = semanticsServiceScope.getMetaMetadataRepository().getDocumentMM(url);
+        if (docMM != null)
+        {
+          // cache the mmd
+          synchronized (mmdByUrl)
+          {
+            // it's fine to put the same mmd twice, but we want to sync all put operations to
+            // prevent concurrent modification.
+            mmdByUrl.put(url, docMM);
+          }
         }
       }
     }
