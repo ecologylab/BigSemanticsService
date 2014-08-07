@@ -47,7 +47,10 @@ class Downloaders:
         continue
       userhost = d.user + "@" + d.host
       code_out_errs.append(
-        call(["ssh", "-i", d.login_id, "-p", str(d.port), userhost, cmd]))
+        call(["ssh", "-o", "StrictHostKeyChecking no",
+                     "-i", d.login_id,
+                     "-p", str(d.port),
+                     userhost, cmd]))
     return code_out_errs
 
   def update_jars(self):
