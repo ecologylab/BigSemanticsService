@@ -195,6 +195,12 @@ public class MetadataServiceHelper extends Debug
       logger.error("DocumentClosure is null for " + purl);
       return null;
     }
+    
+    if (reload)
+    {
+      closure.setReload(true);
+    }
+
     switch (docStatus)
     {
     case UNPROCESSED:
