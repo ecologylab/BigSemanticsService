@@ -24,7 +24,7 @@ public class AbstractDocumentExpander implements DocumentExpander
     if (mmd == null)
       throw new NullPointerException("Document to expand does not have meta-metadata associated.");
 
-    for (MetaMetadataField field : mmd.getChildMetaMetadata())
+    for (MetaMetadataField field : mmd.getChildrenMap())
     {
       if (field instanceof MetaMetadataCompositeField)
       {
