@@ -7,7 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ecologylab.bigsemantics.generated.library.creative_work.Author;
+import ecologylab.bigsemantics.generated.library.author.*;
 import ecologylab.bigsemantics.generated.library.scholarlyArticle.ScholarlyArticle;
 import ecologylab.bigsemantics.metadata.MetadataClassDescriptor;
 import ecologylab.bigsemantics.metadata.MetadataFieldDescriptor;
