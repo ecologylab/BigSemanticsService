@@ -2,7 +2,7 @@ package ecologylab.bigsemantics.service.crawler;
 
 import java.util.Collection;
 
-import ecologylab.bigsemantics.metadata.builtins.CompoundDocument;
+import ecologylab.bigsemantics.metadata.builtins.RichDocument;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
 import ecologylab.bigsemantics.metametadata.MetaMetadataCollectionField;
@@ -52,7 +52,7 @@ public class AbstractDocumentExpander implements DocumentExpander
     if (linkedDoc != null
         && linkedDoc instanceof Document
         && !linkedDoc.getClass().equals(Document.class)
-        && !linkedDoc.getClass().equals(CompoundDocument.class))
+        && !linkedDoc.getClass().equals(RichDocument.class))
     {
       ParsedURL linkedDocLoc = ((Document) linkedDoc).getLocation();
       if (linkedDocLoc != null)
