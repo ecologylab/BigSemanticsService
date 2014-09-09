@@ -4,7 +4,6 @@
 package ecologylab.bigsemantics.service.mmd;
 
 import java.net.URI;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
@@ -15,6 +14,9 @@ import javax.ws.rs.core.UriInfo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder;
 
 import ecologylab.bigsemantics.collecting.DownloadStatus;
 import ecologylab.bigsemantics.metadata.builtins.Document;
@@ -40,18 +42,14 @@ public class MMDServiceHelper implements MMDServiceParamNames
 
   static SemanticsServiceScope                  semanticsServiceScope = SemanticsServiceScope.get();
 
-  static LinkedHashMap<ParsedURL, MetaMetadata> mmdByUrl;
+  static ConcurrentLinkedHashMap<ParsedURL, MetaMetadata> mmdByUrl;
 
   static
   {
     logger = LoggerFactory.getLogger(MMDServiceHelper.class);
-    mmdByUrl = new LinkedHashMap<ParsedURL, MetaMetadata>(MAX_CACHED_URL + 1)
-    {
-      public boolean removeEldestEntry(Map.Entry eldestEntry)
-      {
-        return this.size() > MAX_CACHED_URL;
-      }
-    };
+    Builder<ParsedURL, MetaMetadata> lruMapBuilder = new Builder<ParsedURL, MetaMetadata>();
+    lruMapBuilder.maximumWeightedCapacity(MAX_CACHED_URL);
+    mmdByUrl = lruMapBuilder.build();
   }
   
   public static Response getMmdResponse(String url,
@@ -136,14 +134,9 @@ public class MMDServiceHelper implements MMDServiceParamNames
 
   public static MetaMetadata getMmdByUrl(ParsedURL url)
   {
-    MetaMetadata docMM = null;
+    MetaMetadata docMM = mmdByUrl.get(url);
 
-    if (mmdByUrl.containsKey(url))
-    {
-      // check in cache
-      docMM = mmdByUrl.get(url);
-    }
-    else
+    if (docMM == null)
     {
       // check if we already have a Document associated with this URL. if so, we want to use the
       // meta-metadata for that Document, because it may get changed when we make the HTTP
@@ -165,12 +158,7 @@ public class MMDServiceHelper implements MMDServiceParamNames
         if (docMM != null)
         {
           // cache the mmd
-          synchronized (mmdByUrl)
-          {
-            // it's fine to put the same mmd twice, but we want to sync all put operations to
-            // prevent concurrent modification.
-            mmdByUrl.put(url, docMM);
-          }
+          mmdByUrl.putIfAbsent(url, docMM);
         }
       }
     }
