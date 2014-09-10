@@ -13,7 +13,7 @@ import com.sun.jersey.api.client.WebResource;
 import ecologylab.bigsemantics.collecting.DownloadStatus;
 import ecologylab.bigsemantics.collecting.SemanticsSessionScope;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
-import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationScope;
+import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.metadata.Metadata;
 import ecologylab.bigsemantics.metadata.MetadataComparator;
 import ecologylab.bigsemantics.metadata.builtins.Document;
@@ -55,7 +55,7 @@ public class BasicTest extends Debug implements Continuation<DocumentClosure>
 	static
 	{
 		SimplTypesScope.graphSwitch = GRAPH_SWITCH.ON;
-		scope = RepositoryMetadataTranslationScope.get();
+		scope = RepositoryMetadataTypesScope.get();
 		semanticsScope = new SemanticsSessionScope(scope, CybernekoWrapper.class);
 
 		client = Client.create();

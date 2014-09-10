@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import ecologylab.bigsemantics.collecting.SemanticsSessionScope;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
-import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationScope;
+import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SimplTypesScope;
@@ -45,7 +45,7 @@ public abstract class AbstractDocumentCrawler implements ResourceCrawler<Documen
 
     this.expander = expander;
 
-    metadataTScope = RepositoryMetadataTranslationScope.get();
+    metadataTScope = RepositoryMetadataTypesScope.get();
     semanticsSessionScope = new SemanticsSessionScope(metadataTScope, CybernekoWrapper.class);
     ongoingDocs = new ConcurrentLinkedQueue<Document>();
     seenDocs = new HashSet<String>();

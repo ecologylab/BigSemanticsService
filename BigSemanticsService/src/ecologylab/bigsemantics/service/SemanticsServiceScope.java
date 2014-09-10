@@ -21,7 +21,7 @@ import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
 import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
-import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationScope;
+import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
@@ -144,7 +144,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
       SimplTypesScope.graphSwitch = GRAPH_SWITCH.ON;
       SemanticsSite.disableDownloadInterval = true;
 
-      THE_SERVICE_SCOPE = new SemanticsServiceScope(RepositoryMetadataTranslationScope.get(),
+      THE_SERVICE_SCOPE = new SemanticsServiceScope(RepositoryMetadataTypesScope.get(),
                                                     CybernekoWrapper.class);
       THE_SERVICE_SCOPE.configure(configs);
       

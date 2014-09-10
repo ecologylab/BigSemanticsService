@@ -13,7 +13,7 @@ import com.google.common.io.BaseEncoding;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
-import ecologylab.bigsemantics.generated.library.RepositoryMetadataTranslationScope;
+import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.metadata.MetadataDeserializationHookStrategy;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.net.ParsedURL;
@@ -60,7 +60,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   public DiskPersistentDocumentCache(SemanticsGlobalScope semanticsScope)
   {
     metaTScope = SimplTypesScope.get("PersistenceMetadata", PersistenceMetaInfo.class);
-    docTScope = RepositoryMetadataTranslationScope.get();
+    docTScope = RepositoryMetadataTypesScope.get();
     this.semanticsScope = semanticsScope;
   }
 
