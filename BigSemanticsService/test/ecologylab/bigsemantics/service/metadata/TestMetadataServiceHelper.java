@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
-import ecologylab.bigsemantics.generated.library.amazonProduct.AmazonProduct;
+import ecologylab.bigsemantics.generated.library.commodity.product.AmazonProduct;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.net.ParsedURL;
