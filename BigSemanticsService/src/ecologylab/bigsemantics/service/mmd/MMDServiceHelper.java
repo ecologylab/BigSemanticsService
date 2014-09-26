@@ -4,7 +4,6 @@
 package ecologylab.bigsemantics.service.mmd;
 
 import java.net.URI;
-import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -15,13 +14,8 @@ import javax.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder;
-
-import ecologylab.bigsemantics.collecting.DownloadStatus;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
-import ecologylab.bigsemantics.metametadata.MetaMetadataCompositeField;
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.ServiceUtils;
@@ -42,14 +36,9 @@ public class MMDServiceHelper implements MMDServiceParamNames
 
   static SemanticsServiceScope                  semanticsServiceScope = SemanticsServiceScope.get();
 
-  static ConcurrentLinkedHashMap<ParsedURL, MetaMetadata> mmdByUrl;
-
   static
   {
     logger = LoggerFactory.getLogger(MMDServiceHelper.class);
-    Builder<ParsedURL, MetaMetadata> lruMapBuilder = new Builder<ParsedURL, MetaMetadata>();
-    lruMapBuilder.maximumWeightedCapacity(MAX_CACHED_URL);
-    mmdByUrl = lruMapBuilder.build();
   }
   
   public static Response getMmdResponse(String url,
@@ -65,9 +54,10 @@ public class MMDServiceHelper implements MMDServiceParamNames
       ParsedURL purl = ParsedURL.getAbsolute(url);
       if (purl != null)
       {
-        MetaMetadata mmd = getMmdByUrl(purl);
-        if (mmd != null)
+        Document initialDoc = getInitialDocument(purl);
+        if (initialDoc != null)
         {
+          MetaMetadata mmd = (MetaMetadata) initialDoc.getMetaMetadata();
           UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder().queryParam(NAME, mmd.getName());
           if (callback != null)
           {
@@ -132,38 +122,9 @@ public class MMDServiceHelper implements MMDServiceParamNames
     return docMM;
   }
 
-  public static MetaMetadata getMmdByUrl(ParsedURL url)
+  public static Document getInitialDocument(ParsedURL requestedUrl)
   {
-    MetaMetadata docMM = mmdByUrl.get(url);
-
-    if (docMM == null)
-    {
-      // check if we already have a Document associated with this URL. if so, we want to use the
-      // meta-metadata for that Document, because it may get changed when we make the HTTP
-      // connection.
-      Document doc = semanticsServiceScope.getOrConstructDocument(url);
-      if (doc != null && doc.getDownloadStatus() == DownloadStatus.DOWNLOAD_DONE)
-      {
-        MetaMetadataCompositeField docMMComposite = doc.getMetaMetadata();
-        if (docMMComposite instanceof MetaMetadata)
-        {
-          docMM = (MetaMetadata) docMMComposite;
-        }
-      }
-
-      if (docMM == null)
-      {
-        // if no downloaded Document found, we can only use the URL to find a meta-metadata.
-        docMM = semanticsServiceScope.getMetaMetadataRepository().getDocumentMM(url);
-        if (docMM != null)
-        {
-          // cache the mmd
-          mmdByUrl.putIfAbsent(url, docMM);
-        }
-      }
-    }
-    
-    return docMM;
+    return semanticsServiceScope.getOrConstructDocument(requestedUrl);
   }
 
 }
