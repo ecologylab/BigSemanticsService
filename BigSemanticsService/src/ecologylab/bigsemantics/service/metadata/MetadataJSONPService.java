@@ -54,7 +54,7 @@ public class MetadataJSONPService
     Response resp = null;
     if (url != null)
     {
-      ParsedURL purl = ParsedURL.getAbsoluteWithFragment(url);
+      ParsedURL purl = ParsedURL.getAbsolute(url);
       if (purl != null)
       {
         MetadataServiceHelper helper = new MetadataServiceHelper();
