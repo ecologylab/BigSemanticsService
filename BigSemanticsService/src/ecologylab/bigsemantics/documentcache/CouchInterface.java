@@ -1,23 +1,45 @@
 package ecologylab.bigsemantics.documentcache;
-
 /*
- * Author Zach Brown
+ * @author Zach Brown
  * 
  */
 public interface CouchInterface {
 
-		
-	//Returns and empty string if unsuccessful
-	public String   getDoc(String id , String dbid);
+	/*
+	 * @param docId id of the document desired
+	 * @param databaseId The name of the table
+	 * 
+	 * @return Will return the document from the database in json form
+	 * 		   The json will now also contain the entries id, and _rev
+	 * 		   Will be null if the document was unattainable
+	 */
+	public String   getDoc(String docId , String tableId);
 	
-	//Returns an code, if successful 201 otherwise see codes below
-	public int      putDoc(String id , String json , String dbid );
+	/*
+	 *  @param docId      Will be the id of the new document in the database. Must be a valid, unused id for a couchdb
+	 *  @param docContent The new document as a json string
+	 *  @param tableId    The name of the table
+	 *  
+	 *  @return           Will be 201 if successful, otherwise some error code
+	 */
+	public int      putDoc(String docId , String docContent , String tableId );
 	
-	//Returns an code, if successful 201 otherwise see codes below
-	public int      updateDoc(String id , String json, String dbid); 
+	/*
+	 * @param docId       The id of the document to be updated, document must already exist
+	 * @param docContent  What the document should be changed to as a json string
+	 * @param tableId     The table where the document is.
+	 *
+	 * @return Will be 201 if successful, otherwise some error code
+	 */
+	public int      updateDoc(String docId , String docContent, String tableId); 
 	
-	//Returns an code, if successful 200, otherwise see codes below
-	public int      dropDoc(String id , String dbid);
+	/*
+	 *	@param docId   The id of the document to be deleted, the document should exist.
+	 *	@param tableId The name of the table where the document is. 
+	 *
+	 *	@return        200 if successful, otherwise some error code
+	 */
+	public int      dropDoc(String docId , String tableId);
 	
 	/*
 	 *  Apache CouchDB Return Codes 
@@ -39,7 +61,7 @@ public interface CouchInterface {
 	 *  500 - Internal Server Error
 	 *  
 	 *  CouchInterface Return Codes
-	 *  "" - getDoc failure code
+	 *  null - getDoc failure code
 	 *  1000 - UnsupportedEncodingException
 	 *  1100 - ParseException
 	 *  1200 - IOException

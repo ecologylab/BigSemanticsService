@@ -1,10 +1,7 @@
 package ecologylab.bigsemantics.documentcache;
 
 import java.io.IOException;
-
-
 import java.io.UnsupportedEncodingException;
-
 import java.util.Scanner;
 
 import org.apache.http.HttpResponse;
@@ -13,34 +10,39 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
-
-
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
-
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
- * Author Zach Brown
  * This class uses apache's httpclient version 4.2 
  * to interface with a couchdb instance.
  * 
+ * @author Zach Brown
+ * 
+ * 
  */
 public class HttpCouchInterface implements CouchInterface {
-
-	private String database_url;//Where is the database 
 	
-	public HttpCouchInterface(String database_url){
-		this.database_url = database_url;
+	private static Logger logger = LoggerFactory.getLogger(HttpCouchInterface.class);
+
+	private String databaseUrl;//Where is the database 
+	private HttpClient httpclient = new DefaultHttpClient();
+	
+	
+	public HttpCouchInterface(String databaseUrl){
+		this.databaseUrl = databaseUrl;
 	}
 	
 	@Override
-	public String getDoc(String id ,String dbid) {
+	public String getDoc(String docId ,String tableId) {
 		
-		HttpClient httpclient = new DefaultHttpClient();
-		String location = "http://" + database_url + "/" + dbid + "/" + id;
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId;
+		logger.info("docId = {}, tableId = {}", docId, tableId);
 
 		
 		HttpGet httpget = new HttpGet(location);
@@ -55,28 +57,30 @@ public class HttpCouchInterface implements CouchInterface {
 	    	return result;
 	    }
 	    else{
-	    	return "";
+	    	return null;
 	    }
 		}
 		catch (UnsupportedEncodingException e){
-			e.printStackTrace();
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}finally
+		{
+			httpget.releaseConnection();
 		}
-		return "";
+		return null;
 	}
 
 	@Override
-	public int putDoc(String id , String json , String dbid) {
+	public int putDoc(String docID , String docContent , String tableId) {
 		
-		HttpClient httpclient = new DefaultHttpClient();
-		String location = "http://" + database_url + "/" + dbid + "/" + id;
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docID;
 
 		HttpPut httpput = new HttpPut(location);
 		try {
-		StringEntity entity = new StringEntity(json);  
+		StringEntity entity = new StringEntity(docContent);  
 		entity.setContentType("application/json");
 		httpput.setEntity(entity);
 	    HttpResponse response = httpclient.execute(httpput);
@@ -96,50 +100,54 @@ public class HttpCouchInterface implements CouchInterface {
 		} catch (IOException e) {
 			//e.printStackTrace();
 			return 1200;
+		}finally{
+			httpput.releaseConnection();
 		}
 	}
 
 	@Override
-	public int updateDoc(String id, String json , String dbid) {
-		
-		
-		HttpClient httpclient = new DefaultHttpClient();
+	public int updateDoc(String docId, String docContent , String tableId) {
 		
 		String rev = "";
-		String location = "http://" + database_url + "/" + dbid + "/" + id;
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId;
 		
 		HttpHead httphead = new HttpHead(location);	
+
 		try {  
 			
-		HttpResponse headResponse = httpclient.execute(httphead);
-	    //System.out.println("Tried " + httphead );
-	    int status_code = headResponse.getStatusLine().getStatusCode();	
-	    //System.out.println("Code of response " + status_code );
-	    if( status_code != 200 )
-	    	return status_code;
+			HttpResponse headResponse = httpclient.execute(httphead);
+		    //System.out.println("Tried " + httphead );
+		    int status_code = headResponse.getStatusLine().getStatusCode();	
+		    //System.out.println("Code of response " + status_code );
+		    if( status_code != 200 )
+		    	return status_code;
+		    
+		    rev = headResponse.getHeaders("ETag")[0].getValue();
+		    rev = rev.split("\"")[1];
+		   // System.out.println("The revision code is " + rev );
+		    
+		    
+		    //This block adds the revision key to the json object, which couchDB requires inorder to update documents. 
+		    int lastbrace = docContent.lastIndexOf("}");
+		    docContent = docContent.substring(0, lastbrace);
+		    //System.out.println("This is the json without the las brace" + json);
+		    docContent = docContent +" , \"_rev\" : \"" + rev + "\" }";
+		    //System.out.println("This is the json after adding rev "  + json);
 	    
-	    rev = headResponse.getHeaders("ETag")[0].getValue();
-	    rev = rev.split("\"")[1];
-	   // System.out.println("The revision code is " + rev );
-	    
-	    
-	    //This block adds the revision key to the json object, which couchDB requires inorder to update documents. 
-	    int lastbrace = json.lastIndexOf("}");
-	    json = json.substring(0, lastbrace);
-	    //System.out.println("This is the json without the las brace" + json);
-	    json = json +" , \"_rev\" : \"" + rev + "\" }";
-	    //System.out.println("This is the json after adding rev "  + json);
-	    
-	    HttpPut httpput = new HttpPut(location);
-		StringEntity entity = new StringEntity(json);  
-		entity.setContentType("application/json");
-		httpput.setEntity(entity);
-	    HttpResponse delResponse = httpclient.execute(httpput);
-	    
-	    //System.out.println("Tried " + httpput );
-	    status_code = delResponse.getStatusLine().getStatusCode();
-	    //System.out.println("Code of response " + status_code );
-	    return status_code;
+		    HttpPut httpput = new HttpPut(location);
+			StringEntity entity = new StringEntity(docContent);  
+			entity.setContentType("application/json");
+			httpput.setEntity(entity);
+			try{
+				HttpResponse delResponse = httpclient.execute(httpput);
+		    
+				//System.out.println("Tried " + httpput );
+				status_code = delResponse.getStatusLine().getStatusCode();
+				//System.out.println("Code of response " + status_code );
+				return status_code;
+			}finally{
+				httpput.releaseConnection();
+			}
 	    
 		}
 		catch (UnsupportedEncodingException e){
@@ -152,47 +160,49 @@ public class HttpCouchInterface implements CouchInterface {
 			//e.printStackTrace();
 			return 1200;
 		}
+		finally{
+			httphead.releaseConnection();
+		}
 
 	}
 	
 
 	@Override
-	public int dropDoc(String id, String dbid) {
+	public int dropDoc(String docId, String tableId) {
 		
-		HttpClient httpclient = new DefaultHttpClient();
-	
-		if( id.trim().equals("") ){
+		if( docId.trim().equals("") ){
 			System.out.println("Drop Doc should not be used with an empty id that will delete the database");
 			return 1300; 
 		}
 		
-		
-		
-		
 		String rev = "";
-		String location = "http://" + database_url + "/" + dbid + "/" + id;
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId;
 		
 		HttpHead httphead = new HttpHead(location);	
 		try {  
+			HttpResponse headResponse = httpclient.execute(httphead);
+		    //System.out.println("Tried " + httphead );
+		    int status_code = headResponse.getStatusLine().getStatusCode();
+		    //System.out.println("Code of response " + status_code );
+			if( status_code != 200)
+				return status_code;
+		    
+		    rev = headResponse.getHeaders("ETag")[0].getValue();
+		    rev = rev.split("\"")[1];
+		    //System.out.println("The revision code is " + rev );
+		    location = location +"?rev="+rev;
+			HttpDelete httpdelete = new HttpDelete(location);
 			
-		HttpResponse headResponse = httpclient.execute(httphead);
-	    //System.out.println("Tried " + httphead );
-	    int status_code = headResponse.getStatusLine().getStatusCode();
-	    //System.out.println("Code of response " + status_code );
-		if( status_code != 200)
-			return status_code;
-	    
-	    rev = headResponse.getHeaders("ETag")[0].getValue();
-	    rev = rev.split("\"")[1];
-	    //System.out.println("The revision code is " + rev );
-	    location = location +"?rev="+rev;
-		HttpDelete httpdelete = new HttpDelete(location);
-	    HttpResponse delResponse = httpclient.execute(httpdelete);
-	    
-	    //System.out.println("Tried " + httpdelete );
-	    status_code = delResponse.getStatusLine().getStatusCode();
-	    //System.out.println("Code of response " + status_code );
-	    return status_code;
+			try{
+			    HttpResponse delResponse = httpclient.execute(httpdelete);
+				
+			    status_code = delResponse.getStatusLine().getStatusCode();
+			    return status_code;
+			
+			}finally{
+				httpdelete.releaseConnection();
+			}
+		
 		}
 		catch (UnsupportedEncodingException e){
 			//e.printStackTrace();
@@ -203,6 +213,8 @@ public class HttpCouchInterface implements CouchInterface {
 		} catch (IOException e) {
 			//e.printStackTrace();
 			return 1200;
+		} finally {
+			httphead.releaseConnection();
 		}
 	}
 	
@@ -250,7 +262,8 @@ public class HttpCouchInterface implements CouchInterface {
 		{
 			int code = ci.dropDoc("new" + i, "test_database");
 		}
-
+		
+		input.close();
 	}
 	
 

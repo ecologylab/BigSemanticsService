@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.DownloadStatus;
-import ecologylab.bigsemantics.documentcache.PersistenceMetaInfo;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
+import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
 import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
 import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
