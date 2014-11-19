@@ -71,6 +71,7 @@ import ecologylab.serialization.formatenums.Format;
 	  
 	  }
 
+
 	  private static String getDocId(ParsedURL purl){
 	    return getDocId(purl.toString());
 	  }
@@ -378,33 +379,9 @@ import ecologylab.serialization.formatenums.Format;
 	
 	public static void main(String args[]) throws SIMPLTranslationException, MalformedURLException
 	{
-		
-		CouchPersistentDocumentCache dc = new CouchPersistentDocumentCache();
-		
-		Document doc = dc.semanticsScope.getOrConstructDocument(ParsedURL.getAbsolute("http://dl.acm.org/citation.cfm?id=123451"));
-		PersistenceMetaInfo metaInfo = dc.store(doc, "{ f : 100 }", "", "", "");
-		//String retrievedDoc = dc.retrieveRawContent(metaInfo);
-		PersistenceMetaInfo l = dc.getMetaInfo(doc.getLocation());
-		
-		//SimplTypesScope.serializeOut(l, "", StringFormat.JSON);
-	//	System.out.println(l);
-		
-		Document retrievedDoc = dc.retrieveDoc(l);
-		
-		
-		
-		OutputStream output = new ByteArrayOutputStream();
-   	    SimplTypesScope.serialize(retrievedDoc , output , Format.JSON );
-   	    String val = output.toString();
-   	    System.out.println(val);
-   	    
-   	    //boolean result = dc.remove(l);
-   	    //System.out.println(result);
-   	    
-   	    
 
 		
 	}
-
+	
 }
 
