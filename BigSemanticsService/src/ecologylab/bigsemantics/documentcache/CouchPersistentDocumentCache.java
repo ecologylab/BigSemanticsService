@@ -26,7 +26,6 @@ import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.Format;
-import ecologylab.serialization.formatenums.StringFormat;
 /**
  * A persistent document cache that uses the disk.
  *  
@@ -391,16 +390,16 @@ import ecologylab.serialization.formatenums.StringFormat;
 	//	System.out.println(l);
 		
 		Document retrievedDoc = dc.retrieveDoc(l);
-		SimplTypesScope.serializeOut(retrievedDoc , "" , StringFormat.JSON);
 		
 		
 		
 		OutputStream output = new ByteArrayOutputStream();
    	    SimplTypesScope.serialize(retrievedDoc , output , Format.JSON );
    	    String val = output.toString();
+   	    System.out.println(val);
    	    
-   	    boolean result = dc.remove(l);
-   	    System.out.println(result);
+   	    //boolean result = dc.remove(l);
+   	    //System.out.println(result);
    	    
    	    
 
