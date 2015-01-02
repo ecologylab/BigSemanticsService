@@ -48,7 +48,7 @@ public class ServiceApplication
     ServletContextHandler handler = new ServletContextHandler();
     handler.setContextPath("/");
     handler.addServlet(new ServletHolder(new HelloServlet()), "/hello");
-//    handler.addServlet(new ServletHolder(container), "/BigSemanticsService/*");
+    handler.addServlet(new ServletHolder(container), "/BigSemanticsService/*");
 
     // set up jetty server components
     QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
