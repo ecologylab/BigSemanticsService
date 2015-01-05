@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service;
+package ecologylab.bigsemantics.downloaderpool;
 
 import java.io.IOException;
 
@@ -7,11 +7,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
@@ -20,7 +23,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
  * 
  * @author quyin
  */
-public class ServiceApplication
+public class DownloaderPoolApplication
 {
   
   public static class HelloServlet extends HttpServlet
@@ -37,18 +40,30 @@ public class ServiceApplication
   }
 
 
-  public static void main(String[] args)
+  public static void main(String[] args) throws ConfigurationException
   {
+    ConfigsLoader configsLoader = new ConfigsLoader();
+    Configuration configs = configsLoader.load(null);
+    final Controller controller = new Controller(configs);
+
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
-    config.packages("ecologylab.bigsemantics.service"); // resource scanning
+    config.packages("ecologylab.bigsemantics.downloaderpool.services"); // resource scanning
+    config.register(new AbstractBinder()
+    {
+      @Override
+      protected void configure()
+      {
+        bind(controller).to(Controller.class);
+      }
+    });
     ServletContainer container = new ServletContainer(config);
 
     // set up jetty handler for servlets
     ServletContextHandler handler = new ServletContextHandler();
     handler.setContextPath("/");
     handler.addServlet(new ServletHolder(new HelloServlet()), "/hello");
-    handler.addServlet(new ServletHolder(container), "/BigSemanticsService/*");
+    handler.addServlet(new ServletHolder(container), "/DownloaderPool/*");
 
     // set up jetty server components
     QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);

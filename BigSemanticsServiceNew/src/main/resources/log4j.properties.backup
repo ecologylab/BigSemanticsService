@@ -1,0 +1,57 @@
+ps=/
+jetty.dir=${ps}bigsemantics-service${ps}jetty-dist
+
+log4j.rootLogger=debug, console
+
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
+
+log4j.logger.org.apache=off
+
+
+log4j.logger.ecologylab.bigsemantics.service=debug, fileoutD
+log4j.appender.fileoutD=org.apache.log4j.RollingFileAppender
+log4j.appender.fileoutD.File=${jetty.dir}${ps}logs${ps}details.log
+log4j.appender.fileoutD.MaxFileSize=10MB
+log4j.appender.fileoutD.MaxBackupIndex=10
+log4j.appender.fileoutD.layout=org.apache.log4j.PatternLayout
+log4j.appender.fileoutD.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
+
+log4j.logger.ecologylab.bigsemantics.service.mmd=debug, fileoutMmd
+log4j.appender.fileoutMmd=org.apache.log4j.RollingFileAppender
+log4j.appender.fileoutMmd.File=${jetty.dir}${ps}logs${ps}mmd.log
+log4j.appender.fileoutMmd.MaxFileSize=10MB
+log4j.appender.fileoutMmd.MaxBackupIndex=10
+log4j.appender.fileoutMmd.layout=org.apache.log4j.PatternLayout
+log4j.appender.fileoutMmd.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
+
+log4j.logger.ecologylab.bigsemantics.service.metadata=debug, fileoutM
+log4j.appender.fileoutM=org.apache.log4j.RollingFileAppender
+log4j.appender.fileoutM.File=${jetty.dir}${ps}logs${ps}metadata.log
+log4j.appender.fileoutM.MaxFileSize=10MB
+log4j.appender.fileoutM.MaxBackupIndex=10
+log4j.appender.fileoutM.layout=org.apache.log4j.PatternLayout
+log4j.appender.fileoutM.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
+
+log4j.logger.ecologylab.bigsemantics.service.downloader=debug, fileoutDI
+log4j.appender.fileoutDI=org.apache.log4j.RollingFileAppender
+log4j.appender.fileoutDI.File=${jetty.dir}${ps}logs${ps}downloader.log
+log4j.appender.fileoutDI.MaxFileSize=10MB
+log4j.appender.fileoutDI.MaxBackupIndex=10
+log4j.appender.fileoutDI.layout=org.apache.log4j.PatternLayout
+log4j.appender.fileoutDI.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
+
+log4j.logger.ecologylab.bigsemantics.service.PERF=debug, fileoutPerf
+log4j.appender.fileoutPerf=org.apache.log4j.RollingFileAppender
+log4j.appender.fileoutPerf.File=${jetty.dir}${ps}logs${ps}metadataPerf.log
+log4j.appender.fileoutPerf.MaxFileSize=10MB
+log4j.appender.fileoutPerf.MaxBackupIndex=10
+log4j.appender.fileoutPerf.layout=org.apache.log4j.PatternLayout
+log4j.appender.fileoutPerf.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] %c %x -  %m%n
+
