@@ -3,9 +3,9 @@ package ecologylab.bigsemantics.documentcache;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Date;
 
@@ -20,12 +20,16 @@ import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.generated.library.primitives.CachedHtml;
 import ecologylab.bigsemantics.generated.library.primitives.CouchdbEntry;
+import ecologylab.bigsemantics.metadata.MetadataDeserializationHookStrategy;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
+import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
+import ecologylab.serialization.DeserializationHookStrategy;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.Format;
+import ecologylab.serialization.formatenums.StringFormat;
 /**
  * A persistent document cache that uses the disk.
  *  
@@ -38,7 +42,7 @@ import ecologylab.serialization.formatenums.Format;
 	  private static final String htmlTable     = "html";
 	  private static final String metaDataTable = "metadata";
 	  private static final String metaInfoTable = "metainfo";
-	  private static final String dataBaseUrl   = "ecoarray0:2084";
+	  private static final String dataBaseUrl   = "ecoarray0:7054";
 	  private static CouchInterface couchInterface;
 	 
 	  static Logger                logger;
@@ -58,7 +62,8 @@ import ecologylab.serialization.formatenums.Format;
 		  
 		couchInterface = new HttpCouchInterface(dataBaseUrl);
 		
-	    entryTScope    = SimplTypesScope.get("CouchdbEntry", CouchdbEntry.class);
+	    // entryTScope    = SimplTypesScope.get("CouchdbEntry", CouchdbEntry.class);
+	    entryTScope = ss.getMetadataTypesScope();
 	  
 	  }
 	  
@@ -107,12 +112,12 @@ import ecologylab.serialization.formatenums.Format;
 	  private String getDoc( String docId , String tableId ){
 		  
     	  String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
-    	  System.out.println("In get- with id " + docId );
-    	  System.out.println("Getting with id " + encodedDocId);
+    	  encodedDocId        = new String("A" + encodedDocId);
 		  String json = couchInterface.getDoc(encodedDocId, tableId);
 		  if ( json == null)
 		  {
 			  return null;
+			  
 		  }
 		  else
 		  {
@@ -121,21 +126,49 @@ import ecologylab.serialization.formatenums.Format;
 		  }  
 	  }
 	  
+	  private byte[] getAttach( String docId , String tableId , String title ){
+		  
+    	  String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
+    	  encodedDocId        = new String("A" + encodedDocId);
+		  byte[] bytes = couchInterface.getAttach(encodedDocId, tableId , title);
+		  if ( bytes == null)
+		  {
+			  return null;
+			  
+		  }
+		  else
+		  {
+			 
+			  return bytes;
+		  }  
+	  }
+	  
       private int couchDoc(String docId, String tableId, Object doc) throws SIMPLTranslationException {
     	  
     	  String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
+    	  encodedDocId        = new String("A" + encodedDocId);
     	  OutputStream output = new ByteArrayOutputStream();
     	  SimplTypesScope.serialize(doc , output , Format.JSON );
-    	  String val = output.toString();
     	  String valueJSON = output.toString(); //I need to figure out which character encoding to use
     	  String docJSON = "{\"value\":" + valueJSON + "}";
     	  int code = couchInterface.putDoc(encodedDocId,  docJSON, tableId);
+  
+
     	  return code;
 	  }
 		
-      private int updateDoc(String docId, String tableId,Object metaInfo) throws SIMPLTranslationException {
+      private int couchAttach(String docId, String tableId, String attachment , String mimeType, String contentTitle) throws SIMPLTranslationException {
+    	  String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
+    	  encodedDocId        = new String("A" + encodedDocId);
+    	  int code = couchInterface.putAttach(encodedDocId,  tableId , attachment , mimeType , contentTitle);
+    	  return code;
+  
+      }
+      
+      private int updateDoc(String docId, String tableId ,Object metaInfo) throws SIMPLTranslationException {
 		
     	 String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
+    	 encodedDocId        = new String("A" + encodedDocId);
 		 OutputStream output = new ByteArrayOutputStream();
 		 SimplTypesScope.serialize(metaInfo,  output, Format.JSON);
    	     String valueJSON = output.toString(); //I need to figure out which character encoding to use
@@ -146,21 +179,22 @@ import ecologylab.serialization.formatenums.Format;
 
   	  private int unCouch(String docId, String tableId) {
   		String encodedDocId = Utils.base64urlEncode(Utils.secureHashBytes(docId));
+  		encodedDocId        = new String("A" + encodedDocId);
   		int code = couchInterface.dropDoc(encodedDocId, tableId);
   		return code;
   	  }
-  	  
-  	  private int couchOrOverWrite(String docId, String tableId, Object doc) throws SIMPLTranslationException {
+  	  private int couchOrOverWrite(String docId, String tableId,  Object doc) throws SIMPLTranslationException {
   		  
   		  int result = couchDoc(docId, tableId, doc);
-  		  if( result == 201 )
+  		  if( result == 201  || result == 200)	  
   		  {
   			  return 200;
   		  }
   		  else
   		  {
   			  result = updateDoc(docId, tableId, doc);
-  			  if( result == 200 )
+  			  if( result == 200 || result == 201 )
+  				  
   				  return 200;
   			  else
   				  return result;
@@ -208,20 +242,20 @@ import ecologylab.serialization.formatenums.Format;
 	      return null;
 	    }
 	    
-	
+	    
 	    ParsedURL location = document.getLocation();
-	    System.out.println("location in store " + location);
 	    String docId = getDocId(location);
 	    
 	    CachedHtml cachedHtml = new CachedHtml();
-	    cachedHtml.setContent(rawContent);
+	    //rawContent = Utils.base64urlEncode(rawContent.getBytes());
+	    
+	    
+	    //cachedHtml.setContent(rawContent);
 	    cachedHtml.setLocation(location);
 	    
 	    Date now = new Date();
-
 	    PersistenceMetaInfo metaInfo = getMetaInfo(location);
-	    
-	    
+	   
 	    if (metaInfo == null)
 	    {
 	      metaInfo = new PersistenceMetaInfo();
@@ -233,47 +267,55 @@ import ecologylab.serialization.formatenums.Format;
 	    metaInfo.setPersistenceTime(now);
 	    metaInfo.setMmdHash(document.getMetaMetadata().getHashForExtraction());
 	    
-	
-	   	
+	    
+	    
 	    int result;
-		try {
+	    try {
 			
 			result = couchOrOverWrite( docId , htmlTable , cachedHtml);
-		    if ( result != 200 )
+		    if ( result != 200 && result != 201 )
 		    {
 		    	
 		    	  logger.error("Cannot store " + docId + " in " + htmlTable + " Error code " + result);
 		    	  return null;
 		    }
 		    
-		    result = couchOrOverWrite( docId , metaDataTable , document);
-		    if( result != 200 )
+		    //ci.putAttach("test" , "html" , "Working?" , "text/plain" , "My_example")
+		    result = couchAttach(docId , htmlTable , rawContent, mimeType,  docId);
+		    if ( result != 200 && result != 201 )
+		    {
+		    	
+		    	  logger.error("Cannot store attachment for " + docId + " in " + htmlTable + " Error code " + result);
+		    	  return null;
+		    }
+		    
+		    
+		    
+		    result = couchOrOverWrite( docId , metaDataTable ,document);
+		    if( result != 200 && result != 201 )
 		    {
 		    	  logger.error("Cannot store " + docId + " in " + metaDataTable + " Error code " + result);
 		    	  return null;
 		    }
-		    
 		    result = couchOrOverWrite( docId , metaInfoTable , metaInfo);
-		    if( result != 201 )
+		    if( result != 200 && result != 201 )
 		    {
 		    	logger.error("Cannot store " + docId + " in " + metaInfoTable + " Error code " + result);
 		    	return null;
 		    }
+		    
 		} 
 		catch (SIMPLTranslationException e) {
 				
 				logger.error("Failure to serilize while storing " + document + ", doc_id=" + docId, e);
 				return null;
 		}
-
 	    
 	      
-	     return metaInfo;
+	   return metaInfo;
 	      
 	      
 	  }
-
-
 
 	@Override
 	  public boolean updateDoc(PersistenceMetaInfo metaInfo, Document newDoc)
@@ -313,8 +355,13 @@ import ecologylab.serialization.formatenums.Format;
 	      Document document = null;
 	      try
 	      { 
-	    	InputStream input = new ByteArrayInputStream(couchEntryJson.getBytes() );
-	        CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(input, Format.JSON);
+	    	//InputStream input = new ByteArrayInputStream(couchEntryJson.getBytes() );
+	    	  
+    	    //TranslationContext translationContext = new TranslationContext();
+	    	DeserializationHookStrategy deserializationHookStrategy = new MetadataDeserializationHookStrategy(semanticsScope);
+			CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(couchEntryJson,deserializationHookStrategy , StringFormat.JSON);
+	    	
+	        // CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(input, Format.JSON);
 	        document = (Document) entry.getValue();
 	      }
 	      catch (SIMPLTranslationException e)
@@ -335,30 +382,34 @@ import ecologylab.serialization.formatenums.Format;
 	  public String retrieveRawContent(PersistenceMetaInfo metaInfo)
 	  {
 		  
+
+		 
+		 
 	    String docId = metaInfo.getDocId();
+	    byte[] bytes = getAttach(docId , htmlTable , docId);
+	    return new String( bytes);
+	    /*
 	    String couchEntryJSON = getDoc(docId , htmlTable);
-	    
 	    if (couchEntryJSON != null)
 	    {
 	      CachedHtml rawDocument = null;
 	      try
 	      {
 	    	InputStream input = new ByteArrayInputStream(couchEntryJSON.getBytes());
-	    	System.out.println("The string to serialized is " + couchEntryJSON);
-	    	CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(input,  Format.JSON);
-	        rawDocument = (CachedHtml) entry.getValue();
+
+	    	//CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(input,  Format.JSON);
+	        //rawDocument = (CachedHtml) entry.getValue();
 	      }
 	      catch (SIMPLTranslationException e) {
 	    	logger.error("Cannot deserialize raw document from " + htmlTable + "/" + docId, e);
 		  }
-	      return rawDocument.getContent();
+	      return new String(Utils.base64urlDecode(rawDocument.getContent()));
 	    }
 	    else
 	    {
 	    	logger.error("Cannot retrive raw document from " + htmlTable + "/" + docId);
 	    }
-
-	    return null;
+		*/
 	  }
 
 	  @Override
@@ -377,11 +428,93 @@ import ecologylab.serialization.formatenums.Format;
 
 	
 	
-	public static void main(String args[]) throws SIMPLTranslationException, MalformedURLException
+	public static void main(String args[]) throws SIMPLTranslationException, IOException
 	{
-
 		
+		SemanticsServiceScope sss = SemanticsServiceScope.get();
+		
+		/*
+		SimplTypesScope tscope = sss.getMetadataTypesScope();
+		Document doc = (Document) tscope.deserialize(new FileInputStream(new File("C:\\Users\\ZachB\\AppData\\Local\\Temp\\test-json7459270573011231817.txt")),
+				new MetadataDeserializationHookStrategy(sss), Format.JSON);
+		*/
+		//System.out.println(doc.toString());
+		
+	    /*PrintWriter writer = null;
+		try {
+			writer = new PrintWriter("C:/Users/ZachB/Desktop/source.txt" , "UTF-8");
+		    writer.println(rawContent);
+		    System.out.println("HERE");
+		    writer.close();
+			System.out.println("Opened the file");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		*/
+
+		    
+			CouchPersistentDocumentCache dc = new CouchPersistentDocumentCache();
+			Document doc = dc.semanticsScope.getOrConstructDocument(ParsedURL.getAbsolute("http://www.amazon.com/Discovery-Daft-Punk/dp/B000069MEK"));
+			
+			dc.couchDoc("test", "html", doc);
+			System.out.println(dc.couchAttach("test", "html", "HI", "text/plain", "trial"));
+			
+
 	}
 	
-}
 
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	}
+
+	
+	
+	
+	
+	
+	

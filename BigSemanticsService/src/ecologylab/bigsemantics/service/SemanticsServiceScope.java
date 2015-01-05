@@ -17,6 +17,7 @@ import ecologylab.bigsemantics.documentcache.DiskPersistentDocumentCache;
 import ecologylab.bigsemantics.documentcache.DocumentCache;
 import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
+import ecologylab.bigsemantics.documentcache.CouchPersistentDocumentCache;
 import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
@@ -43,7 +44,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
   static Logger                       logger = LoggerFactory.getLogger(SemanticsServiceScope.class);
 
-  private DiskPersistentDocumentCache persistentDocCache;
+  private CouchPersistentDocumentCache persistentDocCache;
   
   private Configuration               configs;
 
@@ -53,17 +54,22 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
                                 Class<? extends IDOMProvider> domProviderClass)
   {
     super(metadataTScope, domProviderClass);
-    persistentDocCache = new DiskPersistentDocumentCache(this);
+    //persistentDocCache = new DiskPersistentDocumentCache(this);
+    persistentDocCache = new CouchPersistentDocumentCache(this);
   }
 
   public void configure(Configuration configs)
   {
+	 
     this.configs = configs;
+    System.out.println("in Configs");
+    /*
     String cacheBaseDir = configs.getString("cache-dir", "cache");
     if (!persistentDocCache.configure(cacheBaseDir))
     {
       logger.error("Cannot configure cache! Will not cache anything.");
     }
+    */
   }
   
   private void configureDpoolServiceUrl()
@@ -143,12 +149,12 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
       SimplTypesScope.graphSwitch = GRAPH_SWITCH.ON;
       SemanticsSite.disableDownloadInterval = true;
+      
+      DocumentLogRecordScope.addType(ServiceLogRecord.class);
 
       THE_SERVICE_SCOPE = new SemanticsServiceScope(RepositoryMetadataTypesScope.get(),
                                                     CybernekoWrapper.class);
       THE_SERVICE_SCOPE.configure(configs);
-      
-      DocumentLogRecordScope.addType(ServiceLogRecord.class);
 
       // This will disable content body recognization and image-text clipping derivation on the
       // service.

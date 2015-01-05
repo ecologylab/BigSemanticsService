@@ -215,7 +215,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
     {
       return null;
     }
-
+    System.out.println("Im Happengin!FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
     ParsedURL location = document.getLocation();
     String docId = getDocId(location);
     Date now = new Date();

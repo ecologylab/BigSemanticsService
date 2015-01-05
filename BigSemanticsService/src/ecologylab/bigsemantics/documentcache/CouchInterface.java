@@ -34,19 +34,22 @@ public interface CouchInterface {
 	public int      updateDoc(String docId , String docContent, String tableId); 
 	
 	/*
-<<<<<<< HEAD
 	 *	@param docId   The id of the document to be deleted, the doucment should exist.
 	 *	@param tableId The name of the table where the document is. 
 	 *
 	 *	@return        200 if successufl, otherwise some error code
-=======
 	 *	@param docId   The id of the document to be deleted, the document should exist.
 	 *	@param tableId The name of the table where the document is. 
 	 *
 	 *	@return        200 if successful, otherwise some error code
->>>>>>> c145242e6a89fdf008c31e9a672033d8d56a48ff
+
 	 */
 	public int      dropDoc(String docId , String tableId);
+
+	
+	public int putAttach(String docId, String tableId, String content, String mimeType ,String contentTitle);
+	
+	public byte[] getAttach(String docId, String tableId , String title);
 	
 	/*
 	 *  Apache CouchDB Return Codes 

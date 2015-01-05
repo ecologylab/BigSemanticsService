@@ -1,9 +1,13 @@
 package ecologylab.bigsemantics.documentcache;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Scanner;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
@@ -12,6 +16,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -80,14 +85,25 @@ public class HttpCouchInterface implements CouchInterface {
 
 		HttpPut httpput = new HttpPut(location);
 		try {
-		StringEntity entity = new StringEntity(docContent);  
+		StringEntity entity = new StringEntity(docContent);
+		//System.out.println("docContent " + docContent);
 		entity.setContentType("application/json");
+		int size = docContent.length();
 		httpput.setEntity(entity);
+		String request = EntityUtils.toString(entity);
+		//System.out.println(request);
 	    HttpResponse response = httpclient.execute(httpput);
-	    
-	    //What should I do with this?
-	    //System.out.println("Tried " + httpput );
+	    //System.out.println(response);
 	    int status_code = response.getStatusLine().getStatusCode();
+	    
+	    if (status_code != 200 && status_code != 201)
+	    {
+	    	HttpEntity error_entity = response.getEntity();
+	    	String error_msg = EntityUtils.toString(error_entity);
+	    	logger.error("status line: {}", response.getStatusLine());
+	    	logger.error("error details: {}", error_msg);
+	    }
+	    
 	    //System.out.println("Code of response " + status_code );
 	    return status_code;
 		}
@@ -104,9 +120,9 @@ public class HttpCouchInterface implements CouchInterface {
 			httpput.releaseConnection();
 		}
 	}
-
 	@Override
-	public int updateDoc(String docId, String docContent , String tableId) {
+	public int updateDoc(String docId, String docContent , String tableId )
+	{
 		
 		String rev = "";
 		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId;
@@ -165,7 +181,7 @@ public class HttpCouchInterface implements CouchInterface {
 		}
 
 	}
-	
+
 
 	@Override
 	public int dropDoc(String docId, String tableId) {
@@ -218,53 +234,118 @@ public class HttpCouchInterface implements CouchInterface {
 		}
 	}
 	
+	@Override
+	public int putAttach(String docId, String tableId, String content, 
+			String mimeType , String contentTitle) {
+		
+		
+		String rev = "";
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId;
+		
+		HttpHead httphead = new HttpHead(location);	
+
+		try {  
+			
+			HttpResponse headResponse = httpclient.execute(httphead);
+		    //System.out.println("Tried " + httphead );
+		    int status_code = headResponse.getStatusLine().getStatusCode();	
+		    //System.out.println("Code of response " + status_code );
+		    if( status_code != 200 ){
+		    	System.out.println("HERE");
+		    	return status_code;
+		    }
+		    rev = headResponse.getHeaders("ETag")[0].getValue();
+		    rev = rev.split("\"")[1];
+		    //This title might cause a problem
+		    location = location +"/"+contentTitle + "/?rev=";
+		    location +=rev;
+		    
+		    byte[] docContent = content.getBytes(Charset.forName("UTF-8"));
+		    HttpPut httpput = new HttpPut(location);
+			ByteArrayEntity entity = new ByteArrayEntity(docContent);  
+			entity.setContentType(mimeType);
+			httpput.setEntity(entity);
+			try{
+				HttpResponse delResponse = httpclient.execute(httpput);
+		    
+				//System.out.println("Tried " + httpput );
+				status_code = delResponse.getStatusLine().getStatusCode();
+				//System.out.println("Code of response " + status_code );
+				return status_code;
+			}finally{
+				httpput.releaseConnection();
+			}
+	    
+
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
+			return 500; 
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
+			return 1200;
+		}
+		finally{
+			httphead.releaseConnection();
+		}
+	}
+	
+	@Override
+	public byte[] getAttach(String docId, String tableId, String title) {
+		
+		String location = "http://" + databaseUrl + "/" + tableId + "/" + docId + "/" + title;
+		logger.info("docId = {}, tableId = {}", docId, tableId);
+
+		
+		HttpGet httpget = new HttpGet(location);
+		try {  
+	    HttpResponse response = httpclient.execute(httpget);
+	  
+	    int status_code = response.getStatusLine().getStatusCode();
+
+	    if( status_code == 200 || status_code == 201 || status_code == 202){
+	    	byte[] result = EntityUtils.toByteArray(response.getEntity());
+	    	return result;
+	    }
+	    else{
+	    	return null;
+	    }
+		}
+		catch (UnsupportedEncodingException e){
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
+		} catch (ParseException e) {
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
+			
+		} catch (IOException e) {
+			logger.error("docId = " + docId + ", tableId = " + tableId, e);
+			
+		}finally
+		{
+			httpget.releaseConnection();
+		}
+		return null;
+	}
+	
 	public static void main(String argsp[]) throws ClientProtocolException, IOException 
 	{
 		
-		HttpCouchInterface ci = new HttpCouchInterface("ecoarray0:2084");
-		/*
-		ci.putDoc("new21" , "{\"f\" : 1 }" , "html_database");
-		String result = ci.getDoc("new21" ,  "html_database");
-		ci.dropDoc("new21" , "html_database");
-		ci.putDoc("new21" , "{\"f\" : 1 }" , "html_database");
-		ci.updateDoc("new21", "{\"f\" : 2 }" , "html_database");
-		*/
-		System.out.println("Adding 100 document");
-		for(int i = 0; i < 100; i++)
-		{
-			int code = ci.putDoc("new" + i , "{\"f\" : " +  i + " }" , "test_database");
-			
-		}
+		HttpCouchInterface ci = new HttpCouchInterface("ecoarray0:7054");
 		
-		System.out.println("Press <enter> to update all 100 documents");
-		Scanner input = new Scanner(System.in);
-		input.nextLine();
-		System.out.println("Updating 100 document");
-		for(int i =0; i < 100; i++)
-		{
-			int code = ci.updateDoc("new" + i,"{\"f\" : " +  -i + " }" , "test_database");
-			
-		}
-		
-		System.out.println("Press <enter> to get all 100 documents");
-		input.nextLine();
-		System.out.println("Getting 100 document");
-		for(int i =0; i < 100; i++)
-		{
-			String doc = ci.getDoc("new" + i, "test_database");
-			System.out.println(doc);
-		}
-		
-		System.out.println("Press <enter> to delete all 100 documents");
-		input.nextLine();
-		System.out.println("Deleting 100 document");
-		for(int i=0; i < 100; i++)
-		{
-			int code = ci.dropDoc("new" + i, "test_database");
-		}
-		
-		input.close();
+		System.out.println(ci.putAttach("test" , "html" , "Working?" , "text/plain" , "My_example"));
+	
+		byte[] b = ci.getAttach("test", "html", "My_example");
+		System.out.println( new String( b ));
+
+	
+	
 	}
+	
+
+
+
+
+	
 	
 
 
