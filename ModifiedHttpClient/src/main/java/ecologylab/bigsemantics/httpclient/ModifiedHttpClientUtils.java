@@ -3,6 +3,7 @@ package ecologylab.bigsemantics.httpclient;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,8 +17,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
 
 /**
  * Utility methods for the HTTP client.
@@ -140,7 +139,7 @@ public class ModifiedHttpClientUtils
         params.add(new BasicNameValuePair(key, value));
       }
     }
-    HttpEntity entity = new UrlEncodedFormEntity(params, Charsets.UTF_8);
+    HttpEntity entity = new UrlEncodedFormEntity(params, Charset.forName("UTF-8"));
     post.setEntity(entity);
 
     return post;

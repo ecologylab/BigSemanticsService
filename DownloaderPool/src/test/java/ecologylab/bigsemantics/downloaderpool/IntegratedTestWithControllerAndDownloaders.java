@@ -24,9 +24,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,7 +73,8 @@ public class IntegratedTestWithControllerAndDownloaders
   public static void setUpServer() throws Exception
   {
     server = new Server(PORT);
-    server.setHandler(new WebAppContext("src/main/webapp", CONTEXT));
+    // TODO FIXME we can now run the embedded server, so no need to use WebAppContext!
+//    server.setHandler(new WebAppContext("src/main/webapp", CONTEXT));
     server.start();
     while (!server.isRunning())
     {
@@ -108,7 +108,7 @@ public class IntegratedTestWithControllerAndDownloaders
     params.put("tid", tid);
     HttpPost post = ModifiedHttpClientUtils.generatePostRequest(BASE_URL + "page/report", params);
 
-    HttpClient client = new DefaultHttpClient();
+    HttpClient client = HttpClientBuilder.create().build();
     BasicResponse result = new BasicResponse();
     client.execute(post, new BasicResponseHandler(result));
 

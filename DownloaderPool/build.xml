@@ -13,14 +13,13 @@
   <property name="service.lib.dir" value="../lib" />
   <property name="src.dir" value="${basedir}/src/main/java" />
   <property name="resources.dir" value="${basedir}/src/main/resources" />
-  <property name="webapp.dir" value="${basedir}/src/main/webapp" />
 
   <property name="build.dir" value="${basedir}/build" />
   <property name="dist.dir" value="${build.dir}/dist" />
   <property name="dist.classes.dir" value="${dist.dir}/WEB-INF/classes" />
   <property name="dist.lib.dir" value="${dist.dir}/WEB-INF/lib" />
+  <property name="dpool-jar.file" value="DownloaderPool.jar" />
   <property name="downloader-jar.file" value="Downloader.jar" />
-  <property name="runner-jar.file" value="LoggedRunner.jar" />
 
   <import file="../../BigSemanticsJava/lib/bs-build-common.xml" />
 
@@ -58,18 +57,26 @@
     </copy>
   </target>
 
-  <target name="war" depends="compile">
-    <war basedir="${dist.dir}" destfile="${build.dir}/${ant.project.name}.war"
-         webxml="${webapp.dir}/WEB-INF/web.xml">
-      <webinf dir="${dist.dir}/WEB-INF/" />
-      <metainf dir="${webapp.dir}/META-INF/" />
-    </war>
-  </target>
-    
   <taskdef name="one-jar"
            classname="com.simontuffs.onejar.ant.OneJarTask"
            classpath="${service.lib.dir}/one-jar-ant-task-0.97.jar" />
 
+	<target name="dpool-jar" depends="compile">
+    <one-jar destfile="${build.dir}/${dpool-jar.file}">
+      <manifest>
+        <attribute name="One-Jar-Main-Class"
+                   value="ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication" />
+      </manifest>
+      <main>
+        <fileset dir="${dist.classes.dir}" />
+      </main>
+      <lib>
+        <fileset dir="${dist.lib.dir}" includes="*.jar" />
+      </lib>
+      <fileset dir="${resources.dir}" includes="one-jar.properties" />
+    </one-jar>
+	</target>
+	
   <target name="downloader-jar" depends="compile">
     <one-jar destfile="${build.dir}/${downloader-jar.file}">
       <manifest>
@@ -81,28 +88,6 @@
       </main>
       <lib>
         <fileset dir="${dist.lib.dir}" includes="*.jar" />
-      </lib>
-      <fileset dir="${resources.dir}" includes="one-jar.properties" />
-    </one-jar>
-  </target>
-  
-  <target name="runner-jar" depends="compile">
-    <one-jar destfile="${build.dir}/${runner-jar.file}">
-      <manifest>
-          <attribute name="One-Jar-Main-Class"
-                     value="ecologylab.bigsemantics.tools.LoggedRunner" />
-      </manifest>
-      <main>
-        <fileset dir="${dist.classes.dir}">
-          <include name="**/LoggedRunner*" />
-          <include name="log4j.properties" />
-        </fileset>
-      </main>
-      <lib>
-        <fileset dir="${dist.lib.dir}">
-          <include name="log4j*" />
-          <include name="slf4j*" />
-        </fileset>
       </lib>
       <fileset dir="${resources.dir}" includes="one-jar.properties" />
     </one-jar>
