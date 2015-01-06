@@ -15,6 +15,7 @@
     <pathelement path="../../BigSemanticsWrapperRepository/BigSemanticsGeneratedClassesJava" />
     <pathelement path="../DownloaderPoolMessages" />
     <pathelement path="../ModifiedHttpClient" />
+    <pathelement path="../DownloaderPool" />
   </path>
   
   <property name="service.lib.dir" value="../lib" />

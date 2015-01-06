@@ -90,8 +90,20 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
     return cache.removeElement(new Element(key, oldDocument));
   }
   
+  private static CacheManager defaultCacheManager;
+  
+  public static synchronized void setDefaultCacheManager(CacheManager cacheManager)
+  {
+    defaultCacheManager = cacheManager;
+  }
+  
   public static CacheManager getDefaultCacheManager()
   {
+    if (defaultCacheManager != null)
+    {
+      return defaultCacheManager;
+    }
+
     CacheConfiguration defaultCacheConfig = new CacheConfiguration();
     defaultCacheConfig.setMaxEntriesLocalHeap(1000);
     defaultCacheConfig.setEternal(true);
@@ -101,6 +113,7 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
     cacheManConfig.setUpdateCheck(false);
     cacheManConfig.addDefaultCache(defaultCacheConfig);
     CacheManager cacheManager = new CacheManager(cacheManConfig);
+    setDefaultCacheManager(cacheManager);
     return cacheManager;
   }
 

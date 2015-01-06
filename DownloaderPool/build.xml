@@ -10,22 +10,34 @@
     <pathelement path="../ModifiedHttpClient" />
   </path>
   
-  <property name="service.lib.dir" value="../lib" />
   <property name="src.dir" value="${basedir}/src/main/java" />
   <property name="resources.dir" value="${basedir}/src/main/resources" />
+  <property name="test.dir" value="${basedir}/src/test/java" />
 
-  <property name="build.dir" value="${basedir}/build" />
+  <import file="../../BigSemanticsJava/lib/bs-build-common.xml" />
+
+  <property name="service.lib.dir" value="../lib" />
+
   <property name="dist.dir" value="${build.dir}/dist" />
   <property name="dist.classes.dir" value="${dist.dir}/WEB-INF/classes" />
   <property name="dist.lib.dir" value="${dist.dir}/WEB-INF/lib" />
   <property name="dpool-jar.file" value="DownloaderPool.jar" />
   <property name="downloader-jar.file" value="Downloader.jar" />
 
-  <import file="../../BigSemanticsJava/lib/bs-build-common.xml" />
+  <target name="prep-dist-dir" depends="compile">
+    <mkdir dir="${dist.dir}" />
 
-  <target name="copy-dependencies">
+    <mkdir dir="${dist.classes.dir}" />
+  	<echo>copying classes ...</echo>
+  	<copy todir="${dist.classes.dir}">
+  		<fileset dir="${classes.dir}" includes="**" />
+  	</copy>
+  	<echo>copying resources ...</echo>
+    <copy todir="${dist.classes.dir}">
+      <fileset dir="${resources.dir}" includes="**" />
+    </copy>
+
     <mkdir dir="${dist.lib.dir}" />
-
     <echo>adding dependent project as libs ...</echo>
     <path id="dep_proj_jars">
       <filelist dir="/" files="${dep_jars}" />
@@ -48,20 +60,11 @@
     <echo>...done.</echo>
   </target>
 
-  <target name="compile" depends="copy-dependencies">
-    <mkdir dir="${dist.classes.dir}" />
-    <javac srcdir="${src.dir}" destdir="${dist.classes.dir}" source="1.7" target="1.7"
-           fork="yes" classpathref="classpath" includeantruntime="true" />
-    <copy todir="${dist.classes.dir}">
-      <fileset dir="${resources.dir}" includes="*" />
-    </copy>
-  </target>
-
   <taskdef name="one-jar"
            classname="com.simontuffs.onejar.ant.OneJarTask"
            classpath="${service.lib.dir}/one-jar-ant-task-0.97.jar" />
 
-	<target name="dpool-jar" depends="compile">
+	<target name="dpool-jar" depends="prep-dist-dir">
     <one-jar destfile="${build.dir}/${dpool-jar.file}">
       <manifest>
         <attribute name="One-Jar-Main-Class"
@@ -77,7 +80,7 @@
     </one-jar>
 	</target>
 	
-  <target name="downloader-jar" depends="compile">
+  <target name="downloader-jar" depends="prep-dist-dir">
     <one-jar destfile="${build.dir}/${downloader-jar.file}">
       <manifest>
         <attribute name="One-Jar-Main-Class"
@@ -95,6 +98,7 @@
   
   <target name="main">
     <antcall target="depend.${ant.project.name}" />
+    <antcall target="dpool-jar" />
     <antcall target="downloader-jar" />
   </target>
 

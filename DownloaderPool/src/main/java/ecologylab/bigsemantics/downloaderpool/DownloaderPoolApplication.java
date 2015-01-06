@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.ehcache.CacheManager;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.eclipse.jetty.server.Server;
@@ -44,11 +46,17 @@ public class DownloaderPoolApplication
 
   }
 
-  public static void main(String[] args) throws ConfigurationException
+  public static ServletContainer getDpoolContainer() throws ConfigurationException
+  {
+    return getDpoolContainer(null);
+  }
+
+  public static ServletContainer getDpoolContainer(CacheManager cacheManager)
+      throws ConfigurationException
   {
     ConfigsLoader configsLoader = new ConfigsLoader();
     Configuration configs = configsLoader.load(null);
-    final Controller controller = new Controller(configs);
+    final Controller controller = new Controller(configs, cacheManager);
 
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -69,6 +77,14 @@ public class DownloaderPoolApplication
       }
     });
     ServletContainer container = new ServletContainer(config);
+
+    return container;
+  }
+
+
+  public static void main(String[] args) throws ConfigurationException
+  {
+    ServletContainer container = getDpoolContainer();
 
     // set up jetty handler for servlets
     ServletContextHandler handler = new ServletContextHandler();

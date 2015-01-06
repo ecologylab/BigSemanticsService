@@ -87,6 +87,11 @@ public class Controller extends Routine implements ControllerConfigNames
 
   public Controller(Configuration configs)
   {
+    this(configs, null);
+  }
+
+  public Controller(Configuration configs, CacheManager cacheManager)
+  {
     super();
     
     this.setSleepBetweenLoop(configs.getInt(WAIT_BETWEEN_COUNTDOWN, 500));
@@ -97,15 +102,18 @@ public class Controller extends Routine implements ControllerConfigNames
     waitingTasks = new ConcurrentLinkedDeque<Task>();
     tasksByUri = new ConcurrentHashMap<String, Task>();
 
-    CacheConfiguration defaultCacheConfig = new CacheConfiguration();
-    defaultCacheConfig.setMaxEntriesLocalHeap(1000);
-    defaultCacheConfig.setEternal(true);
-    defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
-    net.sf.ehcache.config.Configuration cacheManConfig = new net.sf.ehcache.config.Configuration();
-    cacheManConfig.setDynamicConfig(true);
-    cacheManConfig.setUpdateCheck(false);
-    cacheManConfig.addDefaultCache(defaultCacheConfig);
-    CacheManager cacheManager = new CacheManager(cacheManConfig);
+    if (cacheManager == null)
+    {
+      CacheConfiguration defaultCacheConfig = new CacheConfiguration();
+      defaultCacheConfig.setMaxEntriesLocalHeap(1000);
+      defaultCacheConfig.setEternal(true);
+      defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
+      net.sf.ehcache.config.Configuration cacheManConfig = new net.sf.ehcache.config.Configuration();
+      cacheManConfig.setDynamicConfig(true);
+      cacheManConfig.setUpdateCheck(false);
+      cacheManConfig.addDefaultCache(defaultCacheConfig);
+      cacheManager = new CacheManager(cacheManConfig);
+    }
 
     cacheManager.addCacheIfAbsent("tasks-by-id");
     allTasksById = cacheManager.getCache("tasks-by-id");
