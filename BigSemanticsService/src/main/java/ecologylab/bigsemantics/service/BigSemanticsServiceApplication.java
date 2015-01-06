@@ -1,5 +1,6 @@
 package ecologylab.bigsemantics.service;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -14,11 +15,17 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
 import ecologylab.bigsemantics.downloaderpool.Downloader;
@@ -41,6 +48,8 @@ import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryXMLService;
  */
 public class BigSemanticsServiceApplication
 {
+  
+  static Logger logger = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
   
   public static class HelloServlet extends HttpServlet
   {
@@ -85,11 +94,28 @@ public class BigSemanticsServiceApplication
     ServletContainer serviceContainer = getServiceContainer();
 
     // set up jetty handler for servlets
-    ServletContextHandler handler = new ServletContextHandler();
-    handler.setContextPath("/");
-    handler.addServlet(new ServletHolder(new HelloServlet()), "/hello");
-    handler.addServlet(new ServletHolder(dpoolContainer), "/DownloaderPool/*");
-    handler.addServlet(new ServletHolder(serviceContainer), "/BigSemanticsService/*");
+    ServletContextHandler servletContext = new ServletContextHandler();
+    servletContext.setContextPath("/");
+    servletContext.addServlet(new ServletHolder(new HelloServlet()), "/hello");
+    servletContext.addServlet(new ServletHolder(dpoolContainer), "/DownloaderPool/*");
+    servletContext.addServlet(new ServletHolder(serviceContainer), "/BigSemanticsService/*");
+    
+    // set up static resource handler
+    ContextHandler staticContext = null;
+    try
+    {
+      File staticDir = new File("./static").getCanonicalFile();
+      Resource staticResource = Resource.newResource(staticDir);
+      ResourceHandler resourceHandler = new ResourceHandler();
+      resourceHandler.setBaseResource(staticResource);
+      resourceHandler.setDirectoriesListed(true);
+      staticContext = new ContextHandler("/static");
+      staticContext.setHandler(resourceHandler);
+    }
+    catch (IOException e)
+    {
+      logger.error("Exception when configuring static resources!", e);
+    }
 
     // set up jetty server components
     QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
@@ -104,8 +130,14 @@ public class BigSemanticsServiceApplication
     // misc server settings
     server.setStopAtShutdown(true);
 
-    // connect handler to server
-    server.setHandler(handler);
+    // connect handlers to server
+    ContextHandlerCollection handlers = new ContextHandlerCollection();
+    if (staticContext != null)
+    {
+      handlers.addHandler(staticContext);
+    }
+    handlers.addHandler(servletContext);
+    server.setHandler(handlers);
 
     try
     {
