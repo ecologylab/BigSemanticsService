@@ -24,7 +24,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.eclipse.jetty.server.Server;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -108,7 +108,7 @@ public class IntegratedTestWithControllerAndDownloaders
     params.put("tid", tid);
     HttpPost post = ModifiedHttpClientUtils.generatePostRequest(BASE_URL + "page/report", params);
 
-    HttpClient client = HttpClientBuilder.create().build();
+    HttpClient client = new DefaultHttpClient();
     BasicResponse result = new BasicResponse();
     client.execute(post, new BasicResponseHandler(result));
 
