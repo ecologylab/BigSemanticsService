@@ -76,7 +76,7 @@ class ServiceBuilder:
       else:
         dest_spec = "{0}@{1}:{2}".format(remote_user, remote_host, f1)
         cmds = ["scp", "-i", remote_login, f0, dest_spec]
-        check_call(cmds, wd = local_dir)
+        check_call(cmds, wd = dest_dir)
 
   def archive(self, file_dir, file_name):
     f = join(file_dir, file_name)
