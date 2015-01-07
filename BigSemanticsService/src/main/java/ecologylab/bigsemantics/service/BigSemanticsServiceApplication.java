@@ -15,6 +15,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.AllowSymLinkAliasChecker;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -110,6 +111,7 @@ public class BigSemanticsServiceApplication
       resourceHandler.setBaseResource(staticResource);
       resourceHandler.setDirectoriesListed(true);
       staticContext = new ContextHandler("/static");
+      staticContext.addAliasCheck(new AllowSymLinkAliasChecker());
       staticContext.setHandler(resourceHandler);
     }
     catch (IOException e)
@@ -145,6 +147,7 @@ public class BigSemanticsServiceApplication
       server.start();
 
       // run a downloader after a period of time
+      Thread.sleep(1000 * 5);
       Configuration configs = new PropertiesConfiguration("dpool.properties");
       Downloader d = new Downloader(configs);
       d.start();
