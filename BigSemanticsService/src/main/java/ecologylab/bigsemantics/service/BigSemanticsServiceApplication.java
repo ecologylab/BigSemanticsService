@@ -146,8 +146,7 @@ public class BigSemanticsServiceApplication
       // run server
       server.start();
 
-      // run a downloader after a period of time
-      Thread.sleep(1000 * 5);
+      // run a downloader
       Configuration configs = new PropertiesConfiguration("dpool.properties");
       Downloader d = new Downloader(configs);
       d.start();
