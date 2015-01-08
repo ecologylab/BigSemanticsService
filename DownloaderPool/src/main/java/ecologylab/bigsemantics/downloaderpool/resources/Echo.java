@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.downloaderpool.services;
+package ecologylab.bigsemantics.downloaderpool.resources;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;

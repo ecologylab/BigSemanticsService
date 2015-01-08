@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.downloaderpool.services;
+package ecologylab.bigsemantics.downloaderpool.resources;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -24,7 +24,6 @@ import ecologylab.bigsemantics.downloaderpool.Task.State;
 import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskCreated;
 import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskSuccess;
 import ecologylab.generic.StringBuilderBaseUtils;
-import ecologylab.logging.LogEvent;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.formatenums.StringFormat;
 

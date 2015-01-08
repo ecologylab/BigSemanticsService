@@ -18,6 +18,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ecologylab.bigsemantics.Configs;
 import ecologylab.bigsemantics.httpclient.BasicResponseHandler;
 import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
@@ -319,7 +320,7 @@ public class Downloader extends Routine implements DownloaderConfigNames
 
   public static void main(String[] args) throws ConfigurationException, InterruptedException
   {
-    Configuration configs = new PropertiesConfiguration("dpool.properties");
+    Configuration configs = Configs.loadProperties("dpool.properties");
     Downloader d = new Downloader(configs);
     d.start();
     d.join();

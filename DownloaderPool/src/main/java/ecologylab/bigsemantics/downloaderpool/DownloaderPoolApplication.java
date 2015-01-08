@@ -20,10 +20,11 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
-import ecologylab.bigsemantics.downloaderpool.services.Echo;
-import ecologylab.bigsemantics.downloaderpool.services.LogRequest;
-import ecologylab.bigsemantics.downloaderpool.services.PageRequest;
-import ecologylab.bigsemantics.downloaderpool.services.TaskRequest;
+import ecologylab.bigsemantics.Configs;
+import ecologylab.bigsemantics.downloaderpool.resources.Echo;
+import ecologylab.bigsemantics.downloaderpool.resources.LogRequest;
+import ecologylab.bigsemantics.downloaderpool.resources.PageRequest;
+import ecologylab.bigsemantics.downloaderpool.resources.TaskRequest;
 
 /**
  * Glues different components of the service together.
@@ -54,9 +55,9 @@ public class DownloaderPoolApplication
   public static ServletContainer getDpoolContainer(CacheManager cacheManager)
       throws ConfigurationException
   {
-    ConfigsLoader configsLoader = new ConfigsLoader();
-    Configuration configs = configsLoader.load(null);
+    Configuration configs = Configs.loadProperties("dpool.properties");
     final Controller controller = new Controller(configs, cacheManager);
+    controller.start();
 
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
