@@ -62,6 +62,7 @@ class ServiceBuilder:
     check_call(["git", "clean", "-f", "-d"], wd=git_dir)
     # pull down latest code
     check_call(["git", "pull"], wd=git_dir)
+    check_call(["git", "submodule", "update"], wd=git_dir)
 
   def copy_file(self, fname, src_dir, dest_dir,
                 new_fname = None,
