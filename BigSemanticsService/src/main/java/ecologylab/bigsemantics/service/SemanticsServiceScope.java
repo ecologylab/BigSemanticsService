@@ -13,11 +13,11 @@ import ecologylab.bigsemantics.actions.SemanticsConstants;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
+import ecologylab.bigsemantics.documentcache.CouchPersistentDocumentCache;
 import ecologylab.bigsemantics.documentcache.DiskPersistentDocumentCache;
 import ecologylab.bigsemantics.documentcache.DocumentCache;
 import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
-import ecologylab.bigsemantics.documentcache.CouchPersistentDocumentCache;
 import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
@@ -44,7 +44,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
   static Logger                       logger = LoggerFactory.getLogger(SemanticsServiceScope.class);
 
-  private CouchPersistentDocumentCache persistentDocCache;
+  private PersistentDocumentCache     persistentDocCache;
   
   private Configuration               configs;
 
@@ -54,8 +54,8 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
                                 Class<? extends IDOMProvider> domProviderClass)
   {
     super(metadataTScope, domProviderClass);
-    //persistentDocCache = new DiskPersistentDocumentCache(this);
-    persistentDocCache = new CouchPersistentDocumentCache(this);
+    persistentDocCache = new DiskPersistentDocumentCache(this);
+    // persistentDocCache = new CouchPersistentDocumentCache(this);
   }
 
   public void configure(Configuration configs)
@@ -63,13 +63,15 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 	 
     this.configs = configs;
     System.out.println("in Configs");
-    /*
-    String cacheBaseDir = configs.getString("cache-dir", "cache");
-    if (!persistentDocCache.configure(cacheBaseDir))
+    
+    if (persistentDocCache instanceof DiskPersistentDocumentCache)
     {
-      logger.error("Cannot configure cache! Will not cache anything.");
+      String cacheBaseDir = configs.getString("cache-dir", "cache");
+      if (!((DiskPersistentDocumentCache) persistentDocCache).configure(cacheBaseDir))
+      {
+        logger.error("Cannot configure cache! Will not cache anything.");
+      }
     }
-    */
   }
   
   private void configureDpoolServiceUrl()
