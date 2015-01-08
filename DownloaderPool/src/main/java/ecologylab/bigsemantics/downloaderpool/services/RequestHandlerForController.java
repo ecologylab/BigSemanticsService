@@ -1,5 +1,6 @@
 package ecologylab.bigsemantics.downloaderpool.services;
 
+import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -26,7 +27,7 @@ public class RequestHandlerForController
   public RequestHandlerForController()
   {
     logger = LoggerFactory.getLogger(this.getClass());
-    logger.info(this.getClass().getName() + " Constructed");
+//    logger.info(this.getClass().getName() + " Constructed");
   }
 
   public Controller getController()
@@ -34,11 +35,12 @@ public class RequestHandlerForController
     return controller;
   }
 
+  @Inject
   public void setController(Controller controller)
   {
     this.controller = controller;
     controller.start();
-    logger.info("Controller hooked and started (if not yet).");
+//    logger.info("Controller hooked and started (if not yet).");
   }
 
   protected Response generateResponse(Object result,
