@@ -50,18 +50,18 @@ class ServiceBuilder:
     self.prod_login_id = join(self.home_dir, config["prod_login_id"])
 
   def git_update_to_latest(self, git_dir):
+    # update submodules, if any
+    if isfile(join(git_dir, ".gitmodules")):
+      check_call(["git", "submodule", "foreach", "git", "checkout", "--", "*"], wd=git_dir)
+      check_call(["git", "submodule", "foreach", "git", "clean", "-f"], wd=git_dir)
+      check_call(["git", "submodule", "foreach", "git", "clean", "-f", "-d"], wd=git_dir)
+      check_call(["git", "submodule", "foreach", "git", "fetch"], wd=git_dir)
     # clean local changes
     check_call(["git", "checkout", "--", "*"], wd=git_dir)
     check_call(["git", "clean", "-f"], wd=git_dir)
     check_call(["git", "clean", "-f", "-d"], wd=git_dir)
     # pull down latest code
     check_call(["git", "pull"], wd=git_dir)
-    # update submodules, if any
-    if isfile(join(git_dir, ".gitmodules")):
-      check_call(["git", "submodule", "foreach", "git checkout -- *"], wd=git_dir)
-      check_call(["git", "submodule", "foreach", "git clean -f"], wd=git_dir)
-      check_call(["git", "submodule", "foreach", "git clean -f -d"], wd=git_dir)
-      check_call(["git", "submodule", "update"], wd=git_dir)
 
   def copy_file(self, fname, src_dir, dest_dir,
                 new_fname = None,
