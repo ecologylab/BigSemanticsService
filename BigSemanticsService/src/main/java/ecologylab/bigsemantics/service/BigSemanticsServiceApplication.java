@@ -49,23 +49,73 @@ import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryXMLService;
  */
 public class BigSemanticsServiceApplication
 {
-  
-  static Logger logger = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
-  
+
   public static class HelloServlet extends HttpServlet
   {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-        throws ServletException, IOException {
+        throws ServletException, IOException
+    {
       resp.setContentType("text/html");
       resp.getWriter().println("Hello world!");
       resp.setStatus(HttpServletResponse.SC_OK);
     }
 
   }
-  
-  public static ServletContainer getServiceContainer()
+
+  static Logger  logger            = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
+
+  private Server server;
+
+  private String staticResourceDir = "./static/";
+
+  public BigSemanticsServiceApplication()
+  {
+    super();
+  }
+
+  void initialize() throws ConfigurationException
+  {
+    if (server == null)
+    {
+      // step 1: create and configure server
+      QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
+      server = new Server(threadPool);
+      // num of acceptors: num of cores - 1
+      // num of selectors: use default guess. in practice, depend on cores, load, etc.
+      int cores = Runtime.getRuntime().availableProcessors();
+      ServerConnector connector = new ServerConnector(server, cores - 1, -1);
+      connector.setPort(8080);
+      server.addConnector(connector);
+      // misc server settings
+      server.setStopAtShutdown(true);
+
+      // step 2: set up servlet containers and handler
+      CacheManager cacheManager = EhCacheDocumentCache.getDefaultCacheManager();
+      ServletContainer dpoolContainer = DownloaderPoolApplication.getDpoolContainer(cacheManager);
+      ServletContainer serviceContainer = getBssContainer();
+      ServletContextHandler servletContext = new ServletContextHandler();
+      servletContext.setContextPath("/");
+      servletContext.addServlet(new ServletHolder(new HelloServlet()), "/hello");
+      servletContext.addServlet(new ServletHolder(dpoolContainer), "/DownloaderPool/*");
+      servletContext.addServlet(new ServletHolder(serviceContainer), "/BigSemanticsService/*");
+
+      // step 3: set up static resource handler
+      ContextHandler staticContext = getStaticResourceHandler();
+
+      // step 4: connect handlers to server
+      ContextHandlerCollection handlers = new ContextHandlerCollection();
+      if (staticContext != null)
+      {
+        handlers.addHandler(staticContext);
+      }
+      handlers.addHandler(servletContext);
+      server.setHandler(handlers);
+    }
+  }
+
+  ServletContainer getBssContainer()
   {
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -84,28 +134,16 @@ public class BigSemanticsServiceApplication
     config.register(MMDRepositoryJSONPService.class);
     config.register(MMDRepositoryVersion.class);
     ServletContainer container = new ServletContainer(config);
-    
+
     return container;
   }
-  
-  public static void main(String[] args) throws ConfigurationException
-  {
-    CacheManager cacheManager = EhCacheDocumentCache.getDefaultCacheManager();
-    ServletContainer dpoolContainer = DownloaderPoolApplication.getDpoolContainer(cacheManager);
-    ServletContainer serviceContainer = getServiceContainer();
 
-    // set up jetty handler for servlets
-    ServletContextHandler servletContext = new ServletContextHandler();
-    servletContext.setContextPath("/");
-    servletContext.addServlet(new ServletHolder(new HelloServlet()), "/hello");
-    servletContext.addServlet(new ServletHolder(dpoolContainer), "/DownloaderPool/*");
-    servletContext.addServlet(new ServletHolder(serviceContainer), "/BigSemanticsService/*");
-    
-    // set up static resource handler
+  ContextHandler getStaticResourceHandler()
+  {
     ContextHandler staticContext = null;
     try
     {
-      File staticDir = new File("./static").getCanonicalFile();
+      File staticDir = new File(staticResourceDir).getCanonicalFile();
       Resource staticResource = Resource.newResource(staticDir);
       ResourceHandler resourceHandler = new ResourceHandler();
       resourceHandler.setBaseResource(staticResource);
@@ -118,45 +156,79 @@ public class BigSemanticsServiceApplication
     {
       logger.error("Exception when configuring static resources!", e);
     }
+    return staticContext;
+  }
 
-    // set up jetty server components
-    QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
-    Server server = new Server(threadPool);
-    // num of acceptors: num of cores - 1
-    // num of selectors: use default guess. in practice, depend on cores, load, etc.
-    int cores = Runtime.getRuntime().availableProcessors();
-    ServerConnector connector = new ServerConnector(server, cores - 1, -1);
-    connector.setPort(8080);
-    server.addConnector(connector);
+  void setStaticResourceDir(String staticResourceDir)
+  {
+    this.staticResourceDir = staticResourceDir;
+  }
 
-    // misc server settings
-    server.setStopAtShutdown(true);
-
-    // connect handlers to server
-    ContextHandlerCollection handlers = new ContextHandlerCollection();
-    if (staticContext != null)
+  public void start() throws Exception
+  {
+    if (server == null)
     {
-      handlers.addHandler(staticContext);
+      throw new RuntimeException("Server uninitialized!");
     }
-    handlers.addHandler(servletContext);
-    server.setHandler(handlers);
 
-    try
+    // run server
+    server.start();
+
+    // run a downloader
+    Configuration configs = new PropertiesConfiguration("dpool.properties"); // TODO
+    Downloader d = new Downloader(configs);
+    d.start();
+  }
+
+  public void join() throws InterruptedException
+  {
+    if (server == null)
     {
-      // run server
-      server.start();
-
-      // run a downloader
-      Configuration configs = new PropertiesConfiguration("dpool.properties");
-      Downloader d = new Downloader(configs);
-      d.start();
-
-      server.join();
+      throw new RuntimeException("Server uninitialized!");
     }
-    catch (Exception e)
+
+    server.join();
+  }
+
+  public void stop() throws Exception
+  {
+    if (server == null)
     {
-      e.printStackTrace();
+      throw new RuntimeException("Server uninitialized!");
     }
+
+    server.stop();
+  }
+
+  public static void main(String[] args) throws Exception
+  {
+    String staticDirFlag = "--static_dir=";
+    String staticDir = null;
+    for (int i = 0; i < args.length; ++i)
+    {
+      if (args[i].startsWith(staticDirFlag))
+      {
+        staticDir = args[i].substring(staticDirFlag.length());
+        File staticDirFile = new File(staticDir);
+        if (staticDirFile.exists() && staticDirFile.isDirectory())
+        {
+          staticDir = staticDirFile.getCanonicalPath();
+        }
+        else
+        {
+          staticDir = null;
+        }
+      }
+    }
+
+    BigSemanticsServiceApplication application = new BigSemanticsServiceApplication();
+    if (staticDir != null)
+    {
+      application.setStaticResourceDir(staticDir);
+    }
+    application.initialize();
+    application.start();
+    application.join();
   }
 
 }
