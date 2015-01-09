@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.net.ParsedURL;
 
@@ -27,7 +28,7 @@ public class TestEhCacheDocumentCache
   @Before
   public void setUp() throws Exception
   {
-    cache = new EhCacheDocumentCache();
+    cache = new EhCacheDocumentCache(GlobalCacheManager.getSingleton());
     key = ParsedURL.getAbsolute("http://example.com/");
   }
 

@@ -2,17 +2,15 @@ package ecologylab.bigsemantics.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.ehcache.CacheManager;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AllowSymLinkAliasChecker;
@@ -23,14 +21,18 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
-import ecologylab.bigsemantics.downloaderpool.Downloader;
+import ecologylab.bigsemantics.Configs;
+import ecologylab.bigsemantics.Utils;
+import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
 import ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication;
+import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
+import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.service.metadata.MetadataJSONPService;
 import ecologylab.bigsemantics.service.metadata.MetadataJSONService;
 import ecologylab.bigsemantics.service.metadata.MetadataXMLService;
@@ -47,8 +49,19 @@ import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryXMLService;
  * 
  * @author quyin
  */
-public class BigSemanticsServiceApplication
+public class BigSemanticsServiceApplication implements SemanticsServiceConfigNames
 {
+
+  static final String FLAG_STATIC_DIR = "static_dir";
+
+  static final String FLAG_PORT       = "port";
+
+  static final Logger logger;
+
+  static
+  {
+    logger = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
+  }
 
   public static class HelloServlet extends HttpServlet
   {
@@ -64,36 +77,51 @@ public class BigSemanticsServiceApplication
 
   }
 
-  static Logger  logger            = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
+  private Configuration             configs;
 
-  private Server server;
+  private Server                    server;
 
-  private String staticResourceDir = "./static/";
+  private DownloaderPoolApplication dpoolApp;
+
+  private SemanticsServiceScope     semanticsServiceScope;
 
   public BigSemanticsServiceApplication()
   {
     super();
+    configs = Configs.loadProperties("service.properties");
   }
 
-  void initialize() throws ConfigurationException
+  public Configuration getConfigs()
+  {
+    return configs;
+  }
+
+  public void initialize() throws ConfigurationException, ClassNotFoundException
   {
     if (server == null)
     {
       // step 1: create and configure server
-      QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
+      int maxThreads = configs.getInt(MAX_THREADS, 500);
+      int minThreads = configs.getInt(MIN_THREADS, 50);
+      QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads, minThreads);
       server = new Server(threadPool);
       // num of acceptors: num of cores - 1
       // num of selectors: use default guess. in practice, depend on cores, load, etc.
       int cores = Runtime.getRuntime().availableProcessors();
-      ServerConnector connector = new ServerConnector(server, cores - 1, -1);
-      connector.setPort(8080);
+      int nAcceptors = configs.getInt(NUM_ACCEPTORS, cores - 1);
+      int nSelectors = configs.getInt(NUM_SELECTORS, -1);
+      ServerConnector connector = new ServerConnector(server, nAcceptors, nSelectors);
+      // port
+      int port = configs.getInt(PORT, 8080);
+      connector.setPort(port);
       server.addConnector(connector);
       // misc server settings
       server.setStopAtShutdown(true);
 
       // step 2: set up servlet containers and handler
-      CacheManager cacheManager = EhCacheDocumentCache.getDefaultCacheManager();
-      ServletContainer dpoolContainer = DownloaderPoolApplication.getDpoolContainer(cacheManager);
+      dpoolApp = new DownloaderPoolApplication();
+      dpoolApp.setCacheManager(GlobalCacheManager.getSingleton());
+      ServletContainer dpoolContainer = dpoolApp.getDpoolContainer();
       ServletContainer serviceContainer = getBssContainer();
       ServletContextHandler servletContext = new ServletContextHandler();
       servletContext.setContextPath("/");
@@ -115,7 +143,7 @@ public class BigSemanticsServiceApplication
     }
   }
 
-  ServletContainer getBssContainer()
+  public ServletContainer getBssContainer() throws ClassNotFoundException
   {
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -133,17 +161,32 @@ public class BigSemanticsServiceApplication
     config.register(MMDRepositoryJSONService.class);
     config.register(MMDRepositoryJSONPService.class);
     config.register(MMDRepositoryVersion.class);
+
+    semanticsServiceScope =
+        new SemanticsServiceScope(RepositoryMetadataTypesScope.get(), CybernekoWrapper.class);
+    semanticsServiceScope.configure(configs);
+    SemanticsServiceScope.setSingleton(semanticsServiceScope);
+    config.register(new AbstractBinder()
+    {
+      @Override
+      protected void configure()
+      {
+        bind(semanticsServiceScope).to(SemanticsServiceScope.class);
+      }
+    });
+
     ServletContainer container = new ServletContainer(config);
 
     return container;
   }
 
-  ContextHandler getStaticResourceHandler()
+  public ContextHandler getStaticResourceHandler()
   {
     ContextHandler staticContext = null;
+    String staticDirPath = configs.getString(STATIC_DIR, "./static/");
     try
     {
-      File staticDir = new File(staticResourceDir).getCanonicalFile();
+      File staticDir = new File(staticDirPath).getCanonicalFile();
       Resource staticResource = Resource.newResource(staticDir);
       ResourceHandler resourceHandler = new ResourceHandler();
       resourceHandler.setBaseResource(staticResource);
@@ -154,14 +197,9 @@ public class BigSemanticsServiceApplication
     }
     catch (IOException e)
     {
-      logger.error("Exception when configuring static resources!", e);
+      logger.error("Exception when configuring static dir " + staticDirPath, e);
     }
     return staticContext;
-  }
-
-  void setStaticResourceDir(String staticResourceDir)
-  {
-    this.staticResourceDir = staticResourceDir;
   }
 
   public void start() throws Exception
@@ -175,9 +213,7 @@ public class BigSemanticsServiceApplication
     server.start();
 
     // run a downloader
-    Configuration configs = new PropertiesConfiguration("dpool.properties"); // TODO
-    Downloader d = new Downloader(configs);
-    d.start();
+    dpoolApp.getDownloader().start();
   }
 
   public void join() throws InterruptedException
@@ -197,34 +233,26 @@ public class BigSemanticsServiceApplication
       throw new RuntimeException("Server uninitialized!");
     }
 
+    dpoolApp.getDownloader().stop();
     server.stop();
   }
 
   public static void main(String[] args) throws Exception
   {
-    String staticDirFlag = "--static_dir=";
-    String staticDir = null;
-    for (int i = 0; i < args.length; ++i)
-    {
-      if (args[i].startsWith(staticDirFlag))
-      {
-        staticDir = args[i].substring(staticDirFlag.length());
-        File staticDirFile = new File(staticDir);
-        if (staticDirFile.exists() && staticDirFile.isDirectory())
-        {
-          staticDir = staticDirFile.getCanonicalPath();
-        }
-        else
-        {
-          staticDir = null;
-        }
-      }
-    }
+    Map<String, String> flags = Utils.parseCommandlineFlags(args);
+
+    String staticDir = flags.get(FLAG_STATIC_DIR);
+    String portStr = flags.get(FLAG_PORT);
 
     BigSemanticsServiceApplication application = new BigSemanticsServiceApplication();
+    Configuration appConfigs = application.getConfigs();
     if (staticDir != null)
     {
-      application.setStaticResourceDir(staticDir);
+      appConfigs.setProperty(STATIC_DIR, staticDir);
+    }
+    if (portStr != null)
+    {
+      appConfigs.setProperty(PORT, Integer.parseInt(portStr));
     }
     application.initialize();
     application.start();

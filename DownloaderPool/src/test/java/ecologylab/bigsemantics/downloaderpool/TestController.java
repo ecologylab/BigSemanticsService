@@ -30,7 +30,7 @@ public class TestController
   public void init() throws ConfigurationException
   {
     Configuration configs = new PropertiesConfiguration("dpool-testing.properties");
-    ctrl = new Controller(configs);
+    ctrl = new Controller(configs, GlobalCacheManager.getSingleton());
   }
 
   @Test

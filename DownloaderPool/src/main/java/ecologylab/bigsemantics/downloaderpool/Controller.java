@@ -13,7 +13,6 @@ import javax.inject.Singleton;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
 
 import org.apache.commons.configuration.Configuration;
 import org.jvnet.hk2.annotations.Service;
@@ -74,7 +73,7 @@ public class Controller extends Routine implements ControllerConfigNames
    * remembering previous tasks.
    */
   private ConcurrentHashMap<String, Task> tasksByUri;
-
+  
   /**
    * Indexing all tasks by ID. We regard conflicts of keys as impossible.
    */
@@ -84,11 +83,6 @@ public class Controller extends Routine implements ControllerConfigNames
    * Indexing all tasks by URL. When there is conflict this only stores the latest one.
    */
   private Cache                           allTasksByUri;
-
-  public Controller(Configuration configs)
-  {
-    this(configs, null);
-  }
 
   public Controller(Configuration configs, CacheManager cacheManager)
   {
@@ -101,19 +95,6 @@ public class Controller extends Routine implements ControllerConfigNames
 
     waitingTasks = new ConcurrentLinkedDeque<Task>();
     tasksByUri = new ConcurrentHashMap<String, Task>();
-
-    if (cacheManager == null)
-    {
-      CacheConfiguration defaultCacheConfig = new CacheConfiguration();
-      defaultCacheConfig.setMaxEntriesLocalHeap(1000);
-      defaultCacheConfig.setEternal(true);
-      defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
-      net.sf.ehcache.config.Configuration cacheManConfig = new net.sf.ehcache.config.Configuration();
-      cacheManConfig.setDynamicConfig(true);
-      cacheManConfig.setUpdateCheck(false);
-      cacheManConfig.addDefaultCache(defaultCacheConfig);
-      cacheManager = new CacheManager(cacheManConfig);
-    }
 
     cacheManager.addCacheIfAbsent("tasks-by-id");
     allTasksById = cacheManager.getCache("tasks-by-id");

@@ -3,7 +3,6 @@ package ecologylab.bigsemantics.documentcache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
-import net.sf.ehcache.config.CacheConfiguration;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.net.ParsedURL;
 
@@ -18,18 +17,13 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
   /**
    * The name of the underlying cache in the Ehcache system.
    */
-  static final String EHCACHE_NAME = "bigsemantics-document-cache";
+  static final String  EHCACHE_NAME = "bigsemantics-document-cache";
 
-  private Ehcache     cache;
+  private Ehcache      cache;
 
-  public EhCacheDocumentCache()
+  public EhCacheDocumentCache(CacheManager cacheManager)
   {
-    CacheManager cacheManager = getDefaultCacheManager();
-    if (cacheManager.cacheExists(EHCACHE_NAME))
-    {
-      cacheManager.removeCache(EHCACHE_NAME);
-    }
-    cacheManager.addCache(EHCACHE_NAME);
+    cacheManager.addCacheIfAbsent(EHCACHE_NAME);
     cache = cacheManager.getCache(EHCACHE_NAME);
   }
 
@@ -88,33 +82,6 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
   public boolean remove(ParsedURL key, Document oldDocument)
   {
     return cache.removeElement(new Element(key, oldDocument));
-  }
-  
-  private static CacheManager defaultCacheManager;
-  
-  public static synchronized void setDefaultCacheManager(CacheManager cacheManager)
-  {
-    defaultCacheManager = cacheManager;
-  }
-  
-  public static CacheManager getDefaultCacheManager()
-  {
-    if (defaultCacheManager != null)
-    {
-      return defaultCacheManager;
-    }
-
-    CacheConfiguration defaultCacheConfig = new CacheConfiguration();
-    defaultCacheConfig.setMaxEntriesLocalHeap(1000);
-    defaultCacheConfig.setEternal(true);
-    defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
-    net.sf.ehcache.config.Configuration cacheManConfig = new net.sf.ehcache.config.Configuration();
-    cacheManConfig.setDynamicConfig(true);
-    cacheManConfig.setUpdateCheck(false);
-    cacheManConfig.addDefaultCache(defaultCacheConfig);
-    CacheManager cacheManager = new CacheManager(cacheManConfig);
-    setDefaultCacheManager(cacheManager);
-    return cacheManager;
   }
 
 }

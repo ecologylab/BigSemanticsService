@@ -33,13 +33,14 @@ import ecologylab.bigsemantics.downloaderpool.resources.TaskRequest;
  */
 public class DownloaderPoolApplication
 {
-  
+
   public static class HelloServlet extends HttpServlet
   {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-        throws ServletException, IOException {
+        throws ServletException, IOException
+    {
       resp.setContentType("text/html");
       resp.getWriter().println("Hello world!");
       resp.setStatus(HttpServletResponse.SC_OK);
@@ -47,16 +48,67 @@ public class DownloaderPoolApplication
 
   }
 
-  public static ServletContainer getDpoolContainer() throws ConfigurationException
+  private Configuration configs;
+
+  private CacheManager  cacheManager;
+
+  private Controller    controller;
+
+  private Server        server;
+
+  private Downloader    downloader;
+
+  public DownloaderPoolApplication()
   {
-    return getDpoolContainer(null);
+    super();
+    configs = Configs.loadProperties("dpool.properties");
   }
 
-  public static ServletContainer getDpoolContainer(CacheManager cacheManager)
-      throws ConfigurationException
+  public Configuration getConfigs()
   {
-    Configuration configs = Configs.loadProperties("dpool.properties");
-    final Controller controller = new Controller(configs, cacheManager);
+    return configs;
+  }
+
+  public void setCacheManager(CacheManager cacheManager)
+  {
+    this.cacheManager = cacheManager;
+  }
+
+  public void initialize() throws ConfigurationException
+  {
+    if (server == null)
+    {
+      ServletContainer container = getDpoolContainer();
+
+      // set up jetty handler for servlets
+      ServletContextHandler handler = new ServletContextHandler();
+      handler.setContextPath("/");
+      handler.addServlet(new ServletHolder(new HelloServlet()), "/hello");
+      handler.addServlet(new ServletHolder(container), "/DownloaderPool/*");
+
+      // set up jetty server components
+      QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
+      server = new Server(threadPool);
+      // num of acceptors: num of cores - 1
+      // num of selectors: use default guess. in practice, depend on cores, load, etc.
+      int cores = Runtime.getRuntime().availableProcessors();
+      ServerConnector connector = new ServerConnector(server, cores - 1, -1);
+      connector.setPort(8080);
+      server.addConnector(connector);
+
+      // misc server settings
+      server.setStopAtShutdown(true);
+
+      // connect handler to server
+      server.setHandler(handler);
+    }
+
+    getDownloader();
+  }
+
+  public ServletContainer getDpoolContainer() throws ConfigurationException
+  {
+    controller = new Controller(configs, cacheManager);
     controller.start();
 
     // set up jersey servlet
@@ -82,43 +134,62 @@ public class DownloaderPoolApplication
     return container;
   }
 
-
-  public static void main(String[] args) throws ConfigurationException
+  public Downloader getDownloader()
   {
-    ServletContainer container = getDpoolContainer();
+    if (downloader == null)
+    {
+      synchronized (this)
+      {
+        if (downloader == null)
+        {
+          downloader = new Downloader(configs);
+        }
+      }
+    }
+    return downloader;
+  }
 
-    // set up jetty handler for servlets
-    ServletContextHandler handler = new ServletContextHandler();
-    handler.setContextPath("/");
-    handler.addServlet(new ServletHolder(new HelloServlet()), "/hello");
-    handler.addServlet(new ServletHolder(container), "/DownloaderPool/*");
-
-    // set up jetty server components
-    QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
-    Server server = new Server(threadPool);
-    // num of acceptors: num of cores - 1
-    // num of selectors: use default guess. in practice, depend on cores, load, etc.
-    int cores = Runtime.getRuntime().availableProcessors();
-    ServerConnector connector = new ServerConnector(server, cores - 1, -1);
-    connector.setPort(8080);
-    server.addConnector(connector);
-
-    // misc server settings
-    server.setStopAtShutdown(true);
-
-    // connect handler to server
-    server.setHandler(handler);
+  public void start() throws Exception
+  {
+    if (server == null)
+    {
+      throw new RuntimeException("Server uninitialized!");
+    }
 
     // run server
-    try
+    server.start();
+
+    // run a downloader
+    downloader.start();
+  }
+
+  public void join() throws InterruptedException
+  {
+    if (server == null)
     {
-      server.start();
-      server.join();
+      throw new RuntimeException("Server uninitialized!");
     }
-    catch (Exception e)
+
+    server.join();
+  }
+
+  public void stop() throws Exception
+  {
+    if (server == null)
     {
-      e.printStackTrace();
+      throw new RuntimeException("Server uninitialized!");
     }
+
+    downloader.stop();
+    server.stop();
+  }
+
+  public static void main(String[] args) throws Exception
+  {
+    DownloaderPoolApplication app = new DownloaderPoolApplication();
+    app.setCacheManager(GlobalCacheManager.getSingleton());
+    app.initialize();
+    app.start();
   }
 
 }
