@@ -122,7 +122,7 @@ class ServiceBuilder:
     time.sleep(5)
     fork(["nohup", "java", "-server", "-jar", "BigSemanticsService.jar"],
           wd=self.deploy_dir)
-    time.sleep(5)
+    time.sleep(20)
 
   def archive_local_service(self):
     self.archive(self.service_build, "BigSemanticsService.jar")
