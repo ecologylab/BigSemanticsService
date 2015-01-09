@@ -14,9 +14,13 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.Slf4jRequestLog;
 import org.eclipse.jetty.server.handler.AllowSymLinkAliasChecker;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -142,14 +146,35 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
 
       // step 3: set up static resource handler
       ContextHandler staticContext = getStaticResourceHandler();
+      
+      // step 4: set up a request log
+      Slf4jRequestLog requestLog = new Slf4jRequestLog() {
+        @Override
+        public void write(String requestEntry) throws IOException
+        {
+          if (requestEntry.contains("GET /BigSemanticsService/"))
+          {
+            super.write(requestEntry);
+          }
+        }
+      };
+      requestLog.setExtended(true);
+      requestLog.setLogLatency(true);
+      requestLog.setLogTimeZone("America/Chicago");
+      RequestLogHandler requestLogHandler = new RequestLogHandler();
+      requestLogHandler.setRequestLog(requestLog);
 
-      // step 4: connect handlers to server
-      ContextHandlerCollection handlers = new ContextHandlerCollection();
+      // step 5: connect handlers to server
+      HandlerCollection handlers = new HandlerCollection();
+      ContextHandlerCollection contextHandlers = new ContextHandlerCollection();
       if (staticContext != null)
       {
-        handlers.addHandler(staticContext);
+        contextHandlers.addHandler(staticContext);
       }
-      handlers.addHandler(servletContext);
+      contextHandlers.addHandler(servletContext);
+      handlers.addHandler(contextHandlers);
+      handlers.addHandler(new DefaultHandler());
+      handlers.addHandler(requestLogHandler);
       server.setHandler(handlers);
     }
   }
