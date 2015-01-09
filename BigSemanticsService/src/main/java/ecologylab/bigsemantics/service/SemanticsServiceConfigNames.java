@@ -1,20 +1,29 @@
 package ecologylab.bigsemantics.service;
 
+/**
+ * Config names.
+ * 
+ * @author quyin
+ */
 public interface SemanticsServiceConfigNames
 {
 
-  static String MAX_THREADS   = "threads.max_count";
+  static final String PORT                   = "service.port";
 
-  static String MIN_THREADS   = "threads.min_count";
+  static final String MAX_THREADS            = "service.threads.max";
 
-  static String NUM_ACCEPTORS = "acceptors.max_count";
+  static final String MIN_THREADS            = "service.threads.min";
 
-  static String NUM_SELECTORS = "selectors.max_count";
+  static final String NUM_ACCEPTORS          = "service.acceptors";
 
-  static String PORT          = "port";
+  static final String NUM_SELECTORS          = "service.selectors";
 
-  static String STATIC_DIR    = "static_dir";
-  
-  static String PERSISTENT_CACHE_CLASS = "ecologylab.bigsemantics.documentcache.DiskPersistentDocumentCache";
+  static final String STATIC_DIR             = "service.static_dir";
+
+  static final String PERSISTENT_CACHE_CLASS = "service.persistent_cache.class";
+
+  static final String CACHE_DIR              = "service.persistent_cache.dir";
+
+  static final String NO_BUILTIN_DPOOL       = "service.no_builtin_dpool";
 
 }

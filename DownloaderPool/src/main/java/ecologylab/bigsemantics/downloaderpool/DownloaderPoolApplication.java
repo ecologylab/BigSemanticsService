@@ -1,6 +1,8 @@
 package ecologylab.bigsemantics.downloaderpool;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -21,6 +23,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import ecologylab.bigsemantics.Configs;
+import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.downloaderpool.resources.Echo;
 import ecologylab.bigsemantics.downloaderpool.resources.LogRequest;
 import ecologylab.bigsemantics.downloaderpool.resources.PageRequest;
@@ -31,7 +34,7 @@ import ecologylab.bigsemantics.downloaderpool.resources.TaskRequest;
  * 
  * @author quyin
  */
-public class DownloaderPoolApplication
+public class DownloaderPoolApplication implements DpoolConfigNames
 {
 
   public static class HelloServlet extends HttpServlet
@@ -93,7 +96,7 @@ public class DownloaderPoolApplication
       // num of selectors: use default guess. in practice, depend on cores, load, etc.
       int cores = Runtime.getRuntime().availableProcessors();
       ServerConnector connector = new ServerConnector(server, cores - 1, -1);
-      connector.setPort(8080);
+      connector.setPort(configs.getInt(CONTROLLER_PORT, 8080));
       server.addConnector(connector);
 
       // misc server settings
@@ -103,7 +106,7 @@ public class DownloaderPoolApplication
       server.setHandler(handler);
     }
 
-    getDownloader();
+    downloader = new Downloader(configs);
   }
 
   public ServletContainer getDpoolContainer() throws ConfigurationException
@@ -132,21 +135,6 @@ public class DownloaderPoolApplication
     ServletContainer container = new ServletContainer(config);
 
     return container;
-  }
-
-  public Downloader getDownloader()
-  {
-    if (downloader == null)
-    {
-      synchronized (this)
-      {
-        if (downloader == null)
-        {
-          downloader = new Downloader(configs);
-        }
-      }
-    }
-    return downloader;
   }
 
   public void start() throws Exception
@@ -186,7 +174,12 @@ public class DownloaderPoolApplication
 
   public static void main(String[] args) throws Exception
   {
+    Map<String, String> flags = new HashMap<String, String>();
+    Utils.parseCommandlineFlags(flags, args);
+
     DownloaderPoolApplication app = new DownloaderPoolApplication();
+    Configuration appConfigs = app.getConfigs();
+    Utils.mergeFlagsToConfigs(appConfigs, flags);
     app.setCacheManager(GlobalCacheManager.getSingleton());
     app.initialize();
     app.start();

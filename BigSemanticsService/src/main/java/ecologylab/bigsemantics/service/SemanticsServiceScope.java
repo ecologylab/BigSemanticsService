@@ -18,6 +18,7 @@ import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
 import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
+import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.metadata.builtins.Document;
@@ -88,7 +89,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     // TODO add configure() to PersistentDocumentCache, or use constructor to inject configs
     if (persistentDocCache instanceof DiskPersistentDocumentCache)
     {
-      String cacheBaseDir = configs.getString("cache-dir", "cache");
+      String cacheBaseDir = configs.getString(CACHE_DIR);
       if (!((DiskPersistentDocumentCache) persistentDocCache).configure(cacheBaseDir))
       {
         logger.error("Cannot configure cache! Will not cache anything.");
@@ -98,8 +99,9 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
   private void configureDpoolServiceUrl()
   {
-    String[] dpoolServices = configs.getStringArray("dpool-service");
-    dpoolServiceUrl = DPoolDownloadController.pickDpoolServiceUrl(dpoolServices);
+    String[] dpoolHosts = configs.getStringArray(DpoolConfigNames.CONTROLLER_HOST);
+    int port = configs.getInt(DpoolConfigNames.CONTROLLER_PORT);
+    dpoolServiceUrl = DPoolDownloadController.pickDpoolServiceUrl(port, dpoolHosts);
     if (dpoolServiceUrl == null)
     {
       String msg = "Cannot locate DPool service!";

@@ -37,7 +37,7 @@ import ecologylab.logging.LogEvent;
  */
 @Service
 @Singleton
-public class Controller extends Routine implements ControllerConfigNames
+public class Controller extends Routine implements DpoolConfigNames
 {
 
   private static Logger                   logger = LoggerFactory.getLogger(Controller.class);

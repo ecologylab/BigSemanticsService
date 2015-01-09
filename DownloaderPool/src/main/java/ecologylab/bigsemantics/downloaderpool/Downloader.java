@@ -1,6 +1,7 @@
 package ecologylab.bigsemantics.downloaderpool;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,6 @@ import java.util.Set;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -35,12 +35,14 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author quyin
  * 
  */
-public class Downloader extends Routine implements DownloaderConfigNames
+public class Downloader extends Routine implements DpoolConfigNames
 {
 
   private static Logger logger = LoggerFactory.getLogger(Downloader.class);
 
   // configs:
+
+  private Configuration configs;
 
   private String        name;
 
@@ -61,13 +63,13 @@ public class Downloader extends Routine implements DownloaderConfigNames
   public Downloader(Configuration configs)
   {
     super();
-    
+
+    this.configs = configs;
+
     int maxError = configs.getInt(MAX_ERROR, 50);
     setMaxError(maxError);
 
-    this.name = configs.getString(NAME, null);
-    String[] baseUrls = configs.getStringArray(CONTROLLER_BASE_URL);
-    this.controllerBaseUrl = findWorkingControllerBaseUrl(baseUrls);
+    this.name = configs.getString(DOWNLOADER_NAME, null);
     this.numDownloadThreads = configs.getInt(NUM_DOWNLOADING_THREADS, 4);
     this.maxTaskCount = configs.getInt(MAX_TASK_COUNT, 10);
 
@@ -80,21 +82,29 @@ public class Downloader extends Routine implements DownloaderConfigNames
     logger.info("Downloader[{}] is constructed and ready.", name);
   }
 
-  protected String findWorkingControllerBaseUrl(String... baseUrls)
+  protected String findWorkingControllerBaseUrl(String... controllerHosts)
   {
-    for (String baseUrl : baseUrls)
+    Integer port = configs.getInt(CONTROLLER_PORT);
+    List<String> baseUrls = new ArrayList<String>();
+    for (String controllerHost : controllerHosts)
     {
-      String echoUrl = baseUrl + "echo/get";
-      if (tryEcho(echoUrl))
+      String baseUrl = "http://" + controllerHost + ":" + port + "/DownloaderPool/";
+      if (!baseUrls.contains(baseUrl))
       {
-        logger.info("Connected to controller using " + echoUrl);
-        return baseUrl;
-      }
-      else
-      {
-        logger.info("No controller found using " + echoUrl);
+        baseUrls.add(baseUrl);
       }
     }
+
+    for (String baseUrl : baseUrls)
+    {
+      if (tryEcho(baseUrl + "echo/get"))
+      {
+        logger.info("Connected to controller using " + baseUrl);
+        return baseUrl;
+      }
+    }
+
+    logger.info("No controller found using " + controllerHosts);
     return null;
   }
 
@@ -142,7 +152,7 @@ public class Downloader extends Routine implements DownloaderConfigNames
    * the same website too frequently.
    * 
    * @return The list of retrieved tasks. If failed, null.
-   * @throws IOException 
+   * @throws IOException
    */
   public List<Task> requestTasks() throws IOException
   {
@@ -309,6 +319,14 @@ public class Downloader extends Routine implements DownloaderConfigNames
     DownloaderResponder downloaderResponder = new DownloaderResponder(reportUrl, associatedTask);
     downloaderResponder.downloader = this;
     return downloaderResponder;
+  }
+
+  @Override
+  public void start()
+  {
+    String[] controllerHosts = configs.getStringArray(CONTROLLER_HOST);
+    this.controllerBaseUrl = findWorkingControllerBaseUrl(controllerHosts);
+    super.start();
   }
 
   @Override

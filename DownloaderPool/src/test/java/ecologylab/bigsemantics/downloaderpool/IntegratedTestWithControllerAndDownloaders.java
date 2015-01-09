@@ -122,7 +122,7 @@ public class IntegratedTestWithControllerAndDownloaders
     downloaders = new ArrayList<Downloader>(n);
     for (int i = 0; i < n; ++i)
     {
-      configs.setProperty(Downloader.NAME, "D" + (i + 1));
+      configs.setProperty(Downloader.DOWNLOADER_NAME, "D" + (i + 1));
       Downloader d = new Downloader(configs);
       d.start();
       downloaders.add(d);

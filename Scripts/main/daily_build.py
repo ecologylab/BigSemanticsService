@@ -98,6 +98,8 @@ class ServiceBuilder:
 
   def compile_projs(self):
     # compile service
+    check_call(["find", ".", "-name", "build", "-exec", "rm", "-rf", "{}", ";"],
+               wd=self.code_dir)
     check_call(["ant", "clean"], wd=self.service_proj)
     check_call(["ant", "main"], wd=self.service_proj)
     cmds = ["python", self.example_table_script,

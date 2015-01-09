@@ -224,13 +224,14 @@ public class DPoolDownloadController extends AbstractDownloadController
 
   private static String TEST_STR = "TEST_STR";
 
-  public static String pickDpoolServiceUrl(String... dpoolServices)
+  public static String pickDpoolServiceUrl(Integer port, String... dpoolHosts)
   {
     BasicResponseHandler handler = new BasicResponseHandler();
-    for (String dpoolService : dpoolServices)
+    for (String dpoolHost : dpoolHosts)
     {
-      logger.info("Trying dpool service at " + dpoolService);
-      String testLoc = dpoolService.replace("page/download.xml", "echo/get?msg=" + TEST_STR);
+      logger.info("Trying dpool service at " + dpoolHost);
+      String testLoc =
+          "http://" + dpoolHost + ":" + port + "/DownloaderPool/echo/get?msg=" + TEST_STR;
       AbstractHttpClient client = httpClientFactory.get();
       HttpGet get = new HttpGet(testLoc);
       try
@@ -242,14 +243,14 @@ public class DPoolDownloadController extends AbstractDownloadController
           String content = resp.getContent();
           if (content.contains(TEST_STR))
           {
-            logger.info("Picked dpool service at " + dpoolService);
-            return dpoolService;
+            logger.info("Picked dpool service at " + dpoolHost);
+            return "http://" + dpoolHost + ":" + port + "/DownloaderPool/page/download.xml";
           }
         }
       }
       catch (Throwable t)
       {
-        logger.warn("Dpool service not reachable at: " + dpoolService);
+        logger.warn("Dpool service not reachable at: " + dpoolHost);
       }
       finally
       {
