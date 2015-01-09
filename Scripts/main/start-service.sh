@@ -28,7 +28,7 @@ if [ -d "$_BSS_DIR" ]; then
   #   sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
   echo "Starting BigSemantics service ..."
   nohup java -server -jar BigSemanticsService.jar 2>&1 > /dev/null &
-  sleep 5
+  sleep 20
   echo "Done."
 else
   echo "Service directory not found: $_BSS_DIR"
