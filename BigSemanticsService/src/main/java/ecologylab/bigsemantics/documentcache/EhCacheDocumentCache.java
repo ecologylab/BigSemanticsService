@@ -25,18 +25,19 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
   {
     cacheManager.addCacheIfAbsent(EHCACHE_NAME);
     cache = cacheManager.getCache(EHCACHE_NAME);
+    cache.removeAll();
   }
 
   @Override
   public boolean containsKey(ParsedURL key)
   {
-    return cache.isKeyInCache(key);
+    return cache.isKeyInCache(key.toString());
   }
 
   @Override
   public Document get(ParsedURL key)
   {
-    Element element = cache.get(key);
+    Element element = cache.get(key.toString());
     return element == null ? null : (Document) element.getObjectValue();
   }
 
@@ -49,39 +50,45 @@ public class EhCacheDocumentCache implements DocumentCache<ParsedURL, Document>
   @Override
   public void put(ParsedURL key, Document document)
   {
-    cache.put(new Element(key, document));
+    cache.put(new Element(key.toString(), document));
   }
 
   @Override
   public Document putIfAbsent(ParsedURL key, Document document)
   {
-    Element prev = cache.putIfAbsent(new Element(key, document));
+    Element prev = cache.putIfAbsent(new Element(key.toString(), document));
     return prev == null ? null : (Document) prev.getObjectValue();
   }
 
   @Override
   public boolean replace(ParsedURL key, Document oldDocument, Document newDocument)
   {
-    return cache.replace(new Element(key, oldDocument), new Element(key, newDocument));
+    String k = key.toString();
+    return cache.replace(new Element(k, oldDocument), new Element(k, newDocument));
   }
 
   @Override
   public Document replace(ParsedURL key, Document newDocument)
   {
-    Element prev = cache.replace(new Element(key, newDocument));
+    Element prev = cache.replace(new Element(key.toString(), newDocument));
     return prev == null ? null : (Document) prev.getObjectValue();
   }
 
   @Override
   public void remove(ParsedURL key)
   {
-    cache.remove(key);
+    cache.remove(key.toString());
   }
 
   @Override
   public boolean remove(ParsedURL key, Document oldDocument)
   {
-    return cache.removeElement(new Element(key, oldDocument));
+    return cache.removeElement(new Element(key.toString(), oldDocument));
+  }
+  
+  Ehcache getEhcache()
+  {
+    return cache;
   }
 
 }

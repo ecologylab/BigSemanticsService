@@ -5,12 +5,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.Ehcache;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.config.CacheConfiguration;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.metadata.builtins.Document;
+import ecologylab.bigsemantics.metadata.builtins.RichDocument;
 import ecologylab.net.ParsedURL;
 
 /**
@@ -39,12 +44,12 @@ public class TestEhCacheDocumentCache
   }
 
   @Test
-	public void testContainsKey_shouldContain()
-	{
-		cache.put(key, new Document());
-		
-		assertTrue("Map contains previously added key and value", cache.containsKey(key));
-	}
+  public void testContainsKey_shouldContain()
+  {
+    cache.put(key, new RichDocument());
+
+    assertTrue("Map contains previously added key and value", cache.containsKey(key));
+  }
 
   @Test
   public void testGet_empty()
@@ -55,7 +60,7 @@ public class TestEhCacheDocumentCache
   @Test
   public void testPutAndGet()
   {
-    Document someDoc = new Document();
+    Document someDoc = new RichDocument();
     String title = "test title";
     someDoc.setTitle(title);
     cache.put(key, someDoc);
@@ -68,7 +73,7 @@ public class TestEhCacheDocumentCache
   @Test
   public void testPutIfAbsent_notPresent()
   {
-    Document someDoc = new Document();
+    Document someDoc = new RichDocument();
     String title = "test title";
     someDoc.setTitle(title);
     cache.putIfAbsent(key, someDoc);
@@ -82,12 +87,12 @@ public class TestEhCacheDocumentCache
   public void testPutIfAbsent_alreadyPresent()
   {
     String title1 = "test title 1";
-    Document someDoc1 = new Document();
+    Document someDoc1 = new RichDocument();
     someDoc1.setTitle(title1);
     cache.put(key, someDoc1);
 
     String title2 = "test title 2";
-    Document someDoc2 = new Document();
+    Document someDoc2 = new RichDocument();
     someDoc2.setTitle(title2);
     Document doc = cache.putIfAbsent(key, someDoc2);
     assertNotNull(doc);
@@ -101,12 +106,12 @@ public class TestEhCacheDocumentCache
   public void testReplace_exists()
   {
     String title1 = "test title 1";
-    Document someDoc1 = new Document();
+    Document someDoc1 = new RichDocument();
     someDoc1.setTitle(title1);
     cache.put(key, someDoc1);
 
     String title2 = "test title 2";
-    Document someDoc2 = new Document();
+    Document someDoc2 = new RichDocument();
     someDoc2.setTitle(title2);
     Document doc = cache.replace(key, someDoc2);
 
@@ -120,20 +125,43 @@ public class TestEhCacheDocumentCache
   @Test
   public void testReplace_doesNotExist()
   {
-    assertNull(cache.replace(key, new Document()));
+    assertNull(cache.replace(key, new RichDocument()));
   }
 
   @Test
   public void testRemove()
   {
     String title1 = "test title 1";
-    Document someDoc1 = new Document();
+    Document someDoc1 = new RichDocument();
     someDoc1.setTitle(title1);
     cache.put(key, someDoc1);
 
     cache.remove(key);
 
     assertFalse("The item was removed from the map", cache.containsKey(key));
+  }
+
+  @Test
+  public void testEvict()
+  {
+    int n = 10;
+
+    CacheConfiguration config = cache.getEhcache().getCacheConfiguration().clone();
+    config.setName("test-evict");
+    config.setMaxEntriesLocalHeap(n);
+    Ehcache smallCache = new Cache(config);
+    cache.getEhcache().getCacheManager().addCache(smallCache);
+
+    for (int i = 0; i < n + n; ++i)
+    {
+      ParsedURL key = ParsedURL.getAbsolute("http://example.com/page/" + i);
+      Document value = new RichDocument();
+      value.setTitle("Page " + i);
+      // smallCache.putIfAbsent(new Element(key, value)); // this will cause ehcache exception
+      smallCache.putIfAbsent(new Element(key.toString(), value));
+    }
+
+    assertEquals(n, smallCache.getSize());
   }
 
 }
