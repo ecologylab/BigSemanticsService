@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.metadata;
+package ecologylab.bigsemantics.service.resources;
 
 import ecologylab.bigsemantics.service.BasicTest;
 import ecologylab.bigsemantics.service.RequestType;

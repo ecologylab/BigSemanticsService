@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.metadata;
+package ecologylab.bigsemantics.service.resources;
 
 import java.io.IOException;
 import java.util.Date;
@@ -135,7 +135,6 @@ public class MetadataServiceHelper extends Debug
       throw new NullPointerException("Null Document after downloading and parsing: " + docPurl);
     }
 
-    document = null;
     docStatus = document.getDownloadStatus();
     switch (docStatus)
     {

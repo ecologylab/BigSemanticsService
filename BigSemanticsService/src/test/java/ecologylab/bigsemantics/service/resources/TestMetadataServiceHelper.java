@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.metadata;
+package ecologylab.bigsemantics.service.resources;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,6 +22,8 @@ import ecologylab.bigsemantics.generated.library.commodity.product.AmazonProduct
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
+import ecologylab.bigsemantics.service.resources.MetadataService;
+import ecologylab.bigsemantics.service.resources.MetadataServiceHelper;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.StringFormat;

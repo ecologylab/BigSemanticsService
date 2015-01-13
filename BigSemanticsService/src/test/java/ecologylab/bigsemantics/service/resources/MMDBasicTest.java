@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.mmd;
+package ecologylab.bigsemantics.service.resources;
 
 import ecologylab.bigsemantics.service.BasicTest;
 import ecologylab.bigsemantics.service.ParamType;

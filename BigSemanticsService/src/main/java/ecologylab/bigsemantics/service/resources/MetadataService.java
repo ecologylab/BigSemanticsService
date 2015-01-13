@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.metadata;
+package ecologylab.bigsemantics.service.resources;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +30,7 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class MetadataService
 {
 
-  Logger                logger = LoggerFactory.getLogger(MetadataService.class);
+  static Logger         logger = LoggerFactory.getLogger(MetadataService.class);
 
   @Context
   HttpServletRequest    request;

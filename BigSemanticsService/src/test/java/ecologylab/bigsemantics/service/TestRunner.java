@@ -2,12 +2,12 @@ package ecologylab.bigsemantics.service;
 
 import java.util.ArrayList;
 
-import ecologylab.bigsemantics.service.metadata.MetadataBadRequest;
-import ecologylab.bigsemantics.service.metadata.MetadataNotFound;
-import ecologylab.bigsemantics.service.metadata.MetadataOK;
-import ecologylab.bigsemantics.service.mmd.MMDBadRequest;
-import ecologylab.bigsemantics.service.mmd.MMDNotFound;
-import ecologylab.bigsemantics.service.mmd.MMDStatusOK;
+import ecologylab.bigsemantics.service.resources.MMDBadRequest;
+import ecologylab.bigsemantics.service.resources.MMDNotFound;
+import ecologylab.bigsemantics.service.resources.MMDStatusOK;
+import ecologylab.bigsemantics.service.resources.MetadataBadRequest;
+import ecologylab.bigsemantics.service.resources.MetadataNotFound;
+import ecologylab.bigsemantics.service.resources.MetadataOK;
 import ecologylab.serialization.formatenums.StringFormat;
 
 public class TestRunner

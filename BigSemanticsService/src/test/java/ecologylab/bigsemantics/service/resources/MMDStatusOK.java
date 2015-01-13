@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.mmd;
+package ecologylab.bigsemantics.service.resources;
 
 import javax.ws.rs.core.Response;
 

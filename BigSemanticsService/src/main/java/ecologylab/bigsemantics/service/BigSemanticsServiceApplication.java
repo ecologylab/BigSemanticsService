@@ -40,15 +40,9 @@ import ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
-import ecologylab.bigsemantics.service.metadata.MetadataService;
-import ecologylab.bigsemantics.service.metadata.MetadataServiceHelper;
-import ecologylab.bigsemantics.service.mmd.MMDJSONPService;
-import ecologylab.bigsemantics.service.mmd.MMDJSONService;
-import ecologylab.bigsemantics.service.mmd.MMDXMLService;
-import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryJSONPService;
-import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryJSONService;
-import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryVersion;
-import ecologylab.bigsemantics.service.mmdrepository.MMDRepositoryXMLService;
+import ecologylab.bigsemantics.service.resources.MetadataService;
+import ecologylab.bigsemantics.service.resources.MmdRepoService;
+import ecologylab.bigsemantics.service.resources.MmdService;
 
 /**
  * Glues different components of the service together.
@@ -145,9 +139,10 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
 
       // step 3: set up static resource handler
       ContextHandler staticContext = getStaticResourceHandler();
-      
+
       // step 4: set up a request log
-      Slf4jRequestLog requestLog = new Slf4jRequestLog() {
+      Slf4jRequestLog requestLog = new Slf4jRequestLog()
+      {
         @Override
         public void write(String requestEntry) throws IOException
         {
@@ -187,13 +182,8 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     // as the result, Jersey classpath scanning won't work properly for now.
     // hopefully this can be fixed soon. right now we need to specify classes.
     config.register(MetadataService.class);
-    config.register(MMDXMLService.class);
-    config.register(MMDJSONPService.class);
-    config.register(MMDJSONService.class);
-    config.register(MMDRepositoryXMLService.class);
-    config.register(MMDRepositoryJSONService.class);
-    config.register(MMDRepositoryJSONPService.class);
-    config.register(MMDRepositoryVersion.class);
+    config.register(MmdService.class);
+    config.register(MmdRepoService.class);
 
     semanticsServiceScope =
         new SemanticsServiceScope(RepositoryMetadataTypesScope.get(), CybernekoWrapper.class);

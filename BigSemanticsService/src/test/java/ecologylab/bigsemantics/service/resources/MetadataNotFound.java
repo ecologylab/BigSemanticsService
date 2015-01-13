@@ -1,18 +1,17 @@
-package ecologylab.bigsemantics.service.mmd;
+package ecologylab.bigsemantics.service.resources;
 
 import javax.ws.rs.core.Response;
 
-import ecologylab.bigsemantics.service.ParamType;
 import ecologylab.serialization.formatenums.StringFormat;
 
-public class MMDNotFound extends MMDBasicTest
+public class MetadataNotFound extends MetadataBasicTest
 {
 
-	public MMDNotFound(String urlOrName, StringFormat format, ParamType paramType)
+	public MetadataNotFound(String uri, StringFormat format)
 	{
-		super(urlOrName, format, paramType);
+		super(uri, format);
 	}
-	
+
 	@Override
 	public boolean doTest()
 	{
@@ -28,5 +27,4 @@ public class MMDNotFound extends MMDBasicTest
 			return false;
 		}
 	}
-
 }
