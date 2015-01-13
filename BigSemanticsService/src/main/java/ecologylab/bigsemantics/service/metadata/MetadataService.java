@@ -1,5 +1,6 @@
 package ecologylab.bigsemantics.service.metadata;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -15,10 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
-import ecologylab.bigsemantics.metadata.Metadata;
-import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
+import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
-import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -31,30 +30,38 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class MetadataService
 {
 
-  Logger                     logger = LoggerFactory.getLogger(MetadataService.class);
+  Logger                logger = LoggerFactory.getLogger(MetadataService.class);
 
   @Context
-  private HttpServletRequest request;
+  HttpServletRequest    request;
+
+  String                clientIp;
 
   @QueryParam("url")
-  private String             docUrl;
+  String                docUrl;
+
+  ParsedURL             docPurl;
 
   @QueryParam("callback")
-  private String             callback;
+  String                callback;
 
   @QueryParam("reload")
-  private boolean            reload;
+  boolean               reload;
+
+  @Inject
+  SemanticsServiceScope semanticsServiceScope;
 
   /**
    * The utility method that actually generate the response; used by getJsonp(), getJson(), and
    * getXml().
    * 
    * @param format
+   * @param mediaType
    * @return
    */
-  Response getResponse(StringFormat format)
+  Response getResponse(StringFormat format, String mediaType)
   {
-    String clientIp = request.getRemoteAddr();
+    clientIp = request.getRemoteAddr();
     String msg =
         String.format("Request from %s: %s, in %s, reload=%s", clientIp, docUrl, format, reload);
     byte[] fpBytes = Utils.fingerprintBytes("" + System.currentTimeMillis() + "|" + msg);
@@ -67,11 +74,30 @@ public class MetadataService
     Response resp = null;
     Status errorStatus = Status.INTERNAL_SERVER_ERROR;
     String errorMsg = "Unknown error.";
-    ParsedURL docPurl = ParsedURL.getAbsolute(docUrl);
+    docPurl = ParsedURL.getAbsolute(docUrl);
     if (docPurl != null)
     {
-      MetadataServiceHelper helper = new MetadataServiceHelper();
-      resp = helper.getMetadataResponse(clientIp, docPurl, format, reload);
+      try
+      {
+        MetadataServiceHelper helper = new MetadataServiceHelper(this);
+        int statusCode = helper.getMetadata();
+        if (statusCode == 200)
+        {
+          String respBody = helper.serializeResultDocument(format);
+          resp = Response.status(Status.OK).entity(respBody).type(mediaType).build();
+        }
+        else
+        {
+          errorStatus = Status.fromStatusCode(statusCode);
+          errorMsg = helper.errorMessage;
+        }
+      }
+      catch (Exception e)
+      {
+        errorMsg = "Exception happened: " + e.getMessage() + "; Details:\n"
+                   + Utils.getStackTraceAsString(e);
+        logger.error("Exception when processing " + docPurl, e);
+      }
     }
     else
     {
@@ -97,7 +123,7 @@ public class MetadataService
   @Produces("application/javascript")
   public Response getJsonp()
   {
-    Response resp = getResponse(StringFormat.JSON);
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
     int status = resp.getStatus();
     if (status >= 400) // client or server error
     {
@@ -113,7 +139,7 @@ public class MetadataService
   @Produces("application/json")
   public Response getJson()
   {
-    Response resp = getResponse(StringFormat.JSON);
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
     return resp;
   }
 
@@ -122,7 +148,7 @@ public class MetadataService
   @Produces("application/xml")
   public Response getXml()
   {
-    Response resp = getResponse(StringFormat.XML);
+    Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML);
     return resp;
   }
 

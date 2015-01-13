@@ -4,6 +4,7 @@
 package ecologylab.bigsemantics.service;
 
 import org.apache.commons.configuration.Configuration;
+import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ import ecologylab.serialization.SimplTypesScope.GRAPH_SWITCH;
  * 
  * @author ajit
  */
+@Service
 public class SemanticsServiceScope extends SemanticsGlobalScope
     implements SemanticsServiceConfigNames
 {
