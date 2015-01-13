@@ -5,7 +5,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import ecologylab.bigsemantics.metametadata.MetaMetadataRepository;
-import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
+import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.SimplTypesScope;
@@ -41,11 +41,11 @@ public class MMDRepositoryServiceHelper {
 			{
 				e.printStackTrace();
 				return Response.status(Status.INTERNAL_SERVER_ERROR)
-						.entity(SemanticServiceErrorMessages.INTERNAL_ERROR).type(MediaType.TEXT_PLAIN).build();
+						.entity(SemanticsServiceErrorMessages.INTERNAL_ERROR).type(MediaType.TEXT_PLAIN).build();
 			}
 		}
 		else
-			return Response.status(Status.NOT_FOUND).entity(SemanticServiceErrorMessages.METAMETADATA_NOT_FOUND)
+			return Response.status(Status.NOT_FOUND).entity(SemanticsServiceErrorMessages.METAMETADATA_NOT_FOUND)
 						.type(MediaType.TEXT_PLAIN).build();
 	}
 }

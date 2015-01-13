@@ -18,7 +18,7 @@ import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
 import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
 import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
-import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
+import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.generic.Debug;
@@ -33,7 +33,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author ajit
  */
 public class MetadataServiceHelper extends Debug
-    implements SemanticServiceErrorMessages
+    implements SemanticsServiceErrorMessages
 {
 
   public static int                    CONTINUATION_TIMOUT = 60000;

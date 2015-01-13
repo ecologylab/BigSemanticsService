@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
-import ecologylab.bigsemantics.service.SemanticServiceErrorMessages;
+import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.ServiceUtils;
 import ecologylab.net.ParsedURL;
@@ -99,7 +99,7 @@ public class MMDServiceHelper implements MMDServiceParamNames
     {
       resp = Response
           .status(Status.BAD_REQUEST)
-          .entity(SemanticServiceErrorMessages.BAD_REQUEST)
+          .entity(SemanticsServiceErrorMessages.BAD_REQUEST)
           .type(MediaType.TEXT_PLAIN)
           .build();
     }
@@ -108,7 +108,7 @@ public class MMDServiceHelper implements MMDServiceParamNames
     {
       resp = Response
           .status(Status.NOT_FOUND)
-          .entity(SemanticServiceErrorMessages.METAMETADATA_NOT_FOUND)
+          .entity(SemanticsServiceErrorMessages.METAMETADATA_NOT_FOUND)
           .type(MediaType.TEXT_PLAIN)
           .build();
     }

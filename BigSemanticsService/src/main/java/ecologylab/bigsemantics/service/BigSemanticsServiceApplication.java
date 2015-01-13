@@ -40,9 +40,8 @@ import ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
-import ecologylab.bigsemantics.service.metadata.MetadataJSONPService;
-import ecologylab.bigsemantics.service.metadata.MetadataJSONService;
-import ecologylab.bigsemantics.service.metadata.MetadataXMLService;
+import ecologylab.bigsemantics.service.metadata.MetadataService;
+import ecologylab.bigsemantics.service.metadata.MetadataServiceHelper;
 import ecologylab.bigsemantics.service.mmd.MMDJSONPService;
 import ecologylab.bigsemantics.service.mmd.MMDJSONService;
 import ecologylab.bigsemantics.service.mmd.MMDXMLService;
@@ -187,9 +186,7 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     // we package everything into a runnable jar using OneJAR, which provides its own class loader.
     // as the result, Jersey classpath scanning won't work properly for now.
     // hopefully this can be fixed soon. right now we need to specify classes.
-    config.register(MetadataXMLService.class);
-    config.register(MetadataJSONService.class);
-    config.register(MetadataJSONPService.class);
+    config.register(MetadataService.class);
     config.register(MMDXMLService.class);
     config.register(MMDJSONPService.class);
     config.register(MMDJSONService.class);

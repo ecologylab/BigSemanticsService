@@ -8,7 +8,7 @@ package ecologylab.bigsemantics.service;
  * 
  * @author ajit
  */
-public interface SemanticServiceErrorMessages
+public interface SemanticsServiceErrorMessages
 {
 
   // 400
