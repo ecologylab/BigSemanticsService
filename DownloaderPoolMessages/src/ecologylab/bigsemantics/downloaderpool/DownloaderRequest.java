@@ -3,8 +3,7 @@ package ecologylab.bigsemantics.downloaderpool;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.base.Joiner;
-
+import ecologylab.generic.StringTools;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.annotations.simpl_collection;
 import ecologylab.serialization.annotations.simpl_scalar;
@@ -92,13 +91,11 @@ public class DownloaderRequest
       this.blacklist().add(domain);
   }
 
-  Joiner joiner = Joiner.on(',');
-
   public String getBlacklistString()
   {
     if (blacklist != null)
     {
-      return joiner.join(blacklist);
+      return StringTools.join(",", blacklist);
     }
     return null;
   }

@@ -3,6 +3,11 @@
   <groupId>ecologylab.net</groupId>
   <artifactId>DownloaderPoolMessages</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+
+  <properties>
+    <slf4j-version>1.7.5</slf4j-version>
+  </properties>
+  
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -18,14 +23,9 @@
   </build>
   <dependencies>
   	<dependency>
-  		<groupId>org.slf4j</groupId>
-  		<artifactId>slf4j-simple</artifactId>
-  		<version>1.7.5</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>com.google.guava</groupId>
-  		<artifactId>guava</artifactId>
-  		<version>14.0.1</version>
+  	  <groupId>org.slf4j</groupId>
+  	  <artifactId>slf4j-api</artifactId>
+  	  <version>${slf4j-version}</version>
   	</dependency>
   </dependencies>
 </project>
