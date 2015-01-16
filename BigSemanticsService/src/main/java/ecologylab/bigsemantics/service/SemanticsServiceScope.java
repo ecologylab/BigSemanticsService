@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.actions.SemanticsConstants;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
-import ecologylab.bigsemantics.documentcache.DiskPersistentDocumentCache;
 import ecologylab.bigsemantics.documentcache.DocumentCache;
 import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
@@ -74,28 +73,19 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     return configs;
   }
 
-  public void configure(Configuration configs) throws ClassNotFoundException
+  public void configure(Configuration configs) throws Exception
   {
     this.configs = configs;
 
     String pCacheClass = configs.getString(PERSISTENT_CACHE_CLASS);
     if (pCacheClass != null)
     {
-      Object pCacheObj =
-          ReflectionTools.getInstance(Class.forName(pCacheClass),
-                                      new Class<?>[] { SemanticsGlobalScope.class },
-                                      new Object[] { this });
-      persistentDocCache = (PersistentDocumentCache) pCacheObj;
-    }
-
-    // TODO add configure() to PersistentDocumentCache, or use constructor to inject configs
-    if (persistentDocCache instanceof DiskPersistentDocumentCache)
-    {
-      String cacheBaseDir = configs.getString(CACHE_DIR);
-      if (!((DiskPersistentDocumentCache) persistentDocCache).configure(cacheBaseDir))
-      {
-        logger.error("Cannot configure cache! Will not cache anything.");
-      }
+      Class<? extends PersistentDocumentCache> clazz =
+          (Class<? extends PersistentDocumentCache>) Class.forName(pCacheClass);
+      Class<?>[] ctorArgType = new Class<?>[] { SemanticsGlobalScope.class };
+      Object[] ctorArg = new Object[] { this };
+      persistentDocCache = ReflectionTools.getInstance(clazz, ctorArgType, ctorArg);
+      persistentDocCache.configure(configs);
     }
   }
 
@@ -157,21 +147,6 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   public boolean ifLookForFavicon()
   {
     return false;
-  }
-  
-  @Deprecated
-  private static SemanticsServiceScope singleton;
-  
-  @Deprecated
-  public static void setSingleton(SemanticsServiceScope singletonScope)
-  {
-    singleton = singletonScope;
-  }
-  
-  @Deprecated
-  public static SemanticsServiceScope get()
-  {
-    return singleton;
   }
 
 }

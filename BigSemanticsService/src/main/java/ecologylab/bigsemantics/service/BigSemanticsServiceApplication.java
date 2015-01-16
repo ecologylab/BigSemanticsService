@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.Slf4jRequestLog;
@@ -94,7 +93,7 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     return configs;
   }
 
-  public void initialize() throws ConfigurationException, ClassNotFoundException
+  public void initialize() throws Exception
   {
     if (server == null)
     {
@@ -173,7 +172,7 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     }
   }
 
-  public ServletContainer getBssContainer() throws ClassNotFoundException
+  public ServletContainer getBssContainer() throws Exception
   {
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -188,7 +187,6 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     semanticsServiceScope =
         new SemanticsServiceScope(RepositoryMetadataTypesScope.get(), CybernekoWrapper.class);
     semanticsServiceScope.configure(configs);
-    SemanticsServiceScope.setSingleton(semanticsServiceScope);
     config.register(new AbstractBinder()
     {
       @Override
