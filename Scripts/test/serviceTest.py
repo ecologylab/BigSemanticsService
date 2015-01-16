@@ -11,8 +11,8 @@ for example in examples:
 	if r.status_code == 200:
 		outFile.write(json.dumps(r.json()) + '\n')
 		countFound += 1
-	else:
-		outFile.write("error on url: " + example + '\n')
+	#else:
+	#	outFile.write("error on url: " + example + '\n')
 
 outFile.close()
 print "found " + str(countFound) +  " out of total " + str(len(examples))

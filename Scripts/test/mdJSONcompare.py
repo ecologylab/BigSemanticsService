@@ -16,7 +16,7 @@ firstLine = True
 for line in fileS:
 	if firstLine:
 		firstLine = False
-		servList.append(json.loads(line[3:]))
+		servList.append(json.loads(line))
 		continue
 	if len(line)>1:
 		servList.append(json.loads(line))
@@ -41,7 +41,7 @@ for x in range(0, len(servList2)):
 	for k in servList2[x][curKey]:
 		if k == "meta_metadata_name":
 			servList[x][curKey].pop(k, None)
-		if k == "service_log_record":
+		if k == "log_record":
 			servList[x][curKey].pop(k, None)
 		for k3 in servList2[x][curKey][k]:
 			if k3 == "meta_metadata_name":
