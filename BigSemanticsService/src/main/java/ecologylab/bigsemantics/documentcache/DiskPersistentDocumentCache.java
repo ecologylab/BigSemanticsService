@@ -3,19 +3,18 @@ package ecologylab.bigsemantics.documentcache;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Date;
 
+import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.io.BaseEncoding;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.metadata.MetadataDeserializationHookStrategy;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
+import ecologylab.bigsemantics.service.SemanticsServiceConfigNames;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.DeserializationHookStrategy;
 import ecologylab.serialization.SIMPLTranslationException;
@@ -29,7 +28,8 @@ import ecologylab.serialization.formatenums.Format;
  * 
  * @author quyin
  */
-public class DiskPersistentDocumentCache implements PersistentDocumentCache<Document>
+public class DiskPersistentDocumentCache
+    implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
 {
 
   private static final String  METADATA_SUFFIX = ".meta";
@@ -64,75 +64,28 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
     this.semanticsScope = semanticsScope;
   }
 
-  public boolean configure(String cacheBaseDir)
+  public void configure(Configuration config) throws IOException
   {
-    cacheBaseDir = expandHomeDir(cacheBaseDir);
-    logger.info("cache base dir: " + cacheBaseDir);
+    String cacheBaseDir = expandHomeDir(config.getString(CACHE_DIR));
     File baseDir = new File(cacheBaseDir);
-    if (mkdirsIfNeeded(baseDir))
+    if (baseDir.mkdirs())
     {
-      logger.info("Cache directory: " + baseDir.getAbsolutePath());
+      logger.info("Cache directory: " + baseDir.getCanonicalPath());
       metadataDir = new File(baseDir, "metadata");
       rawDocDir = new File(baseDir, "raw");
       docDir = new File(baseDir, "semantics");
-      return mkdirsIfNeeded(metadataDir) && mkdirsIfNeeded(rawDocDir) && mkdirsIfNeeded(docDir);
+      if (metadataDir.mkdirs() && rawDocDir.mkdirs() && !docDir.mkdirs())
+      {
+        return;
+      }
     }
-    else
-    {
-      logger.warn("Cannot create cache directory at: " + baseDir);
-    }
-    return false;
+    logger.warn("Cannot create cache directory (or subdirectories): " + baseDir.getCanonicalPath());
   }
 
   static String expandHomeDir(String dir)
   {
     String homeDir = System.getProperty("user.home");
     return dir.replaceFirst("\\$HOME", homeDir.replace("\\", "/"));
-  }
-
-  /**
-   * Do mkdirs(), but returns false only when cannot create those dirs.
-   * 
-   * @param dir
-   * @return
-   */
-  private boolean mkdirsIfNeeded(File dir)
-  {
-    if (dir.exists() && dir.isDirectory())
-    {
-      return true;
-    }
-    return dir.mkdirs();
-  }
-
-  private static String getDocId(ParsedURL purl)
-  {
-    return getDocId(purl.toString());
-  }
-
-  public static String getDocId(String purl)
-  {
-    if (purl == null)
-    {
-      return null;
-    }
-
-    MessageDigest md;
-    try
-    {
-      md = MessageDigest.getInstance("SHA-256");
-      md.update(purl.toString().getBytes("UTF-8"));
-      byte[] digest = md.digest();
-
-      BaseEncoding be = BaseEncoding.base64Url();
-      return be.encode(digest, 0, 9);
-    }
-    catch (Exception e)
-    {
-      logger.error("Cannot hash " + purl, e);
-    }
-
-    return "ERROR_DOC_ID";
   }
 
   private File getFilePath(File dir, String name, String suffix)
@@ -185,7 +138,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
   @Override
   public PersistenceMetaInfo getMetaInfo(ParsedURL location)
   {
-    String docId = getDocId(location);
+    String docId = Utils.secureHashBase64NoPadding(location);
     File metadataFile = getFilePath(metadataDir, docId, METADATA_SUFFIX);
     if (metadataFile.exists() && metadataFile.isFile())
     {
@@ -215,7 +168,7 @@ public class DiskPersistentDocumentCache implements PersistentDocumentCache<Docu
       return null;
     }
     ParsedURL location = document.getLocation();
-    String docId = getDocId(location);
+    String docId = Utils.secureHashBase64NoPadding(location);
     Date now = new Date();
 
     PersistenceMetaInfo metaInfo = getMetaInfo(location);

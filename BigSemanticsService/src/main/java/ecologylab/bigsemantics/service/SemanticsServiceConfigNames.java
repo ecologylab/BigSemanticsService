@@ -24,6 +24,8 @@ public interface SemanticsServiceConfigNames
 
   static final String CACHE_DIR              = "service.persistent_cache.dir";
 
+  static final String COUCHDB_URL            = "service.persistent_cache.couchdb.url";
+
   static final String NO_BUILTIN_DPOOL       = "service.no_builtin_dpool";
 
 }
