@@ -85,7 +85,7 @@ public class HttpCouchInterface implements CouchInterface {
 
 		HttpPut httpput = new HttpPut(location);
 		try {
-		StringEntity entity = new StringEntity(docContent);
+		StringEntity entity = new StringEntity(docContent , "UTF-8");
 		//System.out.println("docContent " + docContent);
 		entity.setContentType("application/json");
 		int size = docContent.length();
@@ -151,7 +151,7 @@ public class HttpCouchInterface implements CouchInterface {
 		    //System.out.println("This is the json after adding rev "  + json);
 	    
 		    HttpPut httpput = new HttpPut(location);
-			StringEntity entity = new StringEntity(docContent);  
+			StringEntity entity = new StringEntity(docContent , "UTF-8");  
 			entity.setContentType("application/json");
 			httpput.setEntity(entity);
 			try{
