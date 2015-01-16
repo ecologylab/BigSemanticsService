@@ -8,11 +8,14 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import javax.inject.Singleton;
+
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
 import org.apache.commons.configuration.Configuration;
+import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +35,9 @@ import ecologylab.logging.LogEvent;
  * 
  * @author quyin
  */
-public class Controller extends Routine implements ControllerConfigNames
+@Service
+@Singleton
+public class Controller extends Routine implements DpoolConfigNames
 {
 
   private static Logger                   logger = LoggerFactory.getLogger(Controller.class);
@@ -68,7 +73,7 @@ public class Controller extends Routine implements ControllerConfigNames
    * remembering previous tasks.
    */
   private ConcurrentHashMap<String, Task> tasksByUri;
-
+  
   /**
    * Indexing all tasks by ID. We regard conflicts of keys as impossible.
    */
@@ -79,7 +84,7 @@ public class Controller extends Routine implements ControllerConfigNames
    */
   private Cache                           allTasksByUri;
 
-  public Controller(Configuration configs)
+  public Controller(Configuration configs, CacheManager cacheManager)
   {
     super();
     
@@ -90,7 +95,6 @@ public class Controller extends Routine implements ControllerConfigNames
 
     waitingTasks = new ConcurrentLinkedDeque<Task>();
     tasksByUri = new ConcurrentHashMap<String, Task>();
-    CacheManager cacheManager = CacheManager.getInstance();
 
     cacheManager.addCacheIfAbsent("tasks-by-id");
     allTasksById = cacheManager.getCache("tasks-by-id");
@@ -322,3 +326,4 @@ public class Controller extends Routine implements ControllerConfigNames
   }
 
 }
+
