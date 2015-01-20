@@ -64,6 +64,7 @@ public class DiskPersistentDocumentCache
     this.semanticsScope = semanticsScope;
   }
 
+  @Override
   public void configure(Configuration config) throws IOException
   {
     String cacheBaseDir = expandHomeDir(config.getString(CACHE_DIR));

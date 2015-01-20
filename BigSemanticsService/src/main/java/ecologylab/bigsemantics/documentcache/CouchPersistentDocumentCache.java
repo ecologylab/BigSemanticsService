@@ -59,6 +59,7 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     entryTScope = semanticsScope.getMetadataTypesScope();
   }
 
+  @Override
   public void configure(Configuration config)
   {
     String databaseUrl = config.getString(COUCHDB_URL);
