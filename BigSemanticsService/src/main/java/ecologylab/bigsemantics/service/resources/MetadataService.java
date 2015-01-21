@@ -110,7 +110,7 @@ public class MetadataService
       catch (Exception e)
       {
         String errMsg = String.format("Exception happened for %s (Req ID: %s).", docUrl, requestId);
-        logRecord.setErrorRecord(errMsg, e);
+        logRecord.addErrorRecord(errMsg, e);
         resp = Response.status(Status.INTERNAL_SERVER_ERROR).entity(errMsg).build();
         logger.error(errMsg, e);
       }
