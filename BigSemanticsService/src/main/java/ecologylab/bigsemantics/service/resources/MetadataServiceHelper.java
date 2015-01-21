@@ -87,11 +87,9 @@ public class MetadataServiceHelper extends Debug
    * @param format
    * @param reload
    * @return
-   * @throws DocumentRecycled
-   * @throws IOException
-   * @throws ProcessingUnfinished
+   * @throws Exception 
    */
-  public int getMetadata() throws DocumentRecycled, IOException, ProcessingUnfinished
+  public int getMetadata() throws Exception
   {
     long t0 = System.currentTimeMillis();
     serviceLogRecord.setBeginTime(new Date(t0));
@@ -189,8 +187,9 @@ public class MetadataServiceHelper extends Debug
 
   /**
    * @param docPurl
+   * @throws Exception 
    */
-  private void removeFromPersistentDocumentCache(ParsedURL docPurl)
+  private void removeFromPersistentDocumentCache(ParsedURL docPurl) throws Exception
   {
     logger.debug("Removing document [{}] from persistent document caches", docPurl);
     PersistentDocumentCache pCache = semanticsServiceScope.getPersistentDocumentCache();

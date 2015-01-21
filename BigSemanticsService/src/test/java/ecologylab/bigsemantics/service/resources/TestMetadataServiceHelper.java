@@ -148,7 +148,7 @@ public class TestMetadataServiceHelper
 
   @Test(timeout = 60000)
   public void testServiceLogRecordBeingGeneratedCorrectly()
-      throws DocumentRecycled, IOException, ProcessingUnfinished
+      throws Exception
   {
     ParsedURL purl = ParsedURL.getAbsolute("http://www.amazon.com/dp/B0018TIADQ/");
 
