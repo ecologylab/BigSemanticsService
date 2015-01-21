@@ -10,6 +10,8 @@ public interface SemanticsServiceConfigNames
 
   static final String PORT                   = "service.port";
 
+  static final String ADMIN_PORT             = "service.admin.port";
+
   static final String MAX_THREADS            = "service.threads.max";
 
   static final String MIN_THREADS            = "service.threads.min";

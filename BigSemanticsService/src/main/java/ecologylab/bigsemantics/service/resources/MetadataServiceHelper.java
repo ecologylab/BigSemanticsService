@@ -76,16 +76,16 @@ public class MetadataServiceHelper extends Debug
   public int getMetadata() throws Exception
   {
     ParsedURL docPurl = metadataService.docPurl;
-    boolean reload = metadataService.reload;
-    MetaMetadata mmd = (MetaMetadata) document.getMetaMetadata();
-    boolean noCache = mmd.isNoCache();
-
     document = semanticsServiceScope.getOrConstructDocument(docPurl);
     if (document == null)
     {
       throw new NullPointerException("WEIRD: Null Document returned from SemanticsServiceScope!");
     }
     logger.info("{} returned from SemanticsServiceScope.", document);
+
+    boolean reload = metadataService.reload;
+    MetaMetadata mmd = (MetaMetadata) document.getMetaMetadata();
+    boolean noCache = mmd.isNoCache();
 
     DownloadStatus docStatus = document.getDownloadStatus();
     boolean errorBefore =

@@ -76,7 +76,7 @@ public class MetadataService
     String msg =
         String.format("Request from %s: %s, in %s, reload=%s", clientIp, docUrl, format, reload);
     byte[] fpBytes = Utils.fingerprintBytes("" + System.currentTimeMillis() + "|" + msg);
-    requestId = Utils.base64urlEncode(fpBytes);
+    requestId = Utils.base64urlNoPaddingEncode(fpBytes);
     NDC.push(String.format("[Task %s] ", requestId));
     logger.info(msg);
 
