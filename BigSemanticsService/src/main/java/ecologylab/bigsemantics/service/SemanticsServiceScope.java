@@ -21,12 +21,16 @@ import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
 import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
+import ecologylab.bigsemantics.logging.DocumentLogRecord;
+import ecologylab.bigsemantics.logging.DocumentLogRecordScope;
+import ecologylab.bigsemantics.logging.DpoolEventTypeScope;
+import ecologylab.bigsemantics.logging.DpoolServiceError;
+import ecologylab.bigsemantics.logging.LogStore;
+import ecologylab.bigsemantics.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
-import ecologylab.bigsemantics.metadata.builtins.DocumentLogRecordScope;
-import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
-import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.generic.ReflectionTools;
+import ecologylab.logging.LogEventTypeScope;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.SimplTypesScope.GRAPH_SWITCH;
@@ -49,6 +53,8 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     SimplTypesScope.graphSwitch = GRAPH_SWITCH.ON;
     SemanticsSite.disableDownloadInterval = true;
 
+    DpoolEventTypeScope.init();
+    LogEventTypeScope.addEventClass(DpoolServiceError.class);
     DocumentLogRecordScope.addType(ServiceLogRecord.class);
 
     // This will disable content body recognization and image-text clipping derivation.
@@ -61,6 +67,8 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   private String                  dpoolServiceUrl;
 
   private PersistentDocumentCache persistentDocCache;
+
+  private LogStore                logStore;
 
   public SemanticsServiceScope(SimplTypesScope metadataTScope,
                                Class<? extends IDOMProvider> domProviderClass)
@@ -87,6 +95,9 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
       persistentDocCache = ReflectionTools.getInstance(clazz, ctorArgType, ctorArg);
       persistentDocCache.configure(configs);
     }
+
+    logStore = new LogStore();
+    logStore.configure(configs);
   }
 
   private void configureDpoolServiceUrl()
@@ -147,6 +158,11 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   public boolean ifLookForFavicon()
   {
     return false;
+  }
+
+  public LogStore getLogStore()
+  {
+    return logStore;
   }
 
 }

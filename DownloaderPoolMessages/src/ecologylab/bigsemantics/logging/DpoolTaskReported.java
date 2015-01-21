@@ -1,18 +1,18 @@
-package ecologylab.bigsemantics.downloaderpool.logging;
+package ecologylab.bigsemantics.logging;
 
 import ecologylab.logging.LogEvent;
 import ecologylab.serialization.annotations.simpl_inherit;
 
 /**
- * When a dpool task is created.
+ * When a dpool task is reported from a downloader.
  * 
  * @author quyin
  */
 @simpl_inherit
-public class DpoolTaskCreated extends LogEvent
+public class DpoolTaskReported extends LogEvent
 {
 
-  public DpoolTaskCreated()
+  public DpoolTaskReported()
   {
     super();
   }

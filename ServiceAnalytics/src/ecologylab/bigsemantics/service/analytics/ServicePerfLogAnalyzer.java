@@ -16,8 +16,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-import ecologylab.bigsemantics.metadata.output.DocumentLogRecord;
-import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
+import ecologylab.bigsemantics.logging.DocumentLogRecord;
+import ecologylab.bigsemantics.logging.ServiceLogRecord;
+import ecologylab.bigsemantics.logging.Phase;
 import ecologylab.generic.Debug;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SIMPLTranslationException;
@@ -76,9 +77,10 @@ public class ServicePerfLogAnalyzer extends Debug
 									StringFormat.JSON);
 							if (logRecord != null)
 							{
-								if (fromTime != null && (logRecord.getBeginTime().compareTo(fromTime) < 0))
+							  Date beginTime = logRecord.getBeginTime(Phase.WHOLE);
+								if (fromTime != null && beginTime != null && (beginTime.compareTo(fromTime) < 0))
 									continue;
-								if (toTime != null && (logRecord.getBeginTime().compareTo(toTime) > 0))
+								if (toTime != null && beginTime != null && (beginTime.compareTo(toTime) > 0))
 									continue;
 							}
 							logRecords.add(logRecord);
@@ -116,7 +118,7 @@ public class ServicePerfLogAnalyzer extends Debug
 
 			for (ServiceLogRecord logRecord : logRecords)
 			{
-				float latency = logRecord.getMsTotal();
+				float latency = logRecord.getTotalMs(Phase.WHOLE);
 				avgLatency += latency;
 
 //				ArrayList<Long> queuePeekIntervals = logRecord.getQueuePeekIntervals();
@@ -127,9 +129,8 @@ public class ServicePerfLogAnalyzer extends Debug
 				else
 					avgLatencyWoQueuedWait += latency;
 
-				avgTimeInDownloading += logRecord.getMsHtmlDownload();
-				avgTimeInExtraction += logRecord.getMsExtraction();
-				avgTimeInSerialization += logRecord.getMsSerialization();
+				avgTimeInDownloading += logRecord.getTotalMs(Phase.DOWNLOAD);
+				avgTimeInExtraction += logRecord.getTotalMs(Phase.EXTRACT);
 				
 				if (logRecord.getResponseCode() == STATUS_OK)
 				{
@@ -142,9 +143,8 @@ public class ServicePerfLogAnalyzer extends Debug
 					else
 						avgLatencyWoQueuedWaitS += latency;
 					
-					avgTimeInDownloadingS += logRecord.getMsHtmlDownload();
-					avgTimeInExtractionS += logRecord.getMsExtraction();
-					avgTimeInSerializationS += logRecord.getMsSerialization();					
+					avgTimeInDownloadingS += logRecord.getTotalMs(Phase.DOWNLOAD);
+					avgTimeInExtractionS += logRecord.getTotalMs(Phase.EXTRACT);
 				}
 			}
 
@@ -194,7 +194,7 @@ public class ServicePerfLogAnalyzer extends Debug
 	    {
 	      if (logRecord != null)
 	      {
-  	      ParsedURL purl = logRecord.getDocumentUrl();
+  	      ParsedURL purl = logRecord.getDocumentLocation();
   	      if (purl != null)
   	      {
   	        sorted.add(logRecord);
@@ -208,14 +208,17 @@ public class ServicePerfLogAnalyzer extends Debug
                          @Override
                          public int compare(ServiceLogRecord r1, ServiceLogRecord r2)
                          {
-                           long x = r1.getMsExtraction() - r2.getMsExtraction();
+                           long x =
+                               r1.getTotalMs(Phase.EXTRACT) - r2.getTotalMs(Phase.EXTRACT);
                            return (x>0)?(-1):((x==0)?0:1);
                          }
                        });
 
 	    for (DocumentLogRecord logRecord : sorted)
 	    {
-	      System.out.format("%s\t%s\n", logRecord.getDocumentUrl(), logRecord.getMsExtraction());
+	      System.out.format("%s\t%s\n",
+	                        logRecord.getDocumentLocation(),
+	                        logRecord.getTotalMs(Phase.EXTRACT));
 	    }
 	  }
 	}

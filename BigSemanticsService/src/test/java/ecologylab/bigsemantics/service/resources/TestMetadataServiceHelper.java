@@ -19,9 +19,10 @@ import ecologylab.bigsemantics.exceptions.DocumentRecycled;
 import ecologylab.bigsemantics.exceptions.ProcessingUnfinished;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.generated.library.commodity.product.AmazonProduct;
+import ecologylab.bigsemantics.logging.ServiceLogRecord;
+import ecologylab.bigsemantics.logging.Phase;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
-import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.service.resources.MetadataService;
 import ecologylab.bigsemantics.service.resources.MetadataServiceHelper;
 import ecologylab.net.ParsedURL;
@@ -160,17 +161,16 @@ public class TestMetadataServiceHelper
     MetadataServiceHelper msh = new MetadataServiceHelper(ms);
     msh.getMetadata();
 
-    ServiceLogRecord log = msh.serviceLogRecord;
-    assertNotNull(log.getBeginTime());
-    assertTrue(log.getMsTotal() > 0);
+    ServiceLogRecord log = msh.logRecord;
+    assertNotNull(log.getBeginTime(Phase.WHOLE));
+    assertTrue(log.getTotalMs(Phase.WHOLE) > 0);
     assertNotNull(log.getRequesterIp());
     assertNotNull(log.getRequestUrl());
     assertTrue(log.getResponseCode() > 0);
 
-    assertNotNull(log.getDocumentUrl());
-    assertTrue(log.getMsHtmlDownload() > 0);
-    assertTrue(log.getMsExtraction() > 0);
-    assertTrue(log.getMsSerialization() > 0);
+    assertNotNull(log.getDocumentLocation());
+    assertTrue(log.getTotalMs(Phase.DOWNLOAD) > 0);
+    assertTrue(log.getTotalMs(Phase.EXTRACT) > 0);
 
     assertNotNull(log.getId());
 

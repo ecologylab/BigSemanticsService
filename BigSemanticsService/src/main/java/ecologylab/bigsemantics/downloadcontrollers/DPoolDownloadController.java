@@ -16,15 +16,13 @@ import ecologylab.bigsemantics.collecting.SemanticsSite;
 import ecologylab.bigsemantics.downloaderpool.BasicResponse;
 import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
 import ecologylab.bigsemantics.downloaderpool.MessageScope;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolEventTypeScope;
 import ecologylab.bigsemantics.httpclient.BasicResponseHandler;
 import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
+import ecologylab.bigsemantics.logging.DocumentLogRecord;
+import ecologylab.bigsemantics.logging.DpoolServiceError;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
-import ecologylab.bigsemantics.service.logging.DpoolServiceError;
-import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
-import ecologylab.concurrent.DownloadableLogRecord;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.formatenums.StringFormat;
@@ -45,7 +43,6 @@ public class DPoolDownloadController extends AbstractDownloadController
   {
     logger = LoggerFactory.getLogger(DPoolDownloadController.class);
     httpClientFactory = new HttpClientFactory();
-    DpoolEventTypeScope.init();
   }
 
   public static int                HTTP_DOWNLOAD_REQUEST_TIMEOUT = 60000;
@@ -89,21 +86,13 @@ public class DPoolDownloadController extends AbstractDownloadController
                              SemanticsSite site)
   {
     // init log record
-    ServiceLogRecord logRecord = ServiceLogRecord.DUMMY;
-    DownloadableLogRecord downloadableLogRecord = closure.getLogRecord();
-    if (downloadableLogRecord instanceof ServiceLogRecord)
-    {
-      logRecord = (ServiceLogRecord) downloadableLogRecord;
-    }
+    DocumentLogRecord logRecord = closure.getLogRecord();
 
     result = downloadPage(site, location, getUserAgent());
 
-    DpoolServiceError e = new DpoolServiceError();
-
     if (result == null)
     {
-      e.setMessage("Dpool service null response.");
-      logRecord.logPost().addEventNow(e);
+      logRecord.logPost().addEventNow(new DpoolServiceError("Null response"));
       logger.error("Failed to download {}: null result from downloadPage()", location);
       return false;
     }
@@ -136,8 +125,8 @@ public class DPoolDownloadController extends AbstractDownloadController
     }
     else
     {
-      e.setMessage("Dpool service failed to download " + location);
-      logRecord.logPost().addEventNow(e);
+      logRecord.logPost().addEventNow(new DpoolServiceError("Failed to download " + location,
+                                      result.getHttpRespCode()));
       logger.error("Failed to download {}: {}", location, result.getHttpRespCode());
       return false;
     }

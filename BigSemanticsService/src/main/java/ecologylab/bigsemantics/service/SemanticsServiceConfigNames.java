@@ -28,4 +28,6 @@ public interface SemanticsServiceConfigNames
 
   static final String NO_BUILTIN_DPOOL       = "service.no_builtin_dpool";
 
+  static final String LOG_CACHE_SIZE         = "service.log_cache.size";
+
 }

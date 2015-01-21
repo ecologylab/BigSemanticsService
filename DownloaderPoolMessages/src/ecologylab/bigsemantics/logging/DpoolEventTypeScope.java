@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.downloaderpool.logging;
+package ecologylab.bigsemantics.logging;
 
 import ecologylab.logging.LogEventTypeScope;
 import ecologylab.logging.LogPost;

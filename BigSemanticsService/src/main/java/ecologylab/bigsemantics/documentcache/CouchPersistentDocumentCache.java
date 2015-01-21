@@ -65,11 +65,6 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     couchInterface = new HttpCouchInterface(databaseUrl);
   }
 
-  private String getDocId(String docUrl)
-  {
-    return "A" + Utils.secureHashBase64NoPadding(docUrl);
-  }
-
   private String getDoc(String docId, String tableId)
   {
     String json = couchInterface.getDoc(docId, tableId);
@@ -140,7 +135,7 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
   @Override
   public PersistenceMetaInfo getMetaInfo(ParsedURL location)
   {
-    String docId = getDocId(location.toString());
+    String docId = Utils.getLocationHash(location);
     String couchEntryJson = getDoc(docId, metaInfoTable);
 
     if (couchEntryJson != null)
@@ -183,7 +178,7 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     }
 
     ParsedURL location = document.getLocation();
-    String docId = getDocId(location.toString());
+    String docId = Utils.getLocationHash(location);
 
     CachedHtml cachedHtml = new CachedHtml();
     // rawContent = Utils.base64urlEncode(rawContent.getBytes());
