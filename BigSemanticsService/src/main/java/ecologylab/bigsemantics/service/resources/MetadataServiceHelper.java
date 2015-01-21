@@ -71,11 +71,9 @@ public class MetadataServiceHelper extends Debug
 
   /**
    * @return Status code.
-   * @throws DocumentRecycled
-   * @throws IOException
-   * @throws ProcessingUnfinished
+   * @throws Exception 
    */
-  public int getMetadata() throws DocumentRecycled, IOException, ProcessingUnfinished
+  public int getMetadata() throws Exception
   {
     ParsedURL docPurl = metadataService.docPurl;
     boolean reload = metadataService.reload;
