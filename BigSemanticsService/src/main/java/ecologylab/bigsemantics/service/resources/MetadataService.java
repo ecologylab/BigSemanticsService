@@ -1,5 +1,7 @@
 package ecologylab.bigsemantics.service.resources;
 
+import java.util.Date;
+
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -16,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
+import ecologylab.bigsemantics.logging.Phase;
+import ecologylab.bigsemantics.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.formatenums.StringFormat;
@@ -48,8 +52,15 @@ public class MetadataService
   @QueryParam("reload")
   boolean               reload;
 
+  @QueryParam("caid")
+  String                clientAttachedId;
+
   @Inject
   SemanticsServiceScope semanticsServiceScope;
+
+  String                requestId;
+
+  ServiceLogRecord      logRecord;
 
   /**
    * The utility method that actually generate the response; used by getJsonp(), getJson(), and
@@ -65,15 +76,20 @@ public class MetadataService
     String msg =
         String.format("Request from %s: %s, in %s, reload=%s", clientIp, docUrl, format, reload);
     byte[] fpBytes = Utils.fingerprintBytes("" + System.currentTimeMillis() + "|" + msg);
-    String fp = Utils.base64urlEncode(fpBytes);
-    NDC.push(String.format("[Task %s] ", fp));
+    requestId = Utils.base64urlNoPaddingEncode(fpBytes);
+    NDC.push(String.format("[Task %s] ", requestId));
     logger.info(msg);
 
-    long requestTime = System.currentTimeMillis();
+    logRecord = new ServiceLogRecord();
+    logRecord.setId(requestId);
+    logRecord.setRequesterIp(clientIp);
+    logRecord.setRequestTime(new Date());
+    logRecord.setRequestUrl(request.getRequestURI());
+    semanticsServiceScope.getLogStore().addLogRecord(requestId, clientAttachedId, logRecord);
+
+    logRecord.beginPhase(Phase.WHOLE);
 
     Response resp = null;
-    Status errorStatus = Status.INTERNAL_SERVER_ERROR;
-    String errorMsg = "Unknown error.";
     docPurl = ParsedURL.getAbsolute(docUrl);
     if (docPurl != null)
     {
@@ -88,33 +104,36 @@ public class MetadataService
         }
         else
         {
-          errorStatus = Status.fromStatusCode(statusCode);
-          errorMsg = helper.errorMessage;
+          resp = Response.status(statusCode).entity(helper.errorMessage).build();
         }
       }
       catch (Exception e)
       {
-        errorMsg = "Exception happened: " + e.getMessage() + "; Details:\n"
-                   + Utils.getStackTraceAsString(e);
-        logger.error("Exception when processing " + docPurl, e);
+        String errMsg = String.format("Exception happened for %s (Req ID: %s).", docUrl, requestId);
+        logRecord.addErrorRecord(errMsg, e);
+        resp = Response.status(Status.INTERNAL_SERVER_ERROR).entity(errMsg).build();
+        logger.error(errMsg, e);
       }
     }
     else
     {
-      errorStatus = Status.BAD_REQUEST;
-      errorMsg = "Parameter 'url' must be a valid URL.";
+      String errMsg = "Parameter 'url' must be a valid URL.";
+      resp = Response.status(Status.BAD_REQUEST).entity(errMsg).build();
     }
 
     if (resp == null)
     {
-      resp = Response.status(errorStatus).entity(errorMsg).type(MediaType.TEXT_PLAIN).build();
+      String errMsg = "Unknown error, please contact admin with Req ID " + requestId;
+      resp = Response.status(Status.INTERNAL_SERVER_ERROR).entity(errMsg).build();
     }
 
-    logger.info("Response generated. Total time in BigSemantics: {}ms",
-                System.currentTimeMillis() - requestTime);
     NDC.remove();
 
     // at this point of time resp cannot be null
+    logRecord.setResponseCode(resp.getStatus());
+    logRecord.beginPhase(Phase.WHOLE);
+    logger.info("Response generated. Total time in BigSemantics: {}ms",
+                logRecord.getTotalMs(Phase.WHOLE));
     return resp;
   }
 

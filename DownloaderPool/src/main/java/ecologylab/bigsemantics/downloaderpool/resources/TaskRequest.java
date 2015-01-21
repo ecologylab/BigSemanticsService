@@ -24,7 +24,7 @@ import ecologylab.bigsemantics.downloaderpool.DPoolUtils;
 import ecologylab.bigsemantics.downloaderpool.DownloaderRequest;
 import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
 import ecologylab.bigsemantics.downloaderpool.Task;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskAssigned;
+import ecologylab.bigsemantics.logging.DpoolTaskAssigned;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**

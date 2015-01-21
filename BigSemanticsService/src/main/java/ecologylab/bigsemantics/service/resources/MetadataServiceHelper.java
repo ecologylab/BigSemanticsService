@@ -1,7 +1,6 @@
 package ecologylab.bigsemantics.service.resources;
 
 import java.io.IOException;
-import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +10,14 @@ import ecologylab.bigsemantics.collecting.DownloadStatus;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.exceptions.DocumentRecycled;
 import ecologylab.bigsemantics.exceptions.ProcessingUnfinished;
+import ecologylab.bigsemantics.logging.MemoryCacheHit;
+import ecologylab.bigsemantics.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
 import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
 import ecologylab.bigsemantics.metametadata.MetaMetadata;
 import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
-import ecologylab.bigsemantics.service.logging.ServiceLogRecord;
 import ecologylab.generic.Debug;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.SIMPLTranslationException;
@@ -50,7 +50,7 @@ public class MetadataServiceHelper extends Debug
 
   SemanticsServiceScope semanticsServiceScope;
 
-  ServiceLogRecord      serviceLogRecord;
+  ServiceLogRecord      logRecord;
 
   Document              document;
 
@@ -60,43 +60,29 @@ public class MetadataServiceHelper extends Debug
   {
     this.metadataService = metadataService;
     this.semanticsServiceScope = metadataService.semanticsServiceScope;
-    this.serviceLogRecord = new ServiceLogRecord();
-    this.document = semanticsServiceScope.getOrConstructDocument(metadataService.docPurl);
-    if (this.document == null)
-    {
-      throw new NullPointerException("Null Document returned from SemanticsServiceScope!");
-    }
-    logger.info("{} returned from SemanticsServiceScope.", this.document);
-    document.setLogRecord(this.serviceLogRecord);
-    this.serviceLogRecord.setRequesterIp(metadataService.clientIp);
-    this.serviceLogRecord.setRequestUrl(metadataService.docPurl);
+    this.logRecord = metadataService.logRecord;
   }
 
   public String serializeResultDocument(StringFormat format) throws SIMPLTranslationException
   {
-    long t1 = System.currentTimeMillis();
     String result = SimplTypesScope.serialize(document, format).toString();
-    serviceLogRecord.setMsSerialization(System.currentTimeMillis() - t1);
     return result;
   }
 
   /**
-   * The entry method that accepts a URL and returns a Response with extracted metadata.
-   * 
-   * @param purl
-   * @param format
-   * @param reload
-   * @return
-   * @throws DocumentRecycled
-   * @throws IOException
-   * @throws ProcessingUnfinished
+   * @return Status code.
+   * @throws Exception 
    */
-  public int getMetadata() throws DocumentRecycled, IOException, ProcessingUnfinished
+  public int getMetadata() throws Exception
   {
-    long t0 = System.currentTimeMillis();
-    serviceLogRecord.setBeginTime(new Date(t0));
-
     ParsedURL docPurl = metadataService.docPurl;
+    document = semanticsServiceScope.getOrConstructDocument(docPurl);
+    if (document == null)
+    {
+      throw new NullPointerException("WEIRD: Null Document returned from SemanticsServiceScope!");
+    }
+    logger.info("{} returned from SemanticsServiceScope.", document);
+
     boolean reload = metadataService.reload;
     MetaMetadata mmd = (MetaMetadata) document.getMetaMetadata();
     boolean noCache = mmd.isNoCache();
@@ -115,8 +101,10 @@ public class MetadataServiceHelper extends Debug
     if (docStatus == DownloadStatus.DOWNLOAD_DONE)
     {
       logger.info("{} found in service in-mem document cache", document);
-      serviceLogRecord.setInMemDocumentCacheHit(true);
+      logRecord.logPost().addEventNow(new MemoryCacheHit());
     }
+
+    document.setLogRecord(logRecord);
 
     DocumentClosure closure = document.getOrConstructClosure();
     if (closure == null)
@@ -146,7 +134,6 @@ public class MetadataServiceHelper extends Debug
                                      + document + ", status: " + docStatus);
     case DOWNLOAD_DONE:
       logger.info("{} downloaded and parsed.", document);
-      serviceLogRecord.setMsTotal(System.currentTimeMillis() - t0);
       break;
     case IOERROR:
       errorMessage = "I/O error when downloading " + document;
@@ -155,7 +142,7 @@ public class MetadataServiceHelper extends Debug
       throw new DocumentRecycled("Document is recycled after downloading and parsing: " + document);
     }
 
-    perfLogger.info(Utils.serializeToString(serviceLogRecord, StringFormat.JSON));
+    perfLogger.info(Utils.serializeToString(logRecord, StringFormat.JSON));
 
     return 200;
   }
@@ -163,6 +150,7 @@ public class MetadataServiceHelper extends Debug
   private void download(DocumentClosure closure) throws IOException
   {
     logger.info("performing downloading on {}", document);
+
     closure.performDownloadSynchronously();
     Document newDoc = closure.getDocument();
     logger.info("download status of {}: {}", document, closure.getDownloadStatus());
@@ -194,10 +182,17 @@ public class MetadataServiceHelper extends Debug
   {
     logger.debug("Removing document [{}] from persistent document caches", docPurl);
     PersistentDocumentCache pCache = semanticsServiceScope.getPersistentDocumentCache();
-    PersistenceMetaInfo metaInfo = pCache.getMetaInfo(docPurl);
-    if (metaInfo != null)
+    try
     {
-      pCache.remove(metaInfo);
+      PersistenceMetaInfo metaInfo = pCache.getMetaInfo(docPurl);
+      if (metaInfo != null)
+      {
+        pCache.remove(metaInfo);
+      }
+    }
+    catch (Exception e)
+    {
+      logger.error("Cannot remove from persistent doc cache: " + docPurl, e);
     }
   }
 

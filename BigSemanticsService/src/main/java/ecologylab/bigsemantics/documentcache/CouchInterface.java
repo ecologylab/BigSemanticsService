@@ -1,5 +1,10 @@
 package ecologylab.bigsemantics.documentcache;
 
+import java.io.IOException;
+
+import org.apache.http.ParseException;
+import org.apache.http.client.ClientProtocolException;
+
 /**
  * Apache CouchDB Return Codes:
  * <ul>
@@ -32,7 +37,7 @@ package ecologylab.bigsemantics.documentcache;
  *
  * @author Zach Brown
  */
-public interface CouchInterface
+public interface CouchInterface 
 {
 
   /**
@@ -43,8 +48,11 @@ public interface CouchInterface
    * 
    * @return Will return the document from the database in json form The json will now also contain
    *         the entries id, and _rev Will be null if the document was unattainable
+   * @throws CouchInterfaceException 
+   * @throws IOException 
+   * @throws ParseException 
    */
-  public String getDoc(String docId, String tableId);
+  public String getDoc(String docId, String tableId) throws CouchInterfaceException, ParseException, IOException;
 
   /**
    * @param docId
@@ -55,9 +63,12 @@ public interface CouchInterface
    * @param tableId
    *          The name of the table
    * 
-   * @return Will be 201 if successful, otherwise some error code
+   * @return boolean, true if document was put, false if not because there was a naming conflict
+   * @throws IOException 
+   * @throws ParseException 
+   * @throws CouchInterfaceException 
    */
-  public int putDoc(String docId, String docContent, String tableId);
+  public boolean putDoc(String docId, String docContent, String tableId) throws ParseException, IOException, CouchInterfaceException;
 
   /**
    * @param docId
@@ -67,9 +78,12 @@ public interface CouchInterface
    * @param tableId
    *          The table where the document is.
    *
-   * @return Will be 201 if successful, otherwise some error code
+   * @return true if successful false if can't update because the document doesn't exist
+   * @throws IOException 
+   * @throws ClientProtocolException 
+   * @throws CouchInterfaceException 
    */
-  public int updateDoc(String docId, String docContent, String tableId);
+  public boolean updateDoc(String docId, String docContent, String tableId) throws ClientProtocolException, IOException, CouchInterfaceException;
 
   /**
    * @param docId
@@ -77,16 +91,43 @@ public interface CouchInterface
    * @param tableId
    *          The name of the table where the document is.
    *
-   * @return 200 if successful, otherwise some error code
+   * @return true if successful false if can't delete document because it doesn't exist
+   * @throws CouchInterfaceException 
+   * @throws IOException 
+   * @throws ClientProtocolException 
    */
-  public int dropDoc(String docId, String tableId);
+  public boolean dropDoc(String docId, String tableId) throws CouchInterfaceException, ClientProtocolException, IOException;
 
-  public int putAttach(String docId,
+  /**
+   * 
+   * @param docId
+   * 				The id of the document to add an attachment to
+   * @param tableId
+   * 				The id of the table where the document is
+   * @param content
+   * 			  String content of data to be attached
+   * @param mimeType
+   * 	      of the attachment  
+   * @param contentTitle
+   * 				name of the title
+   * @return true if successful
+   * @throws IOException 
+   * @throws ClientProtocolException 
+   * @throws CouchInterfaceException 
+   */
+  public boolean putAttach(String docId,
                        String tableId,
                        String content,
                        String mimeType,
-                       String contentTitle);
+                       String contentTitle) throws ClientProtocolException, IOException, CouchInterfaceException;
 
+  /**
+   * 
+   * @param docId
+   * @param tableId
+   * @param title
+   * @return the byte array that makes up the attachement
+   */
   public byte[] getAttach(String docId, String tableId, String title);
 
 }

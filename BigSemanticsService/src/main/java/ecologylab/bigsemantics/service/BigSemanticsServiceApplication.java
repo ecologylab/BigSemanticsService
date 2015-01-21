@@ -39,6 +39,7 @@ import ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
 import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
+import ecologylab.bigsemantics.service.resources.LogService;
 import ecologylab.bigsemantics.service.resources.MetadataService;
 import ecologylab.bigsemantics.service.resources.MmdRepoService;
 import ecologylab.bigsemantics.service.resources.MmdService;
@@ -75,6 +76,8 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
   private Configuration             configs;
 
   private Server                    server;
+  
+  private Server                    adminServer;
 
   private DownloaderPoolApplication dpoolApp;
 
@@ -98,22 +101,11 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     if (server == null)
     {
       // step 1: create and configure server
-      int maxThreads = configs.getInt(MAX_THREADS, 500);
-      int minThreads = configs.getInt(MIN_THREADS, 50);
-      QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads, minThreads);
-      server = new Server(threadPool);
-      // num of acceptors: num of cores - 1
-      // num of selectors: use default guess. in practice, depend on cores, load, etc.
-      int cores = Runtime.getRuntime().availableProcessors();
-      int nAcceptors = configs.getInt(NUM_ACCEPTORS, cores - 1);
-      int nSelectors = configs.getInt(NUM_SELECTORS, -1);
-      ServerConnector connector = new ServerConnector(server, nAcceptors, nSelectors);
-      // port
+      server = createServer(configs);
+
       int port = configs.getInt(PORT);
-      connector.setPort(port);
+      ServerConnector connector = createConnector(configs, server, port);
       server.addConnector(connector);
-      // misc server settings
-      server.setStopAtShutdown(true);
 
       // step 2: set up servlet containers and handler
       ServletContextHandler servletContext = new ServletContextHandler();
@@ -170,6 +162,44 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
       handlers.addHandler(requestLogHandler);
       server.setHandler(handlers);
     }
+    
+    // step 5: set up the admin server
+    if (adminServer == null)
+    {
+      adminServer = createServer(configs);
+      int adminPort = configs.getInt(ADMIN_PORT);
+      ServerConnector adminConnector = createConnector(configs, adminServer, adminPort);
+      adminServer.addConnector(adminConnector);
+
+      ServletContainer adminContainer = getAdminContainer();
+      ServletContextHandler adminContext = new ServletContextHandler();
+      adminContext.setContextPath("/");
+      adminContext.addServlet(new ServletHolder(adminContainer), "/admin/*");
+      adminServer.setHandler(adminContext);
+    }
+  }
+
+  private ServerConnector createConnector(Configuration configs, Server server, int port)
+  {
+    // num of acceptors: num of cores - 1
+    // num of selectors: use default guess. in practice, depend on cores, load, etc.
+    int cores = Runtime.getRuntime().availableProcessors();
+    int nAcceptors = configs.getInt(NUM_ACCEPTORS, cores - 1);
+    int nSelectors = configs.getInt(NUM_SELECTORS, -1);
+    ServerConnector connector = new ServerConnector(server, nAcceptors, nSelectors);
+    connector.setPort(port);
+    return connector;
+  }
+
+  private Server createServer(Configuration configs)
+  {
+    int maxThreads = configs.getInt(MAX_THREADS, 500);
+    int minThreads = configs.getInt(MIN_THREADS, 50);
+    QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads, minThreads);
+    Server server = new Server(threadPool);
+    // misc server settings
+    server.setStopAtShutdown(true);
+    return server;
   }
 
   public ServletContainer getBssContainer() throws Exception
@@ -187,6 +217,26 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     semanticsServiceScope =
         new SemanticsServiceScope(RepositoryMetadataTypesScope.get(), CybernekoWrapper.class);
     semanticsServiceScope.configure(configs);
+    config.register(new AbstractBinder()
+    {
+      @Override
+      protected void configure()
+      {
+        bind(semanticsServiceScope).to(SemanticsServiceScope.class);
+      }
+    });
+
+    ServletContainer container = new ServletContainer(config);
+
+    return container;
+  }
+
+  public ServletContainer getAdminContainer() throws Exception
+  {
+    ResourceConfig config = new ResourceConfig();
+
+    config.register(LogService.class);
+
     config.register(new AbstractBinder()
     {
       @Override
@@ -236,6 +286,11 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     // run a downloader
     downloader = new Downloader(dpoolApp.getConfigs());
     downloader.start();
+
+    // run admin server
+    adminServer.start();
+
+    logger.info("BigSemantics Service up and running.");
   }
 
   public void join() throws InterruptedException
@@ -254,10 +309,14 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
     {
       throw new RuntimeException("Server uninitialized!");
     }
-
+    
+    adminServer.stop();
     downloader.stop();
     downloader = null;
     server.stop();
+    Thread.sleep(1000 * 3);
+
+    logger.info("BigSemantics Service stopped.");
   }
 
   public static void main(String[] args) throws Exception

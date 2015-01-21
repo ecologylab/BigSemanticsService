@@ -64,17 +64,20 @@ public class DiskPersistentDocumentCache
     this.semanticsScope = semanticsScope;
   }
 
+  @Override
   public void configure(Configuration config) throws IOException
   {
     String cacheBaseDir = expandHomeDir(config.getString(CACHE_DIR));
     File baseDir = new File(cacheBaseDir);
-    if (baseDir.mkdirs())
+    if (existsOrMakeDirs(baseDir))
     {
       logger.info("Cache directory: " + baseDir.getCanonicalPath());
       metadataDir = new File(baseDir, "metadata");
       rawDocDir = new File(baseDir, "raw");
       docDir = new File(baseDir, "semantics");
-      if (metadataDir.mkdirs() && rawDocDir.mkdirs() && !docDir.mkdirs())
+      if (existsOrMakeDirs(metadataDir)
+          && existsOrMakeDirs(rawDocDir)
+          && existsOrMakeDirs(docDir))
       {
         return;
       }
@@ -87,12 +90,18 @@ public class DiskPersistentDocumentCache
     String homeDir = System.getProperty("user.home");
     return dir.replaceFirst("\\$HOME", homeDir.replace("\\", "/"));
   }
+  
+  static boolean existsOrMakeDirs(File dir)
+  {
+    return dir.exists() || dir.mkdirs();
+  }
 
   private File getFilePath(File dir, String name, String suffix)
   {
-    File intermediateDir = new File(dir, name.substring(0, 2));
-    intermediateDir.mkdirs();
-    return new File(intermediateDir, name + suffix);
+    File intermediateDir = new File(dir, name.substring(0, 3));
+    File moreDir = new File(intermediateDir, "B" + name.substring(3, 5));
+    moreDir.mkdirs();
+    return new File(moreDir, name + suffix);
   }
 
   /**
@@ -138,7 +147,7 @@ public class DiskPersistentDocumentCache
   @Override
   public PersistenceMetaInfo getMetaInfo(ParsedURL location)
   {
-    String docId = Utils.secureHashBase64NoPadding(location);
+    String docId = Utils.getLocationHash(location);
     File metadataFile = getFilePath(metadataDir, docId, METADATA_SUFFIX);
     if (metadataFile.exists() && metadataFile.isFile())
     {
@@ -168,7 +177,7 @@ public class DiskPersistentDocumentCache
       return null;
     }
     ParsedURL location = document.getLocation();
-    String docId = Utils.secureHashBase64NoPadding(location);
+    String docId = Utils.getLocationHash(location);
     Date now = new Date();
 
     PersistenceMetaInfo metaInfo = getMetaInfo(location);

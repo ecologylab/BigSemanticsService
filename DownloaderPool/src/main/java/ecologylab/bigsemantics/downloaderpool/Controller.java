@@ -20,12 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.downloaderpool.Task.State;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolEventTypeScope;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskFailed;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskMatched;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskQueued;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskReported;
-import ecologylab.bigsemantics.downloaderpool.logging.DpoolTaskTerminated;
+import ecologylab.bigsemantics.logging.DpoolEventTypeScope;
+import ecologylab.bigsemantics.logging.DpoolTaskFailed;
+import ecologylab.bigsemantics.logging.DpoolTaskMatched;
+import ecologylab.bigsemantics.logging.DpoolTaskQueued;
+import ecologylab.bigsemantics.logging.DpoolTaskReported;
+import ecologylab.bigsemantics.logging.DpoolTaskTerminated;
 import ecologylab.logging.LogEvent;
 
 /**

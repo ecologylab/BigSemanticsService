@@ -21,10 +21,7 @@ public class GlobalCacheManager
       {
         if (cacheManager == null)
         {
-          CacheConfiguration defaultCacheConfig = new CacheConfiguration();
-          defaultCacheConfig.setMaxEntriesLocalHeap(1000);
-          defaultCacheConfig.setEternal(true);
-          defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
+          CacheConfiguration defaultCacheConfig = getDefaultCacheConfig();
           net.sf.ehcache.config.Configuration cacheManConfig = new net.sf.ehcache.config.Configuration();
           cacheManConfig.setDynamicConfig(true);
           cacheManConfig.setUpdateCheck(false);
@@ -34,6 +31,15 @@ public class GlobalCacheManager
       }
     }
     return cacheManager;
+  }
+
+  public static CacheConfiguration getDefaultCacheConfig()
+  {
+    CacheConfiguration defaultCacheConfig = new CacheConfiguration();
+    defaultCacheConfig.setMaxEntriesLocalHeap(1000);
+    defaultCacheConfig.setEternal(true);
+    defaultCacheConfig.setMemoryStoreEvictionPolicy("LRU");
+    return defaultCacheConfig;
   }
 
 }

@@ -10,6 +10,8 @@ public interface SemanticsServiceConfigNames
 
   static final String PORT                   = "service.port";
 
+  static final String ADMIN_PORT             = "service.admin.port";
+
   static final String MAX_THREADS            = "service.threads.max";
 
   static final String MIN_THREADS            = "service.threads.min";
@@ -27,5 +29,7 @@ public interface SemanticsServiceConfigNames
   static final String COUCHDB_URL            = "service.persistent_cache.couchdb.url";
 
   static final String NO_BUILTIN_DPOOL       = "service.no_builtin_dpool";
+
+  static final String LOG_CACHE_SIZE         = "service.log_cache.size";
 
 }

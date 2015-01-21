@@ -45,7 +45,7 @@ public class HttpCouchInterface implements CouchInterface
   }
 
   @Override
-  public String getDoc(String docId, String tableId)
+  public String getDoc(String docId, String tableId) throws CouchInterfaceException, ParseException, IOException
   {
     String location = databaseUrl + "/" + tableId + "/" + docId;
     logger.info("docId = {}, tableId = {}", docId, tableId);
@@ -54,35 +54,33 @@ public class HttpCouchInterface implements CouchInterface
     try
     {
       HttpResponse response = httpclient.execute(httpget);
-
-      // System.out.println("Tried " + httpget );
       int status_code = response.getStatusLine().getStatusCode();
-      // System.out.println("Code of response " + status_code );
       if (status_code == 200 || status_code == 201 || status_code == 202)
       {
         String result = EntityUtils.toString(response.getEntity(), "UTF-8");
         return result;
       }
-      else
+      else if ( status_code == 404)//There's not a major issue, the document just isn't there
       {
         return null;
       }
-    }
-    catch (Exception e)
-    {
-      logger.error("Error getting Couch doc: docId = " + docId + ", tableId = " + tableId, e);
+      else //There was some kind of issue
+      {
+      	String explaination = EntityUtils.toString(response.getEntity(), "UTF-8");
+      	throw new CouchInterfaceException(explaination , status_code , databaseUrl , tableId, docId );
+      }
     }
     finally
     {
       httpget.releaseConnection();
     }
-    return null;
+
   }
 
   @Override
-  public int putDoc(String docID, String docContent, String tableId)
+  public boolean putDoc(String docID, String docContent, String tableID) throws ParseException, IOException, CouchInterfaceException
   {
-    String location = databaseUrl + "/" + tableId + "/" + docID;
+    String location = databaseUrl + "/" + tableID + "/" + docID;
 
     HttpPut httpput = new HttpPut(location);
     try
@@ -98,31 +96,20 @@ public class HttpCouchInterface implements CouchInterface
       // System.out.println(response);
       int status_code = response.getStatusLine().getStatusCode();
 
-      if (status_code != 200 && status_code != 201)
+      if ( status_code == 200 || status_code == 201 )
       {
+      	return true;
+      }
+      else if ( status_code == 409 )
+      {
+      	return false;
+      }
+      else
+      {	
         HttpEntity error_entity = response.getEntity();
         String error_msg = EntityUtils.toString(error_entity);
-        logger.error("status line: {}", response.getStatusLine());
-        logger.error("error details: {}", error_msg);
+        throw new CouchInterfaceException( error_msg , status_code , databaseUrl , tableID, docID);
       }
-
-      // System.out.println("Code of response " + status_code );
-      return status_code;
-    }
-    catch (UnsupportedEncodingException e)
-    {
-      // e.printStackTrace();
-      return 1000;
-    }
-    catch (ParseException e)
-    {
-      // e.printStackTrace();
-      return 1100;
-    }
-    catch (IOException e)
-    {
-      // e.printStackTrace();
-      return 1200;
     }
     finally
     {
@@ -131,25 +118,22 @@ public class HttpCouchInterface implements CouchInterface
   }
 
   @Override
-  public int updateDoc(String docId, String docContent, String tableId)
+  public boolean updateDoc(String docID, String docContent, String tableID) throws ClientProtocolException, IOException, CouchInterfaceException
   {
     String rev = "";
-    String location = databaseUrl + "/" + tableId + "/" + docId;
+    String location = databaseUrl + "/" + tableID + "/" + docID;
 
     HttpHead httphead = new HttpHead(location);
 
     try
     {
       HttpResponse headResponse = httpclient.execute(httphead);
-      // System.out.println("Tried " + httphead );
       int status_code = headResponse.getStatusLine().getStatusCode();
-      // System.out.println("Code of response " + status_code );
-      if (status_code != 200)
-        return status_code;
+      if (status_code == 404)
+        return false; //Can't update because the document doesn't exist
 
       rev = headResponse.getHeaders("ETag")[0].getValue();
       rev = rev.split("\"")[1];
-      // System.out.println("The revision code is " + rev );
 
       // This block adds the revision key to the json object, which couchDB requires inorder to
       // update documents.
@@ -165,32 +149,23 @@ public class HttpCouchInterface implements CouchInterface
       httpput.setEntity(entity);
       try
       {
-        HttpResponse delResponse = httpclient.execute(httpput);
-
-        // System.out.println("Tried " + httpput );
-        status_code = delResponse.getStatusLine().getStatusCode();
-        // System.out.println("Code of response " + status_code );
-        return status_code;
+        HttpResponse updateResponse = httpclient.execute(httpput);
+        status_code = updateResponse.getStatusLine().getStatusCode();
+        if( status_code == 200 || status_code == 201 )
+        {
+        	return true;
+        }
+        else
+        {
+        	HttpEntity error_entity = updateResponse.getEntity();
+        	String error_msg = EntityUtils.toString(error_entity);
+        	throw new CouchInterfaceException(error_msg , status_code , databaseUrl, tableID , docID);
+        }
       }
       finally
       {
         httpput.releaseConnection();
       }
-    }
-    catch (UnsupportedEncodingException e)
-    {
-      // e.printStackTrace();
-      return 1000;
-    }
-    catch (ParseException e)
-    {
-      // e.printStackTrace();
-      return 1100;
-    }
-    catch (IOException e)
-    {
-      // e.printStackTrace();
-      return 1200;
     }
     finally
     {
@@ -199,26 +174,23 @@ public class HttpCouchInterface implements CouchInterface
   }
 
   @Override
-  public int dropDoc(String docId, String tableId)
+  public boolean dropDoc(String docID, String tableID) throws CouchInterfaceException, ClientProtocolException, IOException
   {
-    if (docId.trim().equals(""))
+    if (docID.trim().equals(""))
     {
-      logger.error("Drop Doc should not be used with an empty id that will delete the database!!");
-      return 1300;
+    	throw new CouchInterfaceException("Drop Doc should not be used with an empty id that will delete the database!!" ,  0 , databaseUrl , tableID, docID);
     }
 
     String rev = "";
-    String location = databaseUrl + "/" + tableId + "/" + docId;
+    String location = databaseUrl + "/" + tableID + "/" + docID;
 
     HttpHead httphead = new HttpHead(location);
     try
     {
       HttpResponse headResponse = httpclient.execute(httphead);
-      // System.out.println("Tried " + httphead );
       int status_code = headResponse.getStatusLine().getStatusCode();
-      // System.out.println("Code of response " + status_code );
-      if (status_code != 200)
-        return status_code;
+      if (status_code == 404)
+        return false;
 
       rev = headResponse.getHeaders("ETag")[0].getValue();
       rev = rev.split("\"")[1];
@@ -231,28 +203,23 @@ public class HttpCouchInterface implements CouchInterface
         HttpResponse delResponse = httpclient.execute(httpdelete);
 
         status_code = delResponse.getStatusLine().getStatusCode();
-        return status_code;
+        
+        if( status_code == 200 || status_code == 201 )
+        {
+        	return true;
+        }
+        else
+        {
+        	HttpEntity error_entity = delResponse.getEntity();
+        	String error_msg = EntityUtils.toString(error_entity);
+        	throw new CouchInterfaceException(error_msg , status_code , databaseUrl, tableID , docID);
+        }
       }
       finally
       {
         httpdelete.releaseConnection();
       }
 
-    }
-    catch (UnsupportedEncodingException e)
-    {
-      // e.printStackTrace();
-      return 1000;
-    }
-    catch (ParseException e)
-    {
-      // e.printStackTrace();
-      return 1100;
-    }
-    catch (IOException e)
-    {
-      // e.printStackTrace();
-      return 1200;
     }
     finally
     {
@@ -261,12 +228,12 @@ public class HttpCouchInterface implements CouchInterface
   }
 
   @Override
-  public int putAttach(String docId, String tableId, String content,
-                       String mimeType, String contentTitle)
+  public boolean putAttach(String docID, String tableID, String content,
+                       String mimeType, String contentTitle) throws ClientProtocolException, IOException, CouchInterfaceException
   {
 
     String rev = "";
-    String location = databaseUrl + "/" + tableId + "/" + docId;
+    String location = databaseUrl + "/" + tableID + "/" + docID;
 
     HttpHead httphead = new HttpHead(location);
 
@@ -276,10 +243,9 @@ public class HttpCouchInterface implements CouchInterface
       // System.out.println("Tried " + httphead );
       int status_code = headResponse.getStatusLine().getStatusCode();
       // System.out.println("Code of response " + status_code );
-      if (status_code != 200)
+      if (status_code == 404)
       {
-        System.out.println("HERE");
-        return status_code;
+        return false;
       }
       rev = headResponse.getHeaders("ETag")[0].getValue();
       rev = rev.split("\"")[1];
@@ -294,27 +260,26 @@ public class HttpCouchInterface implements CouchInterface
       httpput.setEntity(entity);
       try
       {
-        HttpResponse delResponse = httpclient.execute(httpput);
+        HttpResponse attachResponse = httpclient.execute(httpput);
 
         // System.out.println("Tried " + httpput );
-        status_code = delResponse.getStatusLine().getStatusCode();
+        status_code = attachResponse.getStatusLine().getStatusCode();
         // System.out.println("Code of response " + status_code );
-        return status_code;
+        if( status_code == 200 || status_code == 201 )
+        {
+        	return true;
+        }
+        else
+        {
+        	HttpEntity error_entity = attachResponse.getEntity();
+        	String error_msg = EntityUtils.toString(error_entity);
+        	throw new CouchInterfaceException(error_msg , status_code , databaseUrl, tableID , docID);
+        }
       }
       finally
       {
         httpput.releaseConnection();
       }
-    }
-    catch (ClientProtocolException e)
-    {
-      logger.error("docId = " + docId + ", tableId = " + tableId, e);
-      return 500;
-    }
-    catch (IOException e)
-    {
-      logger.error("docId = " + docId + ", tableId = " + tableId, e);
-      return 1200;
     }
     finally
     {
@@ -363,15 +328,6 @@ public class HttpCouchInterface implements CouchInterface
     }
     return null;
   }
-
-  public static void main(String argsp[]) throws ClientProtocolException, IOException
-  {
-    HttpCouchInterface ci = new HttpCouchInterface("ecoarray0:7054");
-
-    System.out.println(ci.putAttach("test", "html", "Working?", "text/plain", "My_example"));
-
-    byte[] b = ci.getAttach("test", "html", "My_example");
-    System.out.println(new String(b));
-  }
-
 }
+
+
