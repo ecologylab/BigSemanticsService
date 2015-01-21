@@ -13,7 +13,7 @@ def prettyPrint(jsonObj):
     print json.dumps(jsonObj, sort_keys=True, indent=4, separators=(',', ': '))
 
 #if run time is an issue some of these checks can be commented out
-def sanitizedStrCheck(str1, str2):
+def sanitizedStrCheck(str1, str2, location):
     if (isinstance(str1, str) and isinstance(str2, str)) or (isinstance(str1, unicode) and isinstance(str2, unicode)):
         if ''.join(filter(lambda c: c in string.printable, str1)) == ''.join(filter(lambda c: c in string.printable, str2)):
             return True
@@ -23,6 +23,17 @@ def sanitizedStrCheck(str1, str2):
             return True
         elif str1.replace(" ", "") == str2.replace(" ", ""):
             return True
+        #print out some of the mismatches that might be caused by character encoding issues. Doesn't catch all of them. 
+		elif isinstance(str1, unicode) and len(str1) > 0 and len(str2) > 0 and str1[0] == str2[0] and location != 'hodor':
+            try:
+                str1.decode('ascii')
+            except (UnicodeDecodeError, UnicodeEncodeError) as e:
+                print "================================"
+                print location
+                print "SERVER:"
+                print repr(str1)
+                print "CLIENT:"
+                print repr(str2)
     return False
 
 def nestedCheck(serv, client):
@@ -52,7 +63,7 @@ def nestedCheck(serv, client):
                         return False
                     else:
                         if i < len(client) and k in client[i]:
-                            if sanitizedStrCheck(serv[i][k], client[i][k]) or nestedCheck(serv[i][k], client[i][k]):
+                            if sanitizedStrCheck(serv[i][k], client[i][k], "hodor") or nestedCheck(serv[i][k], client[i][k]):
                                 #print "found match for " + client[j][k]
                                 nestedMatchCount += 1
                 if len(serv[i].keys()) <= nestedMatchCount:
@@ -167,7 +178,7 @@ for x in range(0, len(clientList)):
                     if k == 'location':
                         continue
                     if k in clientList2[x][curKey] and k in servList2[y][curKey]:
-                        if clientList2[x][curKey][k] == servList2[y][curKey][k] or nestedCheck(servList2[y][curKey][k], clientList2[x][curKey][k]) or sanitizedStrCheck(servList2[y][curKey][k], clientList2[x][curKey][k]):
+                        if clientList2[x][curKey][k] == servList2[y][curKey][k] or nestedCheck(servList2[y][curKey][k], clientList2[x][curKey][k]) or sanitizedStrCheck(servList2[y][curKey][k], clientList2[x][curKey][k], servList[y][curKey]['location']):
                             # "deleting " + str(k) + " ============================================= from " + curKey
                             servList2[y][curKey].pop(k, None)
                             clientList2[x][curKey].pop(k, None)
@@ -210,7 +221,7 @@ for metadataServ in servList:
                         #if curKey == 'instructable':
                         #	prettyPrint(metadataServ[curKey][k])
                         #	prettyPrint(metadataClient[curKey][k])
-                    elif sanitizedStrCheck(metadataServ[curKey][k], metadataClient[curKey][k]):
+                    elif sanitizedStrCheck(metadataServ[curKey][k], metadataClient[curKey][k], metadataServ[curKey]['location']):
                         matchCount += 1
                     #else:
                     #print "NO MATCH======="
