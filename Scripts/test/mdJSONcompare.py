@@ -24,7 +24,8 @@ def sanitizedStrCheck(str1, str2, location):
         elif str1.replace(" ", "") == str2.replace(" ", ""):
             return True
         #print out some of the mismatches that might be caused by character encoding issues. Doesn't catch all of them. 
-		elif isinstance(str1, unicode) and len(str1) > 0 and len(str2) > 0 and str1[0] == str2[0] and location != 'hodor':
+        """
+        elif isinstance(str1, unicode) and len(str1) > 0 and len(str2) > 0 and str1[0] == str2[0] and location != 'hodor':
             try:
                 str1.decode('ascii')
             except (UnicodeDecodeError, UnicodeEncodeError) as e:
@@ -34,9 +35,10 @@ def sanitizedStrCheck(str1, str2, location):
                 print repr(str1)
                 print "CLIENT:"
                 print repr(str2)
+        """
     return False
 
-def nestedCheck(serv, client):
+def nestedCheck(serv, client, parentLocation):
     global nestedCoCounter
     nestedMatchCount = 0
     if serv == client:
@@ -45,7 +47,7 @@ def nestedCheck(serv, client):
         for k in serv:
             if k == "meta_metadata_name":
                 nestedMatchCount += 1
-            if k in client and (serv[k] == client[k] or nestedCheck(serv[k], client[k])):
+            if k in client and (serv[k] == client[k] or nestedCheck(serv[k], client[k], "")):
                 nestedMatchCount += 1
         if len(serv.keys()) == nestedMatchCount:
             return True
@@ -58,12 +60,13 @@ def nestedCheck(serv, client):
                     if k == "download_status":
                         #print "match because download status"
                         nestedMatchCount += 1
+
                     if isinstance(serv[i][k], list) or isinstance(serv[i][k], dict):
                         nestedCoCounter += 1
-                        return False
+                        #return False
                     else:
                         if i < len(client) and k in client[i]:
-                            if sanitizedStrCheck(serv[i][k], client[i][k], "hodor") or nestedCheck(serv[i][k], client[i][k]):
+                            if sanitizedStrCheck(serv[i][k], client[i][k], "hodor") or nestedCheck(serv[i][k], client[i][k], ""):
                                 #print "found match for " + client[j][k]
                                 nestedMatchCount += 1
                 if len(serv[i].keys()) <= nestedMatchCount:
@@ -104,7 +107,7 @@ firstLine = True
 for line in fileC:
     if firstLine:
         firstLine = False
-        clientList.append(json.loads(line[3:]))
+        clientList.append(json.loads(line))
         continue
     if len(line)>1:
         clientList.append(json.loads(line))
@@ -177,8 +180,13 @@ for x in range(0, len(clientList)):
                 for k in servList[y][curKey]:
                     if k == 'location':
                         continue
+                    #if the service has a location in a favicon or home_page that is simply the same as document location don't count it.
+                    if k == 'favicon' or k == 'home_page' and 'location' in servList[y][curKey][k] and 'location' in servList[y][curKey] and servList[y][curKey][k]['location'] == servList[y][curKey]['location']:
+                        #prettyPrint(servList[y][curKey][k])
+                        servList2[y][curKey].pop(k, None)
+                        #print "POPPING"
                     if k in clientList2[x][curKey] and k in servList2[y][curKey]:
-                        if clientList2[x][curKey][k] == servList2[y][curKey][k] or nestedCheck(servList2[y][curKey][k], clientList2[x][curKey][k]) or sanitizedStrCheck(servList2[y][curKey][k], clientList2[x][curKey][k], servList[y][curKey]['location']):
+                        if clientList2[x][curKey][k] == servList2[y][curKey][k] or nestedCheck(servList2[y][curKey][k], clientList2[x][curKey][k], servList[y][curKey]['location']) or sanitizedStrCheck(servList2[y][curKey][k], clientList2[x][curKey][k], servList[y][curKey]['location']):
                             # "deleting " + str(k) + " ============================================= from " + curKey
                             servList2[y][curKey].pop(k, None)
                             clientList2[x][curKey].pop(k, None)
@@ -188,49 +196,43 @@ for x in range(0, len(clientList)):
 #pretty print some so we know what doesn't match
 i = 0
 for metadataServ in servList2:
-    if i > 35 and i < 40:
+    if i >= 0 and i < 1:
         for metadataClient in clientList2:
             curKey = metadataServ.keys()[0]
             if curKey in metadataClient.keys():
-                if metadataServ[curKey]['location'] == metadataClient[curKey]['location']:
+                if metadataServ[curKey]['location'] == metadataClient[curKey]['location'] and curKey == "amazon_product":
                     print "SERVER"
                     prettyPrint(metadataServ)
                     print "CLIENT"
                     prettyPrint(metadataClient)
     i+=1
-    if i > 40:
+    if i > 100:
         break
 
 nestedCounter = 0
+mismatch = False
 for metadataServ in servList:
     for metadataClient in clientList:
         curKey = metadataServ.keys()[0]
         if curKey in metadataClient.keys() and metadataServ[curKey]['location'] == metadataClient[curKey]['location']:
             matchCount = 0
             curFields = len(metadataServ[curKey])
+            mismatch = False
             for k in metadataServ[curKey]:
-                if k in metadataClient[curKey]:
+                if k == 'favicon' or k == 'home_page' and 'location' in metadataServ[curKey][k] and 'location' in metadataServ[curKey] and metadataServ[curKey][k]['location'] == metadataServ[curKey]['location']:
+                    matchCount += 1
+                elif k in metadataClient[curKey]:
                     if metadataServ[curKey][k] == metadataClient[curKey][k]:
                         matchCount += 1
                     #check composites and collections
                     elif isinstance(metadataServ[curKey][k], dict) or isinstance(metadataServ[curKey][k], list):
-                        if nestedCheck(metadataServ[curKey][k], metadataClient[curKey][k]):
+                        if nestedCheck(metadataServ[curKey][k], metadataClient[curKey][k], metadataServ[curKey]['location']):
                             matchCount += 1
                         else:
                             nestedCounter += 1
-                        #if curKey == 'instructable':
-                        #	prettyPrint(metadataServ[curKey][k])
-                        #	prettyPrint(metadataClient[curKey][k])
                     elif sanitizedStrCheck(metadataServ[curKey][k], metadataClient[curKey][k], metadataServ[curKey]['location']):
                         matchCount += 1
-                    #else:
-                    #print "NO MATCH======="
-                    #print repr(''.join(filter(lambda c: c in string.printable, metadataServ[curKey][k]))).strip()
-                    #print repr(''.join(filter(lambda c: c in string.printable, metadataClient[curKey][k]))).strip()
-                    #print "============="
-                    #else:
-                    #print k + " NOT IN CLIENT"
-            print str(matchCount) + " out of " + str(curFields)+ " for " + str(curKey)
+            print str(matchCount) + " out of " + str(curFields)+ " for " + str(curKey)            
             totalCount += matchCount
             totalFields += curFields
 
