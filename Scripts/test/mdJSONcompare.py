@@ -1,4 +1,5 @@
 from __future__ import division
+from difflib import SequenceMatcher
 import json
 import copy
 import string
@@ -15,6 +16,10 @@ def prettyPrint(jsonObj):
 #if run time is an issue some of these checks can be commented out
 def sanitizedStrCheck(str1, str2, location):
     if (isinstance(str1, str) and isinstance(str2, str)) or (isinstance(str1, unicode) and isinstance(str2, unicode)):
+        m = SequenceMatcher(None, str1, str2)
+        rat = m.ratio()
+        str1 = str1.replace("\n", " ")
+        str2 = str2.replace("\n", " ")
         if ''.join(filter(lambda c: c in string.printable, str1)) == ''.join(filter(lambda c: c in string.printable, str2)):
             return True
         elif str1.strip() == str2.strip():
@@ -23,24 +28,22 @@ def sanitizedStrCheck(str1, str2, location):
             return True
         elif str1.replace(" ", "") == str2.replace(" ", ""):
             return True
-        #print out some of the mismatches that might be caused by character encoding issues. Doesn't catch all of them. 
-        """
-        elif isinstance(str1, unicode) and len(str1) > 0 and len(str2) > 0 and str1[0] == str2[0] and location != 'hodor':
-            try:
-                str1.decode('ascii')
-            except (UnicodeDecodeError, UnicodeEncodeError) as e:
-                print "================================"
-                print location
-                print "SERVER:"
-                print repr(str1)
-                print "CLIENT:"
-                print repr(str2)
-        """
+        elif rat > .8 and not str1.__contains__('http://'):
+            #print rat
+            #print "SERVER:"
+            #print repr(str1)
+            #print "CLIENT:"
+            #print repr(str2)
+            return True
     return False
 
 def nestedCheck(serv, client, parentLocation):
     global nestedCoCounter
     nestedMatchCount = 0
+
+
+    #if parentLocation == 'http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.167.1350':
+        #print 'OOGABOOGA'
     if serv == client:
         return True
     if isinstance(serv, dict) and isinstance(client, dict):
@@ -196,21 +199,22 @@ for x in range(0, len(clientList)):
 #pretty print some so we know what doesn't match
 i = 0
 for metadataServ in servList2:
-    if i >= 0 and i < 1:
+    if i >= 0 and i < 300:
         for metadataClient in clientList2:
             curKey = metadataServ.keys()[0]
             if curKey in metadataClient.keys():
-                if metadataServ[curKey]['location'] == metadataClient[curKey]['location'] and curKey == "amazon_product":
+                if metadataServ[curKey]['location'] == metadataClient[curKey]['location'] and curKey == "google_patent":
                     print "SERVER"
                     prettyPrint(metadataServ)
                     print "CLIENT"
                     prettyPrint(metadataClient)
     i+=1
-    if i > 100:
-        break
 
 nestedCounter = 0
 mismatch = False
+
+mmdStatusObjects = []
+
 for metadataServ in servList:
     for metadataClient in clientList:
         curKey = metadataServ.keys()[0]
@@ -232,12 +236,23 @@ for metadataServ in servList:
                             nestedCounter += 1
                     elif sanitizedStrCheck(metadataServ[curKey][k], metadataClient[curKey][k], metadataServ[curKey]['location']):
                         matchCount += 1
-            print str(matchCount) + " out of " + str(curFields)+ " for " + str(curKey)            
+            #print str(matchCount) + " out of " + str(curFields)+ " for " + str(curKey)
+            mmdStatusObjects.append({'matches': matchCount, 'possible': curFields, 'misses': curFields-matchCount, 'type': curKey, 'url': metadataServ[curKey]['location']})
             totalCount += matchCount
             totalFields += curFields
 
-print str(totalCount) + " out of " + str(totalFields)+ " total"
-print str(nestedCounter) + " were composite/collection mismatches"
+newlist = sorted(mmdStatusObjects, key=lambda k: k['misses'], reverse=True)
+for object in newlist:
+    print str(object['matches']) + " out of " + str(object['possible'])+ " for " + str(object['type']) + ". \nURL: " + str(object['url']) + "\n"
+
+documentMatches = 0
+for object in newlist:
+    if object['misses'] == 0:
+        documentMatches+=1
+print str(documentMatches) + " out of " + str(len(newlist)) + " total documents matched\n "
+
+print str(totalCount) + " out of " + str(totalFields)+ " total fields matched"
+#print str(nestedCounter) + " were composite/collection mismatches"
 
 fileS.close()
 fileC.close()
