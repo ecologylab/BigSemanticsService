@@ -37,7 +37,7 @@ import org.apache.http.client.ClientProtocolException;
  *
  * @author Zach Brown
  */
-public interface CouchInterface 
+public interface CouchAccessor
 {
 
   /**
@@ -48,11 +48,12 @@ public interface CouchInterface
    * 
    * @return Will return the document from the database in json form The json will now also contain
    *         the entries id, and _rev Will be null if the document was unattainable
-   * @throws CouchInterfaceException 
-   * @throws IOException 
-   * @throws ParseException 
+   * @throws CouchAccessorException
+   * @throws IOException
+   * @throws ParseException
    */
-  public String getDoc(String docId, String tableId) throws CouchInterfaceException, ParseException, IOException;
+  public String getDoc(String docId, String tableId)
+      throws CouchAccessorException, ParseException, IOException;
 
   /**
    * @param docId
@@ -64,11 +65,12 @@ public interface CouchInterface
    *          The name of the table
    * 
    * @return boolean, true if document was put, false if not because there was a naming conflict
-   * @throws IOException 
-   * @throws ParseException 
-   * @throws CouchInterfaceException 
+   * @throws IOException
+   * @throws ParseException
+   * @throws CouchAccessorException
    */
-  public boolean putDoc(String docId, String docContent, String tableId) throws ParseException, IOException, CouchInterfaceException;
+  public boolean putDoc(String docId, String docContent, String tableId)
+      throws ParseException, IOException, CouchAccessorException;
 
   /**
    * @param docId
@@ -79,11 +81,12 @@ public interface CouchInterface
    *          The table where the document is.
    *
    * @return true if successful false if can't update because the document doesn't exist
-   * @throws IOException 
-   * @throws ClientProtocolException 
-   * @throws CouchInterfaceException 
+   * @throws IOException
+   * @throws ClientProtocolException
+   * @throws CouchAccessorException
    */
-  public boolean updateDoc(String docId, String docContent, String tableId) throws ClientProtocolException, IOException, CouchInterfaceException;
+  public boolean updateDoc(String docId, String docContent, String tableId)
+      throws ClientProtocolException, IOException, CouchAccessorException;
 
   /**
    * @param docId
@@ -92,34 +95,36 @@ public interface CouchInterface
    *          The name of the table where the document is.
    *
    * @return true if successful false if can't delete document because it doesn't exist
-   * @throws CouchInterfaceException 
-   * @throws IOException 
-   * @throws ClientProtocolException 
+   * @throws CouchAccessorException
+   * @throws IOException
+   * @throws ClientProtocolException
    */
-  public boolean dropDoc(String docId, String tableId) throws CouchInterfaceException, ClientProtocolException, IOException;
+  public boolean dropDoc(String docId, String tableId)
+      throws CouchAccessorException, ClientProtocolException, IOException;
 
   /**
    * 
    * @param docId
-   * 				The id of the document to add an attachment to
+   *          The id of the document to add an attachment to
    * @param tableId
-   * 				The id of the table where the document is
+   *          The id of the table where the document is
    * @param content
-   * 			  String content of data to be attached
+   *          String content of data to be attached
    * @param mimeType
-   * 	      of the attachment  
+   *          of the attachment
    * @param contentTitle
-   * 				name of the title
+   *          name of the title
    * @return true if successful
-   * @throws IOException 
-   * @throws ClientProtocolException 
-   * @throws CouchInterfaceException 
+   * @throws IOException
+   * @throws ClientProtocolException
+   * @throws CouchAccessorException
    */
   public boolean putAttach(String docId,
-                       String tableId,
-                       String content,
-                       String mimeType,
-                       String contentTitle) throws ClientProtocolException, IOException, CouchInterfaceException;
+                           String tableId,
+                           String content,
+                           String mimeType,
+                           String contentTitle)
+      throws ClientProtocolException, IOException, CouchAccessorException;
 
   /**
    * 

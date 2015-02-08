@@ -13,13 +13,13 @@ import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
 import ecologylab.bigsemantics.documentcache.DocumentCache;
 import ecologylab.bigsemantics.documentcache.EhCacheDocumentCache;
+import ecologylab.bigsemantics.documentcache.EhCacheMan;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
 import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
 import ecologylab.bigsemantics.dpool.DpoolConfigNames;
-import ecologylab.bigsemantics.dpool.GlobalCacheManager;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.DocumentLogRecordScope;
@@ -102,8 +102,18 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
 
   private void configureDpoolServiceUrl()
   {
-    String[] dpoolHosts = configs.getStringArray(DpoolConfigNames.CONTROLLER_HOST);
-    int port = configs.getInt(DpoolConfigNames.CONTROLLER_PORT);
+    String[] dpoolHosts = null;
+    int port = 0;
+    if (configs.getBoolean(DPOOL_RUN_BUILTIN_SERVICE, true))
+    {
+      dpoolHosts = new String[] { "localhost" };
+      port = configs.getInt(PORT);
+    }
+    else
+    {
+      dpoolHosts = configs.getStringArray(DpoolConfigNames.CONTROLLER_HOST);
+      port = configs.getInt(DpoolConfigNames.CONTROLLER_PORT);
+    }
     dpoolServiceUrl = DPoolDownloadController.pickDpoolServiceUrl(port, dpoolHosts);
     if (dpoolServiceUrl == null)
     {

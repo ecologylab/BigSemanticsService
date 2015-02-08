@@ -34,7 +34,7 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class PageService implements Configurable, DpoolConfigNames
 {
 
-  static Logger              logger        = LoggerFactory.getLogger(PageService.class);
+  static Logger              logger = LoggerFactory.getLogger(PageService.class);
 
   @Context
   private HttpServletRequest request;
@@ -46,10 +46,10 @@ public class PageService implements Configurable, DpoolConfigNames
   private String             userAgent;
 
   @QueryParam("n")
-  private int                numOfAttempts = -1;
+  private int                numOfAttempts;
 
   @QueryParam("t")
-  private int                timeout       = -1;
+  private int                timeout;
 
   @QueryParam("rfail")
   private String             failRegex;
@@ -75,11 +75,11 @@ public class PageService implements Configurable, DpoolConfigNames
     {
       userAgent = configuration.getString(DEFAULT_USER_AGENT);
     }
-    if (numOfAttempts < 0)
+    if (numOfAttempts <= 0)
     {
       numOfAttempts = configuration.getInt(DEFAULT_NUM_ATTEMPTS);
     }
-    if (timeout < 0)
+    if (timeout <= 0)
     {
       timeout = configuration.getInt(DEFAULT_TIMEOUT);
     }
@@ -133,17 +133,15 @@ public class PageService implements Configurable, DpoolConfigNames
 
       State state = task.getState();
       SimplHttpResponse httpResp = task.getResponse();
+      int code = httpResp == null ? 500 : httpResp.getCode();
+      String taskDetail = getTaskDetail(format);
       logger.debug("DownloadTask {} done, state={}", task, state);
-      switch (state)
+      if (state == State.SUCCEEDED)
       {
-      case SUCCEEDED:
-        String httpRespBody = Utils.serializeToString(httpResp, format);
-        response = Response.ok(httpRespBody, mediaType).build();
-        break;
-      default:
-        logger.warn("Failed to download {}, state={}", task, task.getState());
-        int code = httpResp == null ? 500 : httpResp.getCode();
-        String taskDetail = getTaskDetail(format);
+        response = Response.ok(taskDetail, mediaType).build();
+      }
+      else
+      {
         response = Response.status(code).entity(taskDetail).build();
       }
     }

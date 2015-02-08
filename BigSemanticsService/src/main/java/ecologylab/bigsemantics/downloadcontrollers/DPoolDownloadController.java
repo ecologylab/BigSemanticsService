@@ -2,23 +2,18 @@ package ecologylab.bigsemantics.downloadcontrollers;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.AbstractHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
-import ecologylab.bigsemantics.dpool.BasicResponse;
-import ecologylab.bigsemantics.dpool.DownloaderResult;
+import ecologylab.bigsemantics.dpool.DownloadTask;
 import ecologylab.bigsemantics.dpool.MessageScope;
-import ecologylab.bigsemantics.httpclient.BasicResponseHandler;
-import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 import ecologylab.bigsemantics.httpclient.HttpClientUtils;
+import ecologylab.bigsemantics.httpclient.SimplHttpResponse;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.DpoolServiceError;
 import ecologylab.bigsemantics.metadata.builtins.Document;
@@ -35,23 +30,13 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class DPoolDownloadController extends AbstractDownloadController
 {
 
-  private static Logger            logger;
+  private static Logger       logger = LoggerFactory.getLogger(DPoolDownloadController.class);
 
-  private static HttpClientFactory httpClientFactory;
+  private static StringFormat format = StringFormat.JSON;
 
-  static
-  {
-    logger = LoggerFactory.getLogger(DPoolDownloadController.class);
-    httpClientFactory = new HttpClientFactory();
-  }
+  private String              dpoolServiceUrl;
 
-  public static int                HTTP_DOWNLOAD_REQUEST_TIMEOUT = 60000;
-
-  private String                   dpoolServiceUrl;
-
-  private DocumentClosure          closure;
-
-  private DownloaderResult         result;
+  private DocumentClosure     closure;
 
   public DPoolDownloadController(String dpoolServiceUrl)
   {
@@ -66,7 +51,7 @@ public class DPoolDownloadController extends AbstractDownloadController
   @Override
   public boolean accessAndDownload(ParsedURL location) throws IOException
   {
-    setLocation(location);
+    setOriginalLocation(location);
 
     Document document = closure.getDocument();
     SemanticsGlobalScope semanticScope = document.getSemanticsScope();
@@ -88,162 +73,103 @@ public class DPoolDownloadController extends AbstractDownloadController
     // init log record
     DocumentLogRecord logRecord = closure.getLogRecord();
 
-    result = downloadPage(site, location, getUserAgent());
-
-    if (result == null)
+    DownloadTask task = downloadPage(location, getUserAgent());
+    SimplHttpResponse resp = task == null ? null : task.getResponse();
+    if (resp == null)
     {
       logRecord.logPost().addEventNow(new DpoolServiceError("Null response"));
       logger.error("Failed to download {}: null result from downloadPage()", location);
       return false;
     }
 
-    logRecord.logPost().addEvents(result.getLogPost());
+    logRecord.logPost().addEvents(task.getLogPost());
+    setHttpResponse(resp);
 
-    if (result.getHttpRespCode() == HttpStatus.SC_OK)
-    {
-      setLocation(ParsedURL.getAbsolute(result.getRequestedUrl()));
-
-      // handle other locations (e.g. redirects)
-      List<String> otherLocations = result.getOtherLocations();
-      if (otherLocations != null)
-      {
-        for (String otherLocation : otherLocations)
-        {
-          ParsedURL redirectedLocation = ParsedURL.getAbsolute(otherLocation);
-          handleRedirectLocation(semanticScope, closure, location, redirectedLocation);
-        }
-      }
-      
-      setCharset(result.getCharset());
-      setMimeType(result.getMimeType());
-      setStatus(result.getHttpRespCode());
-      setStatusMessage(result.getHttpRespMsg());
-
-      setContent(result.getContent());
-
-      return true;
-    }
-    else
+    if (resp.getCode() != HttpStatus.SC_OK)
     {
       logRecord.logPost().addEventNow(new DpoolServiceError("Failed to download " + location,
-                                      result.getHttpRespCode()));
-      logger.error("Failed to download {}: {}", location, result.getHttpRespCode());
+                                                            resp.getCode()));
+      logger.error("Failed to download {}: {}", location, resp.getCode());
       return false;
     }
+    return true;
   }
 
-  private DownloaderResult downloadPage(SemanticsSite site,
-                                        ParsedURL origLoc,
-                                        String userAgentString)
+  private DownloadTask downloadPage(ParsedURL origLoc, String userAgentString)
   {
     Map<String, String> params = new HashMap<String, String>();
     params.put("url", origLoc.toString());
     params.put("agent", userAgentString);
-    params.put("int", String.valueOf((int) (site.getMinDownloadInterval() * 1000)));
-    params.put("natt", "3");
-    params.put("tatt", "60000");
-    HttpGet get = HttpClientUtils.getRequest(dpoolServiceUrl, params);
-
-    AbstractHttpClient client = httpClientFactory.get();
-    client.getParams().setParameter("http.connection.timeout", HTTP_DOWNLOAD_REQUEST_TIMEOUT);
-    BasicResponseHandler handler = new BasicResponseHandler();
+    params.put("t", "60000");
     try
     {
-      client.execute(get, handler);
+      SimplHttpResponse dpoolResp = HttpClientUtils.doGet(userAgentString, dpoolServiceUrl, params);
+      if (dpoolResp != null && dpoolResp.getCode() == HttpStatus.SC_OK)
+      {
+        String taskStr = dpoolResp.getContent();
+        DownloadTask task =
+            (DownloadTask) MessageScope.get().deserialize(taskStr, format);
+        SimplHttpResponse httpResp = task.getResponse();
+        String content = httpResp == null ? null : httpResp.getContent();
+        logger.info("Received DPool result for {}: tid={}, state={}, content_len={}",
+                    origLoc, task.getId(), task.getState(), content == null ? 0 : content.length());
+        return task;
+      }
+      else
+      {
+        logger.error("DPool controller error status when downloading {}: {} {}",
+                     origLoc, dpoolResp.getCode(), dpoolResp.getMessage());
+      }
     }
-    catch (IOException e)
+    catch (SIMPLTranslationException e)
+    {
+      logger.error("Error deserializing DPool result for " + origLoc, e);
+    }
+    catch (Exception e)
     {
       logger.error("Error downloading " + origLoc + " using DPool!", e);
     }
-    finally
-    {
-      get.releaseConnection();
-    }
-
-    BasicResponse resp = handler.getResponse();
-    if (resp != null && resp.getHttpRespCode() == HttpStatus.SC_OK)
-    {
-      String resultStr = resp.getContent();
-      DownloaderResult result = null;
-      try
-      {
-        result = (DownloaderResult) MessageScope.get().deserialize(resultStr, StringFormat.XML);
-        assert result != null : "Deserialization results in null!";
-        String content = result.getContent();
-        logger.info("Received DPool result for {}: tid={}, state={}, status={}, content_len={}",
-                    origLoc,
-                    result.getTaskId(),
-                    result.getState(),
-                    result.getHttpRespCode(),
-                    content == null ? 0 : content.length());
-      }
-      catch (SIMPLTranslationException e)
-      {
-        logger.error("Error deserializing DPool result for " + origLoc, e);
-      }
-      return result;
-    }
-    else
-    {
-      logger.error("DPool controller error status when downloading {}: {} {}",
-                   origLoc,
-                   resp.getHttpRespCode(),
-                   resp.getHttpRespMsg());
-    }
-
     return null;
-  }
-
-  private void handleRedirectLocation(SemanticsGlobalScope semanticScope,
-                                      DocumentClosure documentClosure,
-                                      ParsedURL originalPurl,
-                                      ParsedURL redirectedLocation)
-  {
-    addRedirectedLocation(redirectedLocation);
-    Document newDocument = semanticScope.getOrConstructDocument(redirectedLocation);
-    newDocument.addAdditionalLocation(originalPurl);
-    documentClosure.changeDocument(newDocument);
-  }
-
-  @Override
-  public String getHeader(String name)
-  {
-    throw new RuntimeException("Not implemented.");
   }
 
   private static String TEST_STR = "TEST_STR";
 
   public static String pickDpoolServiceUrl(Integer port, String... dpoolHosts)
   {
-    BasicResponseHandler handler = new BasicResponseHandler();
     for (String dpoolHost : dpoolHosts)
     {
       logger.info("Trying dpool service at " + dpoolHost);
       String testLoc =
           "http://" + dpoolHost + ":" + port + "/DownloaderPool/echo/get?msg=" + TEST_STR;
-      AbstractHttpClient client = httpClientFactory.get();
-      HttpGet get = new HttpGet(testLoc);
       try
       {
-        client.execute(get, handler);
-        BasicResponse resp = handler.getResponse();
-        if (resp != null && resp.getHttpRespCode() == HttpStatus.SC_OK)
+        SimplHttpResponse resp = HttpClientUtils.doGet(null, testLoc, null);
+        if (resp != null && resp.getCode() == HttpStatus.SC_OK)
         {
           String content = resp.getContent();
           if (content.contains(TEST_STR))
           {
             logger.info("Picked dpool service at " + dpoolHost);
-            return "http://" + dpoolHost + ":" + port + "/DownloaderPool/page/download.xml";
+            String fmt = null;
+            switch (format)
+            {
+            case JSON:
+              fmt = "json";
+              break;
+            case XML:
+              fmt = "xml";
+              break;
+            default:
+              logger.error("Format not supported: " + format);
+              break;
+            }
+            return "http://" + dpoolHost + ":" + port + "/DownloaderPool/page/download." + fmt;
           }
         }
       }
-      catch (Throwable t)
+      catch (Exception e)
       {
         logger.warn("Dpool service not reachable at: " + dpoolHost);
-      }
-      finally
-      {
-        get.releaseConnection();
       }
     }
     logger.error("Cannot locate the DPool service!");

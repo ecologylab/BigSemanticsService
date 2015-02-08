@@ -5,28 +5,30 @@ import java.util.Map;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import ecologylab.bigsemantics.Configs;
+import ecologylab.bigsemantics.Configurable;
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.dpool.resources.Echo;
 import ecologylab.bigsemantics.dpool.resources.LogService;
 import ecologylab.bigsemantics.dpool.resources.PageService;
 import ecologylab.bigsemantics.dpool.resources.TaskService;
+import ecologylab.bigsemantics.service.AbstractServiceApplication;
+import ecologylab.bigsemantics.service.ServiceParams;
 
 /**
  * Glues different components of the service together.
  * 
  * @author quyin
  */
-public class DownloaderPoolApplication implements DpoolConfigNames
+public class DownloaderPoolApplication extends AbstractServiceApplication
+    implements Configurable, DpoolConfigNames
 {
 
   private Configuration configs;
@@ -35,63 +37,46 @@ public class DownloaderPoolApplication implements DpoolConfigNames
 
   private Downloader    downloader;
 
-  private Server        server;
-
-  public DownloaderPoolApplication()
+  public Controller getController()
   {
-    super();
-    configs = Configs.loadProperties("dpool.properties");
+    return controller;
   }
 
-  public Configuration getConfigs()
+  public Downloader getLocalDownloader()
   {
-    return configs;
+    return downloader;
   }
 
-  public void initialize() throws Exception
+  public void setLocalDownloader(Downloader downloader)
   {
+    this.downloader = downloader;
+  }
+
+  @Override
+  public void configure(Configuration configuration) throws Exception
+  {
+    this.configs = configuration;
+
     // set up controller
     controller = new Controller();
     controller.configure(configs);
 
     // set up a local downloader
-    // downloader = new LocalDownloader("local-downloader", 4);
-    RemoteCurlDownloader d = new RemoteCurlDownloader("planetlab3.tamu.edu", 4);
-    d.setUser("tamu_ecologyLab");
-    d.setKeyPath("/Users/quyin/.ssh/quyin_ecologylab.pem");
-    d.initialize();
-    downloader = d;
-    controller.getDispatcher().addWorker(downloader);
-
-    // set up the server
-    if (server == null)
+    if (downloader == null)
     {
-      ServletContainer container = getDpoolServletContainer();
-
-      // set up jetty handler for servlets
-      ServletContextHandler handler = new ServletContextHandler();
-      handler.setContextPath("/DownloaderPool");
-      handler.addServlet(new ServletHolder(container), "/*");
-
-      // set up jetty server components
-      QueuedThreadPool threadPool = new QueuedThreadPool(500, 50);
-      server = new Server(threadPool);
-      // num of acceptors: num of cores - 1
-      // num of selectors: use default guess. in practice, depend on cores, load, etc.
-      int cores = Runtime.getRuntime().availableProcessors();
-      ServerConnector connector = new ServerConnector(server, cores - 1, -1);
-      connector.setPort(configs.getInt(CONTROLLER_PORT, 8080));
-      server.addConnector(connector);
-
-      // misc server settings
-      server.setStopAtShutdown(true);
-
-      // connect handler to server
-      server.setHandler(handler);
+      downloader = new LocalDownloader("local-downloader", 4);
+      controller.getDispatcher().addWorker(downloader);
     }
   }
 
-  public ServletContainer getDpoolServletContainer() throws ConfigurationException
+  @Override
+  public Configuration getConfiguration()
+  {
+    return configs;
+  }
+
+  @Override
+  public Handler createHandler() throws ConfigurationException
   {
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -112,53 +97,41 @@ public class DownloaderPoolApplication implements DpoolConfigNames
       }
     });
     ServletContainer container = new ServletContainer(config);
-    return container;
+    ServletContextHandler handler = new ServletContextHandler();
+    handler.setContextPath("/DownloaderPool");
+    handler.addServlet(new ServletHolder(container), "/*");
+    return handler;
+  }
+
+  @Override
+  public void setupServer() throws Exception
+  {
+    int cores = Runtime.getRuntime().availableProcessors();
+    setupServer(new ServiceParams(500, 50, 8080, cores - 1, -1));
   }
 
   public void start() throws Exception
   {
-    if (server == null)
-    {
-      throw new RuntimeException("Server uninitialized!");
-    }
-
-    // run server
-    server.start();
-
-    // run the dispatcher
     controller.startDispatcher();
-  }
-
-  public void join() throws InterruptedException
-  {
-    if (server == null)
-    {
-      throw new RuntimeException("Server uninitialized!");
-    }
-
-    server.join();
+    super.start();
   }
 
   public void stop() throws Exception
   {
-    if (server == null)
-    {
-      throw new RuntimeException("Server uninitialized!");
-    }
-
+    super.stop();
     controller.stopDispatcher();
-    server.stop();
   }
 
   public static void main(String[] args) throws Exception
   {
     Map<String, String> flags = new HashMap<String, String>();
     Utils.parseCommandlineFlags(flags, args);
+    Configuration appConfigs = Configs.loadProperties("dpool.properties");
+    Utils.mergeFlagsToConfigs(appConfigs, flags);
 
     DownloaderPoolApplication app = new DownloaderPoolApplication();
-    Configuration appConfigs = app.getConfigs();
-    Utils.mergeFlagsToConfigs(appConfigs, flags);
-    app.initialize();
+    app.configure(appConfigs);
+    app.setupServer();
     app.start();
   }
 

@@ -12,15 +12,12 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
-import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
-import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.generated.library.primitives.CachedHtml;
 import ecologylab.bigsemantics.generated.library.primitives.CouchdbEntry;
 import ecologylab.bigsemantics.metadata.MetadataDeserializationHookStrategy;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.PersistenceMetaInfo;
 import ecologylab.bigsemantics.service.SemanticsServiceConfigNames;
-import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
 import ecologylab.serialization.DeserializationHookStrategy;
 import ecologylab.serialization.SIMPLTranslationException;
@@ -33,7 +30,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author zach
  */
 public class CouchPersistentDocumentCache
-implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
+    implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
 {
 
   private static final String  htmlTable     = "html";
@@ -53,7 +50,7 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
 
   private SemanticsGlobalScope semanticsScope;
 
-  private CouchInterface       couchInterface;
+  private CouchAccessor       couchInterface;
 
   public CouchPersistentDocumentCache(SemanticsGlobalScope semanticsScope)
   {
@@ -65,10 +62,11 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
   public void configure(Configuration config)
   {
     String databaseUrl = config.getString(COUCHDB_URL);
-    couchInterface = new HttpCouchInterface(databaseUrl);
+    couchInterface = new CouchHttpAccessor(databaseUrl);
   }
 
-  private String getDoc(String docId, String tableId) throws ParseException, CouchInterfaceException, IOException
+  private String getDoc(String docId, String tableId)
+      throws ParseException, CouchAccessorException, IOException
   {
     String json = couchInterface.getDoc(docId, tableId);
     return json == null ? null : "{ \"couchdb_entry\" : " + json + " } ";
@@ -80,26 +78,30 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     return bytes;
   }
 
-  private boolean couchDoc(String docId, String tableId, Object doc) throws SIMPLTranslationException, ParseException, IOException, CouchInterfaceException
+  private boolean couchDoc(String docId, String tableId, Object doc)
+      throws SIMPLTranslationException, ParseException, IOException, CouchAccessorException
   {
     String valueJSON = SimplTypesScope.serialize(doc, StringFormat.JSON).toString();
     String docJSON = "{\"value\":" + valueJSON + "}";
     boolean result = couchInterface.putDoc(docId, docJSON, tableId);
     return result;
   }
- 
+
   private boolean couchAttach(String docId,
-                          String tableId,
-                          String attachment,
-                          String mimeType,
-                          String contentTitle) throws SIMPLTranslationException, ClientProtocolException, IOException, CouchInterfaceException
+                              String tableId,
+                              String attachment,
+                              String mimeType,
+                              String contentTitle)
+      throws SIMPLTranslationException, ClientProtocolException, IOException,
+      CouchAccessorException
   {
     boolean result = couchInterface.putAttach(docId, tableId, attachment, mimeType, contentTitle);
     return result;
   }
 
   private boolean updateDoc(String docId, String tableId, Object doc)
-      throws SIMPLTranslationException, ClientProtocolException,IOException, CouchInterfaceException
+      throws SIMPLTranslationException, ClientProtocolException, IOException,
+      CouchAccessorException
   {
     String valueJSON = SimplTypesScope.serialize(doc, StringFormat.JSON).toString();
     String docJSON = "{ \"value\" : " + valueJSON + " }";
@@ -107,14 +109,15 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     return result;
   }
 
-  private boolean unCouch(String docId, String tableId) throws ClientProtocolException, CouchInterfaceException, IOException
+  private boolean unCouch(String docId, String tableId)
+      throws ClientProtocolException, CouchAccessorException, IOException
   {
     boolean code = couchInterface.dropDoc(docId, tableId);
     return code;
   }
 
   private void couchOrOverWrite(String docId, String tableId, Object doc)
-      throws SIMPLTranslationException, ParseException, IOException, CouchInterfaceException
+      throws SIMPLTranslationException, ParseException, IOException, CouchAccessorException
   {
     boolean result = couchDoc(docId, tableId, doc);
     if (result)
@@ -128,15 +131,17 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
       {
         return;
       }
-      else //There should never be a case where you can't create, or update a document
+      else
+      // There should never be a case where you can't create, or update a document
       {
-        throw new CouchInterfaceException("Failed to couchOrOverWrite" , 0 ,  "" , tableId, docId);
+        throw new CouchAccessorException("Failed to couchOrOverWrite", 0, "", tableId, docId);
       }
     }
   }
 
   @Override
-  public PersistenceMetaInfo getMetaInfo(ParsedURL location) throws CouchInterfaceException, ParseException, IOException, SIMPLTranslationException
+  public PersistenceMetaInfo getMetaInfo(ParsedURL location)
+      throws CouchAccessorException, ParseException, IOException, SIMPLTranslationException
   {
     String docId = Utils.getLocationHash(location);
     String couchEntryJson = getDoc(docId, metaInfoTable);
@@ -144,17 +149,17 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     if (couchEntryJson != null)
     {
       PersistenceMetaInfo metaInfo = null;
-   
-        CouchdbEntry entry =
-            (CouchdbEntry) entryTScope.deserialize(couchEntryJson, StringFormat.JSON);
-        metaInfo = (PersistenceMetaInfo) entry.getValue();
-        return metaInfo;
+
+      CouchdbEntry entry =
+          (CouchdbEntry) entryTScope.deserialize(couchEntryJson, StringFormat.JSON);
+      metaInfo = (PersistenceMetaInfo) entry.getValue();
+      return metaInfo;
     }
     else
     {
       return null;
     }
-		
+
   }
 
   @Override
@@ -162,7 +167,8 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
                                    String rawContent,
                                    String charset,
                                    String mimeType,
-                                   String mmdHash) throws ParseException, IOException, CouchInterfaceException, SIMPLTranslationException
+                                   String mmdHash)
+      throws ParseException, IOException, CouchAccessorException, SIMPLTranslationException
   {
     if (document == null || document.getLocation() == null)
     {
@@ -197,22 +203,19 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     couchOrOverWrite(docId, metaDataTable, document);
     couchOrOverWrite(docId, metaInfoTable, metaInfo);
 
-
-
     return metaInfo;
   }
 
   @Override
-  public boolean updateDoc(PersistenceMetaInfo metaInfo, Document newDoc) throws ClientProtocolException, 
-  																																							 IOException, 
-  																																							 CouchInterfaceException, 
-  																																							 SIMPLTranslationException
+  public boolean updateDoc(PersistenceMetaInfo metaInfo, Document newDoc)
+      throws ClientProtocolException, IOException, CouchAccessorException,
+      SIMPLTranslationException
   {
     if (newDoc != null && newDoc.getLocation() != null)
     {
       metaInfo.setPersistenceTime(new Date());
       metaInfo.setMmdHash(newDoc.getMetaMetadata().getHashForExtraction());
-     
+
       String docId = metaInfo.getLocation().toString();
       boolean result1 = updateDoc(docId, metaDataTable, newDoc);
       boolean result2 = updateDoc(docId, metaInfoTable, metaInfo);
@@ -224,18 +227,15 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
       {
         return true;
       }
-      
-      
+
     }
 
     return false;
   }
 
   @Override
-  public Document retrieveDoc(PersistenceMetaInfo metaInfo) throws ParseException, 
-  																																 CouchInterfaceException, 
-  																																 IOException, 
-  																																 SIMPLTranslationException
+  public Document retrieveDoc(PersistenceMetaInfo metaInfo)
+      throws ParseException, CouchAccessorException, IOException, SIMPLTranslationException
   {
     String docId = metaInfo.getDocId();
 
@@ -244,10 +244,10 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
     {
       Document document = null;
       DeserializationHookStrategy deserializationHookStrategy =
-            new MetadataDeserializationHookStrategy(semanticsScope);
+          new MetadataDeserializationHookStrategy(semanticsScope);
       CouchdbEntry entry = (CouchdbEntry) entryTScope.deserialize(couchEntryJson,
-                                                                    deserializationHookStrategy,
-                                                                    StringFormat.JSON);
+                                                                  deserializationHookStrategy,
+                                                                  StringFormat.JSON);
 
       document = (Document) entry.getValue();
       return document;
@@ -269,15 +269,14 @@ implements PersistentDocumentCache<Document>, SemanticsServiceConfigNames
   }
 
   @Override
-  public boolean remove(PersistenceMetaInfo metaInfo) throws ClientProtocolException, 
-  	 																												 CouchInterfaceException,	 
-  	 																												 IOException
+  public boolean remove(PersistenceMetaInfo metaInfo)
+      throws ClientProtocolException, CouchAccessorException, IOException
   {
     String docId = metaInfo.getDocId();
     boolean result1 = unCouch(docId, htmlTable);
     boolean result2 = unCouch(docId, metaDataTable);
     boolean result3 = unCouch(docId, metaInfoTable);
-    if (result1 && result2 && result3 )
+    if (result1 && result2 && result3)
     {
       return true;
     }

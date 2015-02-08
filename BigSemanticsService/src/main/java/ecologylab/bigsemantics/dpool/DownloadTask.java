@@ -12,6 +12,7 @@ import ecologylab.net.ParsedURL;
 import ecologylab.serialization.annotations.Hint;
 import ecologylab.serialization.annotations.simpl_composite;
 import ecologylab.serialization.annotations.simpl_hints;
+import ecologylab.serialization.annotations.simpl_inherit;
 import ecologylab.serialization.annotations.simpl_scalar;
 
 /**
@@ -21,6 +22,7 @@ import ecologylab.serialization.annotations.simpl_scalar;
  * @author quyin
  * 
  */
+@simpl_inherit
 public class DownloadTask extends Task
 {
 

@@ -67,7 +67,7 @@ public class DiskPersistentDocumentCache
   @Override
   public void configure(Configuration config) throws IOException
   {
-    String cacheBaseDir = expandHomeDir(config.getString(CACHE_DIR));
+    String cacheBaseDir = expandHomeDir(config.getString(PERSISTENT_CACHE_DIR));
     File baseDir = new File(cacheBaseDir);
     if (existsOrMakeDirs(baseDir))
     {

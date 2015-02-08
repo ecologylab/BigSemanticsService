@@ -13,7 +13,6 @@ import net.sf.ehcache.config.CacheConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
-import ecologylab.bigsemantics.dpool.GlobalCacheManager;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.RichDocument;
 import ecologylab.net.ParsedURL;
