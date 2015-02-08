@@ -18,8 +18,8 @@ import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
 import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
-import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
-import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
+import ecologylab.bigsemantics.dpool.DpoolConfigNames;
+import ecologylab.bigsemantics.dpool.GlobalCacheManager;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.DocumentLogRecordScope;
@@ -115,7 +115,7 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
   @Override
   protected DocumentCache<ParsedURL, Document> getDocumentCache()
   {
-    return new EhCacheDocumentCache(GlobalCacheManager.getSingleton());
+    return new EhCacheDocumentCache(EhCacheMan.getSingleton());
   }
 
   @Override

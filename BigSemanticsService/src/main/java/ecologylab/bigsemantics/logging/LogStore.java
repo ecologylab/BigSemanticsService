@@ -17,7 +17,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 import org.apache.commons.configuration.Configuration;
 
-import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
+import ecologylab.bigsemantics.documentcache.EhCacheMan;
 import ecologylab.bigsemantics.service.SemanticsServiceConfigNames;
 import ecologylab.collections.FilteredIterator;
 
@@ -45,7 +45,7 @@ public class LogStore implements SemanticsServiceConfigNames
 
     logs = new ConcurrentHashMap<ServiceLogRecord, String>(size);
 
-    CacheConfiguration cacheConfig = GlobalCacheManager.getDefaultCacheConfig();
+    CacheConfiguration cacheConfig = EhCacheMan.getDefaultCacheConfig();
     cacheConfig.setName(LogStore.class.getName() + ".logsById");
     cacheConfig.setMaxEntriesLocalHeap(size);
     cacheConfig.memoryStoreEvictionPolicy(MemoryStoreEvictionPolicy.FIFO);
@@ -59,7 +59,7 @@ public class LogStore implements SemanticsServiceConfigNames
         logs.remove(logRecord);
       }
     });
-    GlobalCacheManager.getSingleton().addCache(logsById); // necessary for initialization
+    EhCacheMan.getSingleton().addCache(logsById); // necessary for initialization
   }
 
   public void addLogRecord(String id, String clientAttachedId, ServiceLogRecord log)

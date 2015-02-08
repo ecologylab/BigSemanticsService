@@ -13,12 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.collecting.SemanticsGlobalScope;
 import ecologylab.bigsemantics.collecting.SemanticsSite;
-import ecologylab.bigsemantics.downloaderpool.BasicResponse;
-import ecologylab.bigsemantics.downloaderpool.DownloaderResult;
-import ecologylab.bigsemantics.downloaderpool.MessageScope;
+import ecologylab.bigsemantics.dpool.BasicResponse;
+import ecologylab.bigsemantics.dpool.DownloaderResult;
+import ecologylab.bigsemantics.dpool.MessageScope;
 import ecologylab.bigsemantics.httpclient.BasicResponseHandler;
 import ecologylab.bigsemantics.httpclient.HttpClientFactory;
-import ecologylab.bigsemantics.httpclient.ModifiedHttpClientUtils;
+import ecologylab.bigsemantics.httpclient.HttpClientUtils;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.DpoolServiceError;
 import ecologylab.bigsemantics.metadata.builtins.Document;
@@ -142,7 +142,7 @@ public class DPoolDownloadController extends AbstractDownloadController
     params.put("int", String.valueOf((int) (site.getMinDownloadInterval() * 1000)));
     params.put("natt", "3");
     params.put("tatt", "60000");
-    HttpGet get = ModifiedHttpClientUtils.generateGetRequest(dpoolServiceUrl, params);
+    HttpGet get = HttpClientUtils.getRequest(dpoolServiceUrl, params);
 
     AbstractHttpClient client = httpClientFactory.get();
     client.getParams().setParameter("http.connection.timeout", HTTP_DOWNLOAD_REQUEST_TIMEOUT);

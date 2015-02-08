@@ -34,10 +34,10 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.Configs;
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
-import ecologylab.bigsemantics.downloaderpool.Downloader;
-import ecologylab.bigsemantics.downloaderpool.DownloaderPoolApplication;
-import ecologylab.bigsemantics.downloaderpool.DpoolConfigNames;
-import ecologylab.bigsemantics.downloaderpool.GlobalCacheManager;
+import ecologylab.bigsemantics.dpool.Downloader;
+import ecologylab.bigsemantics.dpool.DownloaderPoolApplication;
+import ecologylab.bigsemantics.dpool.DpoolConfigNames;
+import ecologylab.bigsemantics.dpool.GlobalCacheManager;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.service.resources.LogService;
 import ecologylab.bigsemantics.service.resources.MetadataService;
@@ -119,8 +119,8 @@ public class BigSemanticsServiceApplication implements SemanticsServiceConfigNam
         Configuration dpoolConfigs = dpoolApp.getConfigs();
         dpoolConfigs.setProperty(DpoolConfigNames.CONTROLLER_HOST, "localhost");
         dpoolConfigs.setProperty(DpoolConfigNames.CONTROLLER_PORT, port);
-        dpoolApp.setCacheManager(GlobalCacheManager.getSingleton());
-        ServletContainer dpoolContainer = dpoolApp.getDpoolContainer();
+        dpoolApp.setCacheManager(EhCacheMan.getSingleton());
+        ServletContainer dpoolContainer = dpoolApp.getDpoolServletContainer();
         servletContext.addServlet(new ServletHolder(dpoolContainer), "/DownloaderPool/*");
       }
       // bigsemantics service
