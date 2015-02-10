@@ -1,0 +1,165 @@
+
+===================Cases where server gets a field that client doesn't have at all
+
+number_of_steps not in instructable               http://www.instructables.com/id/Tomato-Water-Bloody-Mary/
+number_of_steps not in instructable               http://www.instructables.com/id/Cheesy-Potato-Shotz/
+bestseller_list_rank not in amazon_product        http://www.amazon.com/Samsung-UN60D7000-60-Inch-1080p-Silver/dp/B004QFGGTY
+bestseller_list_rank not in amazon_product        http://www.amazon.com/Deathly-Hallows-Movie-Only-Edition-UltraViolet/dp/B005O30Y5Y
+seller not in ebay_product                        http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
+business_address not in restaurant                http://www.urbanspoon.com/r/114/875031/restaurant/College-Station/Christophers-World-Grille-Bryan
+pic not in imdb_movie                             http://www.imdb.com/title/tt0137523/
+champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/diana/
+champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/caitlyn/
+pic not in rotten_movie                           http://www.rottentomatoes.com/m/inglourious_basterds/
+rating not in tv_show                             http://www.tv.com/shows/house/
+pic not in tv_show                                http://www.tv.com/shows/house/
+citeulike_user not in citeulike_paper             http://www.citeulike.org/user/dwenig/article/828279
+citeulike_user not in citeulike_paper             http://www.citeulike.org/user/laurapapaleo/article/2901818
+authors not in research_gate_article              http://www.researchgate.net/publication/228563675_A_formula_for_the_volume_of_a_hyperbolic_tetrahedon
+birth_detail not in imdb_person                   http://www.imdb.com/name/nm0000487/
+birth_detail not in imdb_person                   http://www.imdb.com/name/nm0000199/
+birth_detail not in imdb_person                   http://www.imdb.com/name/nm0004266/
+publication_detail not in acm_portal_author       http://dl.acm.org/author_page.cfm?id=81100091670
+publication_detail not in acm_portal_author       http://dl.acm.org/author_page.cfm?id=81309499161
+weather_image not in weather_report               http://www.wunderground.com/US/77840?MR=1
+weather_image not in weather_report               http://i.wund.com/US/TX/College_Station.html
+description_section not in wikipedia_mobile_page  http://en.m.wikipedia.org/wiki/Nuon_Chea
+
+citeulike_user not in collection of               http://www.citeulike.org/author/Hearst:MA
+description not in composite of                   http://www.homeaway.com/vacation-rentals/greenland/r1113
+meta_metadata_name not in collection of           http://en.m.wikipedia.org/wiki/Nuon_Chea
+comments not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+specifications not in collection of               http://www.newegg.com/Product/Product.aspx?Item=N82E16834257878
+locality not in composite of                      http://www.tripadvisor.com/Hotel_Review-g30196-d98474-Reviews-The_Driskill-Austin_Texas.html
+text not in collection of                         http://en.m.wikipedia.org/wiki/Nuon_Chea
+archive not in composite of                       http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.167.1350
+description not in collection of                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
+citeulike_paper not in collection of              http://www.citeulike.org/search/all?q=latent semantic
+text_keywords not in composite of                 http://www.homeaway.com/vacation-rentals/greenland/r1113
+year not in composite of                          http://www.ncbi.nlm.nih.gov/pubmed/23180662
+rhizome_artwork not in collection of              http://rhizome.org/artbase/tag/nostalgia/
+examples not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/TheGunslinger
+region not in composite of                        http://www.tripadvisor.com/Hotel_Review-g30196-d98474-Reviews-The_Driskill-Austin_Texas.html
+paragraphs not in collection of                   http://en.wikipedia.org/wiki/Type_system
+newmuseum_artwork not in collection of            http://archive.newmuseum.org/index.php/Browse/modifyCriteria/facet/type_facet/id/12/mod_id/0
+twitter_profile not in collection of              http://www.nytimes.com/2012/08/28/science/earth/sea-ice-in-arctic-measured-at-record-low.html?_r=0
+price not in collection of                        http://www.amazon.co.uk/gp/bestsellers/books/515344
+citeseerx_summary not in collection of            http://citeseerx.ist.psu.edu/showciting?doi=10.1.1.31.1768
+rating not in collection of                       http://www.amazon.com/Deathly-Hallows-Movie-Only-Edition-UltraViolet/dp/B005O30Y5Y
+overall_rating not in collection of               http://boardgamegeek.com/boardgamecategory/1016/science-fiction
+title not in collection of                        http://www.citeulike.org/author/Hearst:MA
+name not in collection of                         http://www.amazon.com/Twilight-Saga-Breaking-Two-Disc-Special/dp/B002BWP49C
+guggen_artwork not in collection of               http://www.guggenheim.org/new-york/collections/collection-online/artwork-types/195198
+overall_rating not in composite of                http://www.amazon.com/Discovery-Daft-Punk/dp/B000059MEK
+location not in collection of                     http://www.citeulike.org/author/Hearst:MA
+download_status not in composite of               http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.167.1350
+authors not in collection of                      http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
+champions not in collection of                    http://gameinfo.na.leagueoflegends.com/en/game-info/champions/caitlyn/
+street_address not in composite of                http://www.tripadvisor.com/Hotel_Review-g30196-d98474-Reviews-The_Driskill-Austin_Texas.html
+social_media_search_result not in collection of   http://slashdot.org/index2.pl?fhfilter=test
+reviews_location not in collection of             http://www.amazon.com/Discovery-Daft-Punk/dp/B000059MEK
+anchors not in collection of                      http://en.m.wikipedia.org/wiki/Nuon_Chea
+main_images not in composite of                   http://www.homeaway.com/vacation-rentals/greenland/r1113
+favicon not in composite of                       http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.167.1350
+example_tropes not in collection of               http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+main_images not in collection of                  http://www.amazon.com/Acer-C720-Chromebook-11-6-Inch-2GB/dp/B00FNPD1VW/
+site_name not in composite of                     http://www.homeaway.com/vacation-rentals/greenland/r1113
+postal_code not in composite of                   http://www.tripadvisor.com/Hotel_Review-g30196-d98474-Reviews-The_Driskill-Austin_Texas.html
+source not in collection of                       http://www.citeulike.org/author/Hearst:MA
+title not in composite of                         http://www.citeulike.org/author/Hearst:MA
+value not in collection of                        http://www.amazon.com/Twilight-Saga-Breaking-Two-Disc-Special/dp/B002BWP49C
+image_search_result not in collection of          http://www.tumblr.com/search/wow
+location not in composite of                      http://www.citeulike.org/author/Hearst:MA
+specifications_table not in collection of         http://www.newegg.com/All-Laptops-Notebooks/SubCategory/ID-32?Pagesize=100
+amount_string not in collection of                http://www.nsf.gov/awardsearch/advancedSearchNoScript?Keyword=banana
+ieee_xplore_article not in collection of          http://ieeexplore.ieee.org/search/searchresult.jsp?searchWithin=Search_Index_Terms%3Aart+pop
+all_linked_tropes not in collection of            http://tvtropes.org/pmwiki/pmwiki.php/Main/TheGunslinger
+pic not in collection of                          http://www.rottentomatoes.com/celebrity/keir_dullea/
+patent_class not in collection of                 http://www.google.com/patents/US7953462
+
+===================Status of each document with mismatches
+
+13 out of 20 for imdb_movie                       http://www.imdb.com/title/tt0137523/
+10 out of 15 for amazon_product                   http://www.amazon.com/Twilight-Saga-Breaking-Two-Disc-Special/dp/B002BWP49C
+11 out of 15 for amazon_product                   http://www.amazon.com/Deathly-Hallows-Movie-Only-Edition-UltraViolet/dp/B005O30Y5Y
+16 out of 20 for imdb_movie                       http://www.imdb.com/title/tt0110912/
+7 out of 11 for citeseerx_summary                 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.167.1350
+6 out of 10 for acm_portal_author                 http://dl.acm.org/author_page.cfm?id=81100091670
+6 out of 10 for acm_portal_author                 http://dl.acm.org/author_page.cfm?id=81309499161
+9 out of 13 for weather_report                    http://i.wund.com/US/TX/College_Station.html
+13 out of 16 for instructable                     http://www.instructables.com/id/Tomato-Water-Bloody-Mary/
+13 out of 16 for instructable                     http://www.instructables.com/id/Cheesy-Potato-Shotz/
+7 out of 10 for tvtrope                           http://tvtropes.org/pmwiki/pmwiki.php/Main/TheGunslinger
+12 out of 15 for amazon_product                   http://www.amazon.com/Samsung-UN60D7000-60-Inch-1080p-Silver/dp/B004QFGGTY
+11 out of 14 for amazon_product                   http://www.amazon.com/Acer-C720-Chromebook-11-6-Inch-2GB/dp/B00FNPD1VW/
+7 out of 10 for newegg_product                    http://www.newegg.com/Product/Product.aspx?Item=N82E16834257878
+7 out of 10 for league_champion                   http://gameinfo.na.leagueoflegends.com/en/game-info/champions/diana/
+7 out of 10 for league_champion                   http://gameinfo.na.leagueoflegends.com/en/game-info/champions/caitlyn/
+13 out of 16 for moma_artwork                     http://www.moma.org/collection/browse_results.php?object_id=79211
+4 out of 7 for globe_cartoon                      http://public.globecartoon.com/cgi-bin/WebObjects/globecartoon.woa/wo/13.0.13.5.9
+6 out of 9 for research_gate_article              http://www.researchgate.net/publication/228563675_A_formula_for_the_volume_of_a_hyperbolic_tetrahedon
+13 out of 15 for amazon_product                   http://www.amazon.com/Discovery-Daft-Punk/dp/B000059MEK
+6 out of 8 for bestbuy_product                    http://www.bestbuy.com/site/samsung-60-class-60-diag--led-1080p-120hz-smart-hdtv/7827055.p
+11 out of 13 for newegg_product                   http://www.newegg.com/Product/Product.aspx?Item=N82E16813128532
+6 out of 8 for restaurant_genre                   http://www.urbanspoon.com/f/114/100002/College-Station/American-Restaurants
+8 out of 10 for fondation_article                 http://www.fondation-langlois.org/html/e/page.php?NumPage=2131
+8 out of 10 for fondation_article                 http://www.fondation-langlois.org/html/e/page.php?NumPage=2222
+12 out of 14 for google_patent                    http://www.google.com/patents/US20100045705
+12 out of 14 for google_patent                    http://www.google.com/patents/US7953462
+10 out of 12 for nytimes                          http://www.nytimes.com/2012/08/28/science/earth/sea-ice-in-arctic-measured-at-record-low.html?_r=0
+7 out of 9 for slashdot_article                   http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
+7 out of 9 for tv_show                            http://www.tv.com/shows/house/
+9 out of 11 for met_artwork                       http://www.metmuseum.org/collection/the-collection-online/search/436576
+7 out of 9 for citeulike_paper                    http://www.citeulike.org/user/dwenig/article/828279
+7 out of 9 for citeulike_paper                    http://www.citeulike.org/user/laurapapaleo/article/2901818
+12 out of 14 for google_patent                    http://www.google.com/patents/US5868128
+10 out of 12 for imdb_person                      http://www.imdb.com/name/nm0000487/
+7 out of 9 for imdb_person                        http://www.imdb.com/name/nm0004266/
+3 out of 5 for citeulike_author                   http://www.citeulike.org/author/Hearst:MA
+3 out of 5 for slashdot_search                    http://slashdot.org/index2.pl?fhfilter=test
+7 out of 9 for wikipedia_mobile_page              http://en.m.wikipedia.org/wiki/Nuon_Chea
+4 out of 5 for citeulike_tag                      http://www.citeulike.org/tag/semantic
+4 out of 5 for citeulike_tag                      http://www.citeulike.org/user/yoelabreu84/tag/semantic
+6 out of 7 for instructable_tag                   http://www.instructables.com/tag/type-id/category-food/keyword-tomato/
+6 out of 7 for patent_classification              http://www.uspto.gov/web/patents/classification/uspc725/defs725.htm
+8 out of 9 for tvtrope                            http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+8 out of 9 for ebay_product                       http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
+9 out of 10 for modcloth                          http://www.modcloth.com/shop/dresses/midnight-sun-dress-in-navy
+5 out of 6 for modcloth_search                    http://www.modcloth.com/shop/best-selling-dresses
+6 out of 7 for newegg_subcategory_list            http://www.newegg.com/All-Laptops-Notebooks/SubCategory/ID-32?Pagesize=100
+5 out of 6 for product                            http://m.samsclub.com/ip/showtime-reclining-sectional-with-console-storage/180248
+9 out of 10 for tigerdirect_product               http://www.tigerdirect.com/applications/SearchTools/item-details.asp?EdpNo=8674056
+8 out of 9 for hotel                              http://www.homeaway.com/vacation-rentals/greenland/r1113
+9 out of 10 for hotel                             http://www.tripadvisor.com/Hotel_Review-g30196-d98474-Reviews-The_Driskill-Austin_Texas.html
+8 out of 9 for restaurant                         http://www.urbanspoon.com/r/114/875031/restaurant/College-Station/Christophers-World-Grille-Bryan
+5 out of 6 for amazon_list                        http://www.amazon.com/Cook-Books-amp-more/lm/R1PADW7FZALCHA/
+5 out of 6 for amazon_list                        http://www.amazon.com/gp/bestsellers/books/6
+5 out of 6 for amazon_list                        http://www.amazon.co.uk/gp/bestsellers/books/515344
+6 out of 7 for bgg_category                       http://boardgamegeek.com/boardgamecategory/1016/science-fiction
+6 out of 7 for rotten_movie                       http://www.rottentomatoes.com/m/inglourious_basterds/
+11 out of 12 for met_artwork                      http://www.metmuseum.org/collection/the-collection-online/search/503932
+9 out of 10 for rhizome_artwork                   http://rhizome.org/portfolios/artwork/57882/
+10 out of 11 for sfu_cartoon_archive              http://edocs.lib.sfu.ca/cgi-bin/Cartoons?CartoonID=960
+7 out of 8 for pubmed_article                     http://www.ncbi.nlm.nih.gov/pubmed/22439083
+7 out of 8 for pubmed_article                     http://www.ncbi.nlm.nih.gov/pubmed/23180662
+5 out of 6 for science_direct_article             http://www.sciencedirect.com/science/article/pii/S1570826808000693
+9 out of 10 for anandtech_review                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
+4 out of 5 for citeulike_user                     http://www.citeulike.org/user/dwenig
+11 out of 12 for imdb_person                      http://www.imdb.com/name/nm0000199/
+5 out of 6 for rotten_person                      http://www.rottentomatoes.com/celebrity/keir_dullea/
+4 out of 5 for citeulike_author                   http://www.citeulike.org/user/jsun/author/Hofmann:T
+7 out of 8 for moma_artist                        http://www.moma.org/collection/artist.php?artist_id=28723
+5 out of 6 for nsf_investigator                   http://www.nsf.gov/awardsearch/advancedSearchNoScript?PILastName=test
+6 out of 7 for citeseerx_citing                   http://citeseerx.ist.psu.edu/showciting?doi=10.1.1.31.1768
+6 out of 7 for guggen_filter                      http://www.guggenheim.org/new-york/collections/collection-online/movements/195203
+6 out of 7 for guggen_filter                      http://www.guggenheim.org/new-york/collections/collection-online/artwork-types/195198
+4 out of 5 for newmuseum_filter                   http://archive.newmuseum.org/index.php/Browse/modifyCriteria/facet/type_facet/id/12/mod_id/0
+4 out of 5 for nsf_investigator                   http://www.nsf.gov/awardsearch/advancedSearchNoScript?Keyword=banana
+5 out of 6 for rhizome_tag                        http://rhizome.org/artbase/tag/futurism/
+5 out of 6 for rhizome_tag                        http://rhizome.org/artbase/tag/nostalgia/
+6 out of 7 for image_search                       http://www.tumblr.com/search/wow
+8 out of 9 for weather_report                     http://www.wunderground.com/US/77840?MR=1
+6 out of 7 for wikipedia_page                     http://en.wikipedia.org/wiki/Type_system
+
+68 out of 149 total documents matched
+1104 out of 1255 total fields matched
