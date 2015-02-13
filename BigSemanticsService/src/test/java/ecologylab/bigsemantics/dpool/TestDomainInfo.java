@@ -1,16 +1,21 @@
 package ecologylab.bigsemantics.dpool;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 public class TestDomainInfo
 {
 
-  static class FakeDomainInfo extends DomainInfo
+  static class FakeDomainRuntimeInfo extends DomainRuntimeInfo
   {
 
     long currentTime;
+
+    public FakeDomainRuntimeInfo(DomainInfo domainInfo)
+    {
+      super(domainInfo);
+    }
 
     public long getCurrentTime()
     {
@@ -22,55 +27,55 @@ public class TestDomainInfo
   @Test
   public void testNormalDelay()
   {
-    FakeDomainInfo domainInfo = new FakeDomainInfo();
+    DomainInfo domainInfo = new DomainInfo("test.com");
 
-    domainInfo.setDomain("test.com");
     domainInfo.setMinDelay(5); // 5 sec
     domainInfo.setLongDelayThreshold(3);
     domainInfo.setLongDelay(60); // 60 sec, or 1 min
 
-    domainInfo.currentTime = 1000; // here the unit is millisecond
-    domainInfo.beginAccess();
-    domainInfo.endAccess(200);
+    FakeDomainRuntimeInfo domainRuntimeInfo = new FakeDomainRuntimeInfo(domainInfo);
+    domainRuntimeInfo.currentTime = 1000; // here the unit is millisecond
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(200);
 
-    assertTrue(domainInfo.getCurrentDelay() >= 5000);
-    assertTrue(domainInfo.getCurrentDelay() <= 7500);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() >= 5000);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() <= 7500);
   }
 
   @Test
   public void testLongDelay()
   {
-    FakeDomainInfo domainInfo = new FakeDomainInfo();
+    DomainInfo domainInfo = new DomainInfo("test.com");
 
-    domainInfo.setDomain("test.com");
     domainInfo.setMinDelay(5);
     domainInfo.setLongDelayThreshold(3);
     domainInfo.setLongDelay(60);
 
-    domainInfo.currentTime = 1000;
-    domainInfo.beginAccess();
-    domainInfo.endAccess(500);
-    domainInfo.beginAccess();
-    domainInfo.endAccess(500); // 2 failures till now
+    FakeDomainRuntimeInfo domainRuntimeInfo = new FakeDomainRuntimeInfo(domainInfo);
+    domainRuntimeInfo.currentTime = 1000;
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(500);
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(500); // 2 failures till now
 
-    assertTrue(domainInfo.getCurrentDelay() >= 5000);
-    assertTrue(domainInfo.getCurrentDelay() <= 7500);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() >= 5000);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() <= 7500);
 
-    domainInfo.beginAccess();
-    domainInfo.endAccess(500); // 3 failures now, should do long delay
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(500); // 3 failures now, should do long delay
 
-    assertTrue(domainInfo.getCurrentDelay() >= 60000);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() >= 60000);
 
-    domainInfo.beginAccess();
-    domainInfo.endAccess(500); // fail again, should delay 60x2=120 sec now
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(500); // fail again, should delay 60x2=120 sec now
 
-    assertTrue(domainInfo.getCurrentDelay() >= 120000);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() >= 120000);
 
-    domainInfo.beginAccess();
-    domainInfo.endAccess(200); // success, should go back to min delay
+    domainRuntimeInfo.beginAccess();
+    domainRuntimeInfo.endAccess(200); // success, should go back to min delay
 
-    assertTrue(domainInfo.getCurrentDelay() >= 5000);
-    assertTrue(domainInfo.getCurrentDelay() <= 7500);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() >= 5000);
+    assertTrue(domainRuntimeInfo.getCurrentDelay() <= 7500);
   }
 
 }

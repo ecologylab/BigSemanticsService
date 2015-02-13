@@ -1,5 +1,7 @@
 package ecologylab.bigsemantics.dpool;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +23,9 @@ import ecologylab.serialization.annotations.simpl_inherit;
 public abstract class Downloader extends Worker<DownloadTask>
 {
 
-  static Logger           logger          = LoggerFactory.getLogger(Downloader.class);
+  static Logger                  logger = LoggerFactory.getLogger(Downloader.class);
 
-  private DomainInfoTable domainInfoTable = new DomainInfoTable();
+  private DomainRuntimeInfoTable domainInfoTable;
 
   /**
    * For deserialization only.
@@ -43,8 +45,17 @@ public abstract class Downloader extends Worker<DownloadTask>
     super(id, numThreads, priority);
   }
 
-  protected DomainInfo getDomainInfo(DownloadTask task)
+  public void initializeDomainInfoTable(ConcurrentHashMap<String, DomainInfo> domainInfos)
   {
+    this.domainInfoTable = new DomainRuntimeInfoTable(domainInfos);
+  }
+
+  protected DomainRuntimeInfo getDomainRuntimeInfo(DownloadTask task) throws DpoolException
+  {
+    if (domainInfoTable == null)
+    {
+      throw new DpoolException("Domain Info Table must be initialized before use!");
+    }
     return domainInfoTable.getOrCreate(task.getDomain());
   }
 
@@ -65,12 +76,12 @@ public abstract class Downloader extends Worker<DownloadTask>
 
   public boolean performDownload(DownloadTask task) throws Exception
   {
-    DomainInfo domainInfo = getDomainInfo(task);
+    DomainRuntimeInfo domainRuntimeInfo = getDomainRuntimeInfo(task);
     try
     {
-      domainInfo.beginAccess();
+      domainRuntimeInfo.beginAccess();
       int code = doPerformDownload(task);
-      domainInfo.endAccess(code);
+      domainRuntimeInfo.endAccess(code);
       SimplHttpResponse httpResp = task.getResponse();
 
       if (code < 400)
@@ -86,7 +97,7 @@ public abstract class Downloader extends Worker<DownloadTask>
         }
         if (task.getBanRegex() != null && task.getBanPattern().matcher(content).find())
         {
-          domainInfo.setBanned();
+          domainRuntimeInfo.setBanned();
           logger.warn("Ban pattern found in {}", task);
           DownloadTaskFailed event = new DownloadTaskFailed();
           event.setMessage("Ban pattern found.");
@@ -105,7 +116,7 @@ public abstract class Downloader extends Worker<DownloadTask>
       DownloadTaskDied event = new DownloadTaskDied();
       event.setStacktrace(Utils.getStackTraceAsString(e));
       task.getLogPost().addEventNow(event);
-      domainInfo.endAccess(601);
+      domainRuntimeInfo.endAccess(601);
       throw e;
     }
     return false;
@@ -122,10 +133,10 @@ public abstract class Downloader extends Worker<DownloadTask>
   abstract public int doPerformDownload(DownloadTask task) throws Exception;
 
   @Override
-  public boolean canHandle(DownloadTask task)
+  public boolean canHandle(DownloadTask task) throws DpoolException
   {
-    DomainInfo domainInfo = getDomainInfo(task);
-    return domainInfo.canAccess();
+    DomainRuntimeInfo domainRuntimeInfo = getDomainRuntimeInfo(task);
+    return domainRuntimeInfo.canAccess();
   }
 
 }

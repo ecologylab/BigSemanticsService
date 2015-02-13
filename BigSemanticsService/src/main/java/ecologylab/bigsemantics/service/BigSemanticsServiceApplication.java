@@ -25,13 +25,17 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.Configs;
 import ecologylab.bigsemantics.Configurable;
 import ecologylab.bigsemantics.Utils;
+import ecologylab.bigsemantics.collecting.SemanticsSiteMap;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
+import ecologylab.bigsemantics.dpool.Controller;
+import ecologylab.bigsemantics.dpool.DomainInfo;
 import ecologylab.bigsemantics.dpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.service.resources.LogService;
 import ecologylab.bigsemantics.service.resources.MetadataService;
 import ecologylab.bigsemantics.service.resources.MmdRepoService;
 import ecologylab.bigsemantics.service.resources.MmdService;
+import ecologylab.concurrent.Site;
 
 /**
  * Glues different components of the service together.
@@ -70,6 +74,19 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     {
       dpoolApp = new DownloaderPoolApplication();
       dpoolApp.configure(configuration);
+
+      Controller controller = dpoolApp.getController();
+      SemanticsSiteMap siteMap =
+          semanticsServiceScope.getMetaMetadataRepository().getSemanticsSiteMap();
+      if (siteMap != null)
+      {
+        for (Site site : siteMap.values())
+        {
+          DomainInfo domainInfo = new DomainInfo(site.domain());
+          domainInfo.setMinDelay(site.getDownloadInterval() / 1000f);
+          controller.addDomainInfoIfAbsent(domainInfo);
+        }
+      }
     }
 
     adminApp = new AdminServiceApplication();

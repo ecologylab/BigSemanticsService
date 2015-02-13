@@ -16,6 +16,7 @@ public class MessageScope
   public static final Class<?>[] CLASSES =
                                          {
                                          DomainInfo.class,
+                                         DomainRuntimeInfo.class,
                                          DownloadDispatcher.class,
                                          Downloader.class,
                                          DownloadTask.class,

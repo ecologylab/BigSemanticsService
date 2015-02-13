@@ -1,5 +1,7 @@
 package ecologylab.bigsemantics.dpool;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -25,26 +27,31 @@ public class DownloadDispatcher extends Dispatcher<DownloadTask, Downloader>
     implements DpoolConfigNames
 {
 
-  static Logger logger = LoggerFactory.getLogger(DownloadDispatcher.class);
+  static Logger                                 logger;
 
   static
   {
+    logger = LoggerFactory.getLogger(DownloadDispatcher.class);
     DpoolEventTypeScope.init();
   }
+
+  private ConcurrentHashMap<String, DomainInfo> domainInfos;
 
   /**
    * Indexing all tasks by ID. We regard conflicts of keys as impossible.
    */
-  private Cache allTasksById;
+  private Cache                                 allTasksById;
 
   /**
    * Indexing all tasks by URL. When there is conflict this only stores the latest one.
    */
-  private Cache allTasksByUrl;
+  private Cache                                 allTasksByUrl;
 
   public DownloadDispatcher()
   {
     super();
+
+    this.domainInfos = new ConcurrentHashMap<String, DomainInfo>();
 
     CacheManager cacheManager = EhCacheMan.getSingleton();
 
@@ -55,6 +62,17 @@ public class DownloadDispatcher extends Dispatcher<DownloadTask, Downloader>
     allTasksByUrl = cacheManager.getCache("tasks-by-uri");
 
     logger.info("Controller is constructed and ready.");
+  }
+
+  public ConcurrentHashMap<String, DomainInfo> getDomainInfos()
+  {
+    return domainInfos;
+  }
+
+  @Override
+  protected void onAddWorker(Downloader downloader)
+  {
+    downloader.initializeDomainInfoTable(domainInfos);
   }
 
   public DownloadTask getTask(String id)

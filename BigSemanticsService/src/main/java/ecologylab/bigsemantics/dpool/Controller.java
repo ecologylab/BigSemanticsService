@@ -71,6 +71,10 @@ public class Controller implements Configurable
       {
         logger.warn("Dispatcher interrupted.", e);
       }
+      catch (Exception e)
+      {
+        logger.warn("Exception on dispatching task.", e);
+      }
     }
   }
 
@@ -91,6 +95,16 @@ public class Controller implements Configurable
     {
       logger.warn("Interruptted when waiting for dispatcher thread to stop", e);
     }
+  }
+
+  public DomainInfo getDomainInfo(String domain)
+  {
+    return dispatcher.getDomainInfos().get(domain);
+  }
+
+  public DomainInfo addDomainInfoIfAbsent(DomainInfo domainInfo)
+  {
+    return dispatcher.getDomainInfos().putIfAbsent(domainInfo.getDomain(), domainInfo);
   }
 
 }
