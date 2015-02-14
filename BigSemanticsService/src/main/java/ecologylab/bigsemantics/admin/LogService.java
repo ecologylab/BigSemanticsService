@@ -1,4 +1,4 @@
-package ecologylab.bigsemantics.service.resources;
+package ecologylab.bigsemantics.admin;
 
 import java.util.Iterator;
 

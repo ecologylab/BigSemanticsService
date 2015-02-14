@@ -282,7 +282,16 @@ public class RemoteCurlDownloader extends Downloader
     String userAgent = task.getUserAgent();
     String url = task.getUrl();
     String command = String.format("curl -i -L -A \"%s\" \"%s\"", userAgent, url);
-    ExecResult execResult = execCommand(command);
+    ExecResult execResult = null;
+    try
+    {
+      execResult = execCommand(command);
+    }
+    catch (Exception e)
+    {
+      incConsecutiveFailures();
+      throw e;
+    }
 
     int exitCode = execResult.exitCode;
     if (exitCode == 0)

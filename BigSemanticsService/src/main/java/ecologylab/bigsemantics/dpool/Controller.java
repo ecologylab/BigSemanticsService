@@ -15,7 +15,7 @@ import ecologylab.bigsemantics.Configurable;
  */
 @Singleton
 @Service
-public class Controller implements Configurable
+public class Controller implements Configurable, DpoolConfigNames
 {
 
   static Logger              logger = LoggerFactory.getLogger(Controller.class);
@@ -46,6 +46,8 @@ public class Controller implements Configurable
   public void configure(Configuration configs)
   {
     this.configs = configs;
+    int maxWorkerConsecFailures = configs.getInt(MAX_WORKER_CONSECUTIVE_FAILURES);
+    dispatcher.setMaxConsecutiveWorkerFailures(maxWorkerConsecFailures);
   }
 
   @Override

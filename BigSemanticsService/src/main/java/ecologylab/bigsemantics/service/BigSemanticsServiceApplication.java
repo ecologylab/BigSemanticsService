@@ -26,13 +26,16 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.Configs;
 import ecologylab.bigsemantics.Configurable;
 import ecologylab.bigsemantics.Utils;
+import ecologylab.bigsemantics.admin.AdminServiceApplication;
+import ecologylab.bigsemantics.admin.DownloaderService;
+import ecologylab.bigsemantics.admin.LogService;
 import ecologylab.bigsemantics.collecting.SemanticsSiteMap;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
+import ecologylab.bigsemantics.dpool.Controller;
 import ecologylab.bigsemantics.dpool.DomainInfo;
 import ecologylab.bigsemantics.dpool.DownloadDispatcher;
 import ecologylab.bigsemantics.dpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
-import ecologylab.bigsemantics.service.resources.LogService;
 import ecologylab.bigsemantics.service.resources.MetadataService;
 import ecologylab.bigsemantics.service.resources.MmdRepoService;
 import ecologylab.bigsemantics.service.resources.MmdService;
@@ -54,9 +57,9 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     logger = LoggerFactory.getLogger(BigSemanticsServiceApplication.class);
   }
 
-  private Configuration             configs;
+  Configuration                     configs;
 
-  private SemanticsServiceScope     semanticsServiceScope;
+  SemanticsServiceScope             semanticsServiceScope;
 
   private DownloaderPoolApplication dpoolApp;
 
@@ -96,6 +99,30 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     }
 
     adminApp = new AdminServiceApplication();
+    int adminPort = configuration.getInt(ADMIN_PORT);
+    adminApp.setPort(adminPort);
+    ResourceConfig adminResourceConfig = adminApp.getResourceConfig();
+    adminResourceConfig.register(LogService.class);
+    adminResourceConfig.register(new AbstractBinder()
+    {
+      @Override
+      protected void configure()
+      {
+        bind(semanticsServiceScope).to(SemanticsServiceScope.class);
+      }
+    });
+    if (configs.getBoolean(DPOOL_RUN_BUILTIN_SERVICE))
+    {
+      adminResourceConfig.register(DownloaderService.class);
+      adminResourceConfig.register(new AbstractBinder()
+      {
+        @Override
+        protected void configure()
+        {
+          bind(dpoolApp.getController()).to(Controller.class);
+        }
+      });
+    }
   }
 
   @Override
@@ -104,36 +131,9 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     return configs;
   }
 
-  class AdminServiceApplication extends AbstractServiceApplication
+  public SemanticsServiceScope getSemanticsServiceScope()
   {
-
-    @Override
-    public Handler createHandler() throws Exception
-    {
-      ResourceConfig config = new ResourceConfig();
-      config.register(LogService.class);
-      config.register(new AbstractBinder()
-      {
-        @Override
-        protected void configure()
-        {
-          bind(semanticsServiceScope).to(SemanticsServiceScope.class);
-        }
-      });
-      ServletContainer servletContainer = new ServletContainer(config);
-      ServletContextHandler servletContextHandler = new ServletContextHandler();
-      servletContextHandler.setContextPath("/admin");
-      servletContextHandler.addServlet(new ServletHolder(servletContainer), "/*");
-      return servletContextHandler;
-    }
-
-    @Override
-    public void setupServer() throws Exception
-    {
-      int adminPort = configs.getInt(ADMIN_PORT);
-      super.setupServer(new ServiceParams(50, 5, adminPort, 1, 1));
-    }
-
+    return semanticsServiceScope;
   }
 
   public void setupServer() throws Exception

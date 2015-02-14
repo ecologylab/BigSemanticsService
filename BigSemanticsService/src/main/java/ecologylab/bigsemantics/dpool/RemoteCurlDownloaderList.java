@@ -34,6 +34,15 @@ public class RemoteCurlDownloaderList
     return downloaders;
   }
 
+  public synchronized void addDownloader(RemoteCurlDownloader downloader)
+  {
+    if (downloaders == null)
+    {
+      downloaders = new ArrayList<RemoteCurlDownloader>();
+    }
+    downloaders.add(downloader);
+  }
+
   public static void main(String[] args)
       throws SIMPLTranslationException, FileNotFoundException, IOException
   {
