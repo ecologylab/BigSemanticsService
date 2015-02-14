@@ -26,7 +26,7 @@ fileHit = open('jsonClientSide.txt', 'w')
 countFound = 0
 for example in examples:
 	driver.get(example)
-	time.sleep(2)
+	time.sleep(4)
 	for entry in driver.get_log('browser'):
 		if 'source' in entry:
     			if entry['source'] == 'console-api' and "chrome-extension" in entry['message']:
