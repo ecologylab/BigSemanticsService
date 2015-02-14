@@ -97,14 +97,4 @@ public class Controller implements Configurable
     }
   }
 
-  public DomainInfo getDomainInfo(String domain)
-  {
-    return dispatcher.getDomainInfos().get(domain);
-  }
-
-  public DomainInfo addDomainInfoIfAbsent(DomainInfo domainInfo)
-  {
-    return dispatcher.getDomainInfos().putIfAbsent(domainInfo.getDomain(), domainInfo);
-  }
-
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Slf4jRequestLog;
@@ -27,8 +28,8 @@ import ecologylab.bigsemantics.Configurable;
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.SemanticsSiteMap;
 import ecologylab.bigsemantics.cyberneko.CybernekoWrapper;
-import ecologylab.bigsemantics.dpool.Controller;
 import ecologylab.bigsemantics.dpool.DomainInfo;
+import ecologylab.bigsemantics.dpool.DownloadDispatcher;
 import ecologylab.bigsemantics.dpool.DownloaderPoolApplication;
 import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.service.resources.LogService;
@@ -72,10 +73,15 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
 
     if (configs.getBoolean(DPOOL_RUN_BUILTIN_SERVICE, true))
     {
-      dpoolApp = new DownloaderPoolApplication();
-      dpoolApp.configure(configuration);
+      Configuration dpoolConfig = Configs.loadProperties("dpool.properties");
+      CompositeConfiguration compositeConfig = new CompositeConfiguration();
+      compositeConfig.addConfiguration(configuration);
+      compositeConfig.addConfiguration(dpoolConfig);
 
-      Controller controller = dpoolApp.getController();
+      dpoolApp = new DownloaderPoolApplication();
+      dpoolApp.configure(compositeConfig);
+
+      DownloadDispatcher dispatcher = dpoolApp.getController().getDispatcher();
       SemanticsSiteMap siteMap =
           semanticsServiceScope.getMetaMetadataRepository().getSemanticsSiteMap();
       if (siteMap != null)
@@ -84,7 +90,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
         {
           DomainInfo domainInfo = new DomainInfo(site.domain());
           domainInfo.setMinDelay(site.getDownloadInterval() / 1000f);
-          controller.addDomainInfoIfAbsent(domainInfo);
+          dispatcher.addDomainInfoIfAbsent(domainInfo);
         }
       }
     }

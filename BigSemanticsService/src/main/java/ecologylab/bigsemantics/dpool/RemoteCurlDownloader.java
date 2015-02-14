@@ -234,7 +234,7 @@ public class RemoteCurlDownloader extends Downloader
     {
       long t = System.currentTimeMillis() - t0;
       logger.debug("{}@{}: {} (exit code: {}; time: {})", user, getHost(), command, exitCode, t);
-      if (channel.isConnected())
+      if (channel != null && channel.isConnected())
       {
         channel.disconnect();
       }
@@ -297,6 +297,38 @@ public class RemoteCurlDownloader extends Downloader
       String errString = new String(execResult.err, Charset.forName("UTF-8"));
       throw new DpoolException("Failed to exec " + command + " on " + getHost() + ";"
                                + " exit code = " + exitCode + ", error = " + errString);
+    }
+  }
+
+  public void copyFrom(RemoteCurlDownloader other)
+  {
+    if (this.getNumThreads() == 0)
+    {
+      this.setNumThreads(other.getNumThreads());
+    }
+    if (this.port == 0)
+    {
+      this.port = other.port;
+    }
+    if (this.user == null)
+    {
+      this.user = other.user;
+    }
+    if (this.password == null)
+    {
+      this.password = other.password;
+    }
+    if (this.keyPath == null)
+    {
+      this.keyPath = other.keyPath;
+    }
+    if (this.passPhrase == null)
+    {
+      this.passPhrase = other.passPhrase;
+    }
+    if (this.connectTimeout == 0)
+    {
+      this.connectTimeout = other.connectTimeout;
     }
   }
 

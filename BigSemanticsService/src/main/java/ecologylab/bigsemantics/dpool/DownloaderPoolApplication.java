@@ -1,5 +1,6 @@
 package ecologylab.bigsemantics.dpool;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +22,7 @@ import ecologylab.bigsemantics.dpool.resources.PageService;
 import ecologylab.bigsemantics.dpool.resources.TaskService;
 import ecologylab.bigsemantics.service.AbstractServiceApplication;
 import ecologylab.bigsemantics.service.ServiceParams;
+import ecologylab.serialization.formatenums.Format;
 
 /**
  * Glues different components of the service together.
@@ -31,25 +33,15 @@ public class DownloaderPoolApplication extends AbstractServiceApplication
     implements Configurable, DpoolConfigNames
 {
 
-  private Configuration configs;
+  private Configuration            configs;
 
-  private Controller    controller;
+  private Controller               controller;
 
-  private Downloader    downloader;
+  private RemoteCurlDownloaderList downloaders;
 
   public Controller getController()
   {
     return controller;
-  }
-
-  public Downloader getLocalDownloader()
-  {
-    return downloader;
-  }
-
-  public void setLocalDownloader(Downloader downloader)
-  {
-    this.downloader = downloader;
   }
 
   @Override
@@ -61,11 +53,23 @@ public class DownloaderPoolApplication extends AbstractServiceApplication
     controller = new Controller();
     controller.configure(configs);
 
-    // set up a local downloader
-    if (downloader == null)
+    // set up downloader(s)
+    String downloadersFilePath = configuration.getString(DOWNLOADERS_FILE, null);
+    File file = downloadersFilePath == null ? null : new File(downloadersFilePath);
+    if (file == null || !file.exists() || !file.isFile())
     {
-      downloader = new LocalDownloader("local-downloader", 4);
-      controller.getDispatcher().addWorker(downloader);
+      LocalDownloader localDownloader = new LocalDownloader("local-downloader", 4);
+      controller.getDispatcher().addWorker(localDownloader);
+    }
+    else
+    {
+      downloaders = (RemoteCurlDownloaderList) MessageScope.get().deserialize(file, Format.JSON);
+      for (RemoteCurlDownloader downloader : downloaders.getDownloaders())
+      {
+        downloader.copyFrom(downloaders.getDefaultConfig());
+        downloader.initialize();
+        controller.getDispatcher().addWorker(downloader);
+      }
     }
   }
 

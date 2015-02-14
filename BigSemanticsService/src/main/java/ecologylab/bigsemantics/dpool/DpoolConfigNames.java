@@ -18,4 +18,6 @@ public interface DpoolConfigNames
 
   static final String CONTROLLER_PORT      = "dpool.controller.port";
 
+  static final String DOWNLOADERS_FILE     = "dpool.downloaders.file";
+
 }

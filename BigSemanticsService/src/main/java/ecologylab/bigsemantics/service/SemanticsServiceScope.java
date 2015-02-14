@@ -19,7 +19,6 @@ import ecologylab.bigsemantics.documentparsers.DefaultHTMLDOMParser;
 import ecologylab.bigsemantics.documentparsers.DocumentParser;
 import ecologylab.bigsemantics.downloadcontrollers.DPoolDownloadController;
 import ecologylab.bigsemantics.downloadcontrollers.DownloadController;
-import ecologylab.bigsemantics.dpool.DpoolConfigNames;
 import ecologylab.bigsemantics.html.dom.IDOMProvider;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.DocumentLogRecordScope;
@@ -111,8 +110,8 @@ public class SemanticsServiceScope extends SemanticsGlobalScope
     }
     else
     {
-      dpoolHosts = configs.getStringArray(DpoolConfigNames.CONTROLLER_HOST);
-      port = configs.getInt(DpoolConfigNames.CONTROLLER_PORT);
+      dpoolHosts = configs.getStringArray(SemanticsServiceConfigNames.DPOOL_HOST);
+      port = configs.getInt(SemanticsServiceConfigNames.DPOOL_PORT);
     }
     dpoolServiceUrl = DPoolDownloadController.pickDpoolServiceUrl(port, dpoolHosts);
     if (dpoolServiceUrl == null)

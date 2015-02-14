@@ -22,6 +22,7 @@ public class MessageScope
                                          DownloadTask.class,
                                          LocalDownloader.class,
                                          RemoteCurlDownloader.class,
+                                         RemoteCurlDownloaderList.class,
                                          };
 
   public static SimplTypesScope get()

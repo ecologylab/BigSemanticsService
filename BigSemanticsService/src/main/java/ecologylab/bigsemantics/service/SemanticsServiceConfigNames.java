@@ -32,4 +32,8 @@ public interface SemanticsServiceConfigNames
 
   static final String DPOOL_RUN_BUILTIN_SERVICE = "service.dpool.run_builtin_service";
 
+  static final String DPOOL_HOST                = "service.dpool.host";
+
+  static final String DPOOL_PORT                = "service.dpool.port";
+
 }
