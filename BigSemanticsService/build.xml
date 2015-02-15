@@ -13,9 +13,6 @@
     <pathelement path="../../BigSemanticsJava/BigSemanticsSunSpecifics" />
     <pathelement path="../../BigSemanticsWrapperRepository/BigSemanticsWrappers" />
     <pathelement path="../../BigSemanticsWrapperRepository/BigSemanticsGeneratedClassesJava" />
-    <pathelement path="../DownloaderPoolMessages" />
-    <pathelement path="../ModifiedHttpClient" />
-    <pathelement path="../DownloaderPool" />
   </path>
   
   <property name="src.dir" value="${basedir}/src/main/java" />
