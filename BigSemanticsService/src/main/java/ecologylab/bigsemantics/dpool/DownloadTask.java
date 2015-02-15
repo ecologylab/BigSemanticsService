@@ -285,10 +285,10 @@ public class DownloadTask extends Task
   }
 
   /**
-   * Note that this will happen in an individual thread, so no need to create a new thread.
+   * Note that the thread this method is running in will be scheduled by the Downloader.
    */
   @Override
-  public boolean perform() throws Exception
+  public Result perform()
   {
     return downloader.performDownload(this);
   }

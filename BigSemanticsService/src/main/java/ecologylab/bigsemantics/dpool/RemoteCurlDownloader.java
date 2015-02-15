@@ -2,6 +2,7 @@ package ecologylab.bigsemantics.dpool;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Properties;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
 import ecologylab.bigsemantics.httpclient.SimplHttpResponse;
@@ -199,7 +201,8 @@ public class RemoteCurlDownloader extends Downloader
     return sessions.size();
   }
 
-  public ExecResult execCommand(String command) throws Exception
+  public ExecResult execCommand(String command)
+      throws InterruptedException, JSchException, IOException
   {
     long t0 = System.currentTimeMillis();
     Session session = null;
@@ -287,7 +290,12 @@ public class RemoteCurlDownloader extends Downloader
     {
       execResult = execCommand(command);
     }
-    catch (Exception e)
+    catch (JSchException e)
+    {
+      incConsecutiveFailures();
+      throw e;
+    }
+    catch (IOException e)
     {
       incConsecutiveFailures();
       throw e;

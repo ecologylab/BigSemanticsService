@@ -101,7 +101,7 @@ public class DomainRuntimeInfo
   /**
    * 
    * @param httpResponseCode
-   *          The HTTP response code, or 6XX if a non-HTTP-related error happened.
+   *          The HTTP response code, or 0 if a non-HTTP-related error happened.
    */
   public synchronized void endAccess(int httpResponseCode)
   {

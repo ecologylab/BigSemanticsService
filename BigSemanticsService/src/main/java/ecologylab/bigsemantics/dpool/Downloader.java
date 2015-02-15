@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
+import ecologylab.bigsemantics.distributed.Task.Result;
 import ecologylab.bigsemantics.distributed.TaskEventHandler;
 import ecologylab.bigsemantics.distributed.Worker;
 import ecologylab.bigsemantics.httpclient.SimplHttpResponse;
@@ -74,11 +75,12 @@ public abstract class Downloader extends Worker<DownloadTask>
     task.setDownloader(null);
   }
 
-  public boolean performDownload(DownloadTask task) throws Exception
+  public Result performDownload(DownloadTask task)
   {
-    DomainRuntimeInfo domainRuntimeInfo = getDomainRuntimeInfo(task);
+    DomainRuntimeInfo domainRuntimeInfo = null;
     try
     {
+      domainRuntimeInfo = getDomainRuntimeInfo(task);
       domainRuntimeInfo.beginAccess();
       int code = doPerformDownload(task);
       domainRuntimeInfo.endAccess(code);
@@ -93,7 +95,7 @@ public abstract class Downloader extends Worker<DownloadTask>
           DownloadTaskFailed event = new DownloadTaskFailed();
           event.setMessage("Failure pattern found.");
           task.getLogPost().addEventNow(event);
-          return false;
+          return Result.ERROR;
         }
         if (task.getBanRegex() != null && task.getBanPattern().matcher(content).find())
         {
@@ -102,13 +104,13 @@ public abstract class Downloader extends Worker<DownloadTask>
           DownloadTaskFailed event = new DownloadTaskFailed();
           event.setMessage("Ban pattern found.");
           task.getLogPost().addEventNow(event);
-          return false;
+          return Result.FATAL;
         }
         DownloadTaskSucceeded event = new DownloadTaskSucceeded();
         event.setDownloaderId(this.getId());
         event.setContentLength(httpResp.getContentLength());
         task.getLogPost().addEventNow(event);
-        return true;
+        return Result.OK;
       }
     }
     catch (Exception e)
@@ -116,10 +118,12 @@ public abstract class Downloader extends Worker<DownloadTask>
       DownloadTaskDied event = new DownloadTaskDied();
       event.setStacktrace(Utils.getStackTraceAsString(e));
       task.getLogPost().addEventNow(event);
-      domainRuntimeInfo.endAccess(601);
-      throw e;
+      if (domainRuntimeInfo != null)
+      {
+        domainRuntimeInfo.endAccess(0);
+      }
     }
-    return false;
+    return Result.ERROR;
   }
 
   /**

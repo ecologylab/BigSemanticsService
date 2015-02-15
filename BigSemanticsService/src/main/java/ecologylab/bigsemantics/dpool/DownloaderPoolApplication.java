@@ -12,6 +12,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Configs;
 import ecologylab.bigsemantics.Configurable;
@@ -32,6 +34,13 @@ import ecologylab.serialization.formatenums.Format;
 public class DownloaderPoolApplication extends AbstractServiceApplication
     implements Configurable, DpoolConfigNames
 {
+  
+  static Logger logger;
+  
+  static
+  {
+    logger = LoggerFactory.getLogger(DownloaderPoolApplication.class);
+  }
 
   private Configuration            configs;
 
@@ -67,8 +76,16 @@ public class DownloaderPoolApplication extends AbstractServiceApplication
       for (RemoteCurlDownloader downloader : downloaders.getDownloaders())
       {
         downloader.copyFrom(downloaders.getDefaultConfig());
-        downloader.initialize();
-        controller.getDispatcher().addWorker(downloader);
+        try
+        {
+          downloader.initialize();
+          controller.getDispatcher().addWorker(downloader);
+          logger.info("Successfully added {} as a downloader", downloader);
+        }
+        catch (Exception e)
+        {
+          logger.error("Failed to initialize " + downloader, e);
+        }
       }
     }
   }
