@@ -11,6 +11,7 @@ import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
 import ecologylab.bigsemantics.exceptions.DocumentRecycled;
 import ecologylab.bigsemantics.exceptions.ProcessingUnfinished;
 import ecologylab.bigsemantics.logging.MemoryCacheHit;
+import ecologylab.bigsemantics.logging.MemoryCacheMiss;
 import ecologylab.bigsemantics.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.metadata.builtins.DocumentClosure;
@@ -102,6 +103,10 @@ public class MetadataServiceHelper extends Debug
     {
       logger.info("{} found in service in-mem document cache", document);
       logRecord.logPost().addEventNow(new MemoryCacheHit());
+    }
+    else
+    {
+      logRecord.logPost().addEventNow(new MemoryCacheMiss());
     }
 
     document.setLogRecord(logRecord);

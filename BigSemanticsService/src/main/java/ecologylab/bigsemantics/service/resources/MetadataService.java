@@ -118,12 +118,14 @@ public class MetadataService
     else
     {
       String errMsg = "Parameter 'url' must be a valid URL.";
+      logRecord.addErrorRecord(errMsg, null);
       resp = Response.status(Status.BAD_REQUEST).entity(errMsg).build();
     }
 
     if (resp == null)
     {
       String errMsg = "Unknown error, please contact admin with Req ID " + requestId;
+      logRecord.addErrorRecord(errMsg, null);
       resp = Response.status(Status.INTERNAL_SERVER_ERROR).entity(errMsg).build();
     }
 
@@ -131,7 +133,7 @@ public class MetadataService
 
     // at this point of time resp cannot be null
     logRecord.setResponseCode(resp.getStatus());
-    logRecord.beginPhase(Phase.WHOLE);
+    logRecord.endPhase(Phase.WHOLE);
     logger.info("Response generated. Total time in BigSemantics: {}ms",
                 logRecord.getTotalMs(Phase.WHOLE));
     return resp;
