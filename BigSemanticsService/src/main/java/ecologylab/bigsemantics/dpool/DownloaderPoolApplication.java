@@ -34,9 +34,9 @@ import ecologylab.serialization.formatenums.Format;
 public class DownloaderPoolApplication extends AbstractServiceApplication
     implements Configurable, DpoolConfigNames
 {
-  
-  static Logger logger;
-  
+
+  static Logger                    logger;
+
   static
   {
     logger = LoggerFactory.getLogger(DownloaderPoolApplication.class);
@@ -73,20 +73,28 @@ public class DownloaderPoolApplication extends AbstractServiceApplication
     else
     {
       downloaders = (RemoteCurlDownloaderList) MessageScope.get().deserialize(file, Format.JSON);
-      for (RemoteCurlDownloader downloader : downloaders.getDownloaders())
+      Thread downloaderInitThread = new Thread(new Runnable()
       {
-        downloader.copyFrom(downloaders.getDefaultConfig());
-        try
+        @Override
+        public void run()
         {
-          downloader.initialize();
-          controller.getDispatcher().addWorker(downloader);
-          logger.info("Successfully added {} as a downloader", downloader);
+          for (RemoteCurlDownloader downloader : downloaders.getDownloaders())
+          {
+            downloader.copyFrom(downloaders.getDefaultConfig());
+            try
+            {
+              downloader.initialize();
+              controller.getDispatcher().addWorker(downloader);
+              logger.info("Successfully added {} as a downloader", downloader);
+            }
+            catch (Exception e)
+            {
+              logger.error("Failed to initialize " + downloader, e);
+            }
+          }
         }
-        catch (Exception e)
-        {
-          logger.error("Failed to initialize " + downloader, e);
-        }
-      }
+      }, "downloader-init-thread");
+      downloaderInitThread.start();
     }
   }
 
