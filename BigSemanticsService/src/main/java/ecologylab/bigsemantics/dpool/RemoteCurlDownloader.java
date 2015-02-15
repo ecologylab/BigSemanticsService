@@ -51,6 +51,8 @@ public class RemoteCurlDownloader extends Downloader
 
   private JSch                        jsch;
 
+  private Properties                  sessionConfig;
+
   private ArrayBlockingQueue<Session> sessions;
 
   /**
@@ -167,23 +169,15 @@ public class RemoteCurlDownloader extends Downloader
       }
     }
 
+    sessionConfig = new Properties();
+    sessionConfig.put("StrictHostKeyChecking", "no");
+
     // create sessions
     sessions = new ArrayBlockingQueue<Session>(getNumThreads());
-    Properties config = new Properties();
-    config.put("StrictHostKeyChecking", "no");
     for (int i = 0; i < getNumThreads(); ++i)
     {
-      Session session = null;
-      if (password == null)
-      {
-        session = jsch.getSession(user, host, port);
-      }
-      else
-      {
-        session = jsch.getSession(user, host, port);
-        session.setPassword(password);
-      }
-      session.setConfig(config);
+      Session session = createSession();
+      session.connect(connectTimeout);
       sessions.put(session);
     }
 
@@ -201,6 +195,23 @@ public class RemoteCurlDownloader extends Downloader
     return sessions.size();
   }
 
+  private Session createSession() throws JSchException
+  {
+    Session session = null;
+    String host = getHost();
+    if (password == null)
+    {
+      session = jsch.getSession(user, host, port);
+    }
+    else
+    {
+      session = jsch.getSession(user, host, port);
+      session.setPassword(password);
+    }
+    session.setConfig(sessionConfig);
+    return session;
+  }
+
   public ExecResult execCommand(String command)
       throws InterruptedException, JSchException, IOException
   {
@@ -213,6 +224,7 @@ public class RemoteCurlDownloader extends Downloader
       session = sessions.take();
       if (!session.isConnected())
       {
+        session = createSession();
         session.connect(connectTimeout);
       }
 

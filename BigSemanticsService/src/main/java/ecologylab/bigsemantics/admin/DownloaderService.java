@@ -58,6 +58,7 @@ public class DownloaderService
         downloaders.addDownloader((RemoteCurlDownloader) downloader);
       }
     }
+    downloaders.getNumDownloadersAlive();
     try
     {
       String result = SimplTypesScope.serialize(downloaders, format).toString();

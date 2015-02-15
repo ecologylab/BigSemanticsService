@@ -7,8 +7,11 @@ import java.util.List;
 
 import ecologylab.serialization.SIMPLTranslationException;
 import ecologylab.serialization.SimplTypesScope;
+import ecologylab.serialization.annotations.Hint;
 import ecologylab.serialization.annotations.simpl_collection;
 import ecologylab.serialization.annotations.simpl_composite;
+import ecologylab.serialization.annotations.simpl_hints;
+import ecologylab.serialization.annotations.simpl_scalar;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -23,6 +26,13 @@ public class RemoteCurlDownloaderList
 
   @simpl_collection("downloader")
   private List<RemoteCurlDownloader> downloaders;
+
+  /**
+   * This number is not maintained automatically. You need to call the getter to calculate it.
+   */
+  @simpl_scalar
+  @simpl_hints(Hint.XML_LEAF)
+  private int                        numDownloadersAlive;
 
   public RemoteCurlDownloader getDefaultConfig()
   {
@@ -41,6 +51,12 @@ public class RemoteCurlDownloaderList
       downloaders = new ArrayList<RemoteCurlDownloader>();
     }
     downloaders.add(downloader);
+  }
+
+  public int getNumDownloadersAlive()
+  {
+    numDownloadersAlive = downloaders.size();
+    return numDownloadersAlive;
   }
 
   public static void main(String[] args)
