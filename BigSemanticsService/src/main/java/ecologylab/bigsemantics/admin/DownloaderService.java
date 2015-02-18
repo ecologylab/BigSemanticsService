@@ -49,26 +49,25 @@ public class DownloaderService
 
   public Response all(StringFormat format, String mediaType)
   {
-    RemoteCurlDownloaderList downloaders = new RemoteCurlDownloaderList();
-    Map<String, Downloader> workers = controller.getDispatcher().getWorkers();
-    for (Downloader downloader : workers.values())
-    {
-      if (downloader instanceof RemoteCurlDownloader)
-      {
-        downloaders.addDownloader((RemoteCurlDownloader) downloader);
-      }
-    }
-    downloaders.getNumDownloadersAlive();
     try
     {
+      RemoteCurlDownloaderList downloaders = new RemoteCurlDownloaderList();
+      Map<String, Downloader> workers = controller.getDispatcher().getWorkers();
+      for (Downloader downloader : workers.values())
+      {
+        if (downloader instanceof RemoteCurlDownloader)
+        {
+          downloaders.addDownloader((RemoteCurlDownloader) downloader);
+        }
+      }
+      downloaders.getNumDownloadersAlive();
       String result = SimplTypesScope.serialize(downloaders, format).toString();
       return Response.ok(result).type(mediaType).build();
     }
     catch (SIMPLTranslationException e)
     {
       logger.error("Cannot serialize downloader list!", e);
-      String error = Utils.getStackTraceAsString(e);
-      return Response.serverError().entity(error).build();
+      return Response.serverError().entity(Utils.getStackTraceAsString(e)).build();
     }
   }
 

@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.logging.DocumentLogRecord;
 import ecologylab.bigsemantics.logging.ServiceLogRecord;
 import ecologylab.bigsemantics.logging.ServiceLogRecordCollection;
@@ -72,15 +73,22 @@ public class LogService
                             MediaType.APPLICATION_XML);
   }
 
-  public Response getLogResponse(String id, StringFormat format, String mediaType) throws Exception
+  public Response getLogResponse(String id, StringFormat format, String mediaType)
   {
     Response resp = Response.status(Status.NOT_FOUND).entity("Not found.").build();
 
-    DocumentLogRecord logRecord = semanticsServiceScope.getLogStore().getLogRecord(id);
-    if (logRecord != null)
+    try
     {
-      String result = SimplTypesScope.serialize(logRecord, format).toString();
-      resp = Response.status(Status.OK).type(mediaType).entity(result).build();
+      DocumentLogRecord logRecord = semanticsServiceScope.getLogStore().getLogRecord(id);
+      if (logRecord != null)
+      {
+        String result = SimplTypesScope.serialize(logRecord, format).toString();
+        resp = Response.status(Status.OK).type(mediaType).entity(result).build();
+      }
+    }
+    catch (Exception e)
+    {
+      resp = Response.serverError().entity(Utils.getStackTraceAsString(e)).build();
     }
 
     return resp;
@@ -90,7 +98,7 @@ public class LogService
                                    String urlFrag,
                                    int n,
                                    StringFormat format,
-                                   String mediaType) throws Exception
+                                   String mediaType)
   {
     if (n <= 0)
     {
@@ -99,16 +107,23 @@ public class LogService
 
     Response resp = Response.status(Status.SERVICE_UNAVAILABLE).entity("Unknown error.").build();
 
-    ServiceLogRecordCollection logs = new ServiceLogRecordCollection();
-    Iterator<ServiceLogRecord> iter =
-        semanticsServiceScope.getLogStore().filter(clientAttachedId, urlFrag);
-    for (int i = 0; i < n && iter.hasNext(); ++i)
+    try
     {
-      logs.addLogRecord(iter.next());
-    }
+      ServiceLogRecordCollection logs = new ServiceLogRecordCollection();
+      Iterator<ServiceLogRecord> iter =
+          semanticsServiceScope.getLogStore().filter(clientAttachedId, urlFrag);
+      for (int i = 0; i < n && iter.hasNext(); ++i)
+      {
+        logs.addLogRecord(iter.next());
+      }
 
-    String body = SimplTypesScope.serialize(logs, format).toString();
-    resp = Response.status(Status.OK).entity(body).type(mediaType).build();
+      String body = SimplTypesScope.serialize(logs, format).toString();
+      resp = Response.status(Status.OK).entity(body).type(mediaType).build();
+    }
+    catch (Exception e)
+    {
+      resp = Response.serverError().entity(Utils.getStackTraceAsString(e)).build();
+    }
 
     return resp;
   }
