@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.distributed.Dispatcher;
 import ecologylab.bigsemantics.distributed.TaskEventHandler;
 import ecologylab.bigsemantics.documentcache.EhCacheMan;
-import ecologylab.bigsemantics.logging.DownloadTaskDispatching;
-import ecologylab.bigsemantics.logging.DownloadTaskQueued;
 import ecologylab.bigsemantics.logging.DpoolEventTypeScope;
 
 /**
@@ -105,20 +103,7 @@ public class DownloadDispatcher extends Dispatcher<DownloadTask, Downloader>
   public void queueTask(DownloadTask task, TaskEventHandler<DownloadTask> handler)
   {
     allTasksById.put(new Element(task.getId(), task));
-    logger.info("enqueuing task " + task);
     super.queueTask(task, handler);
-  }
-
-  @Override
-  protected void onQueued(DownloadTask task)
-  {
-    task.getLogPost().addEventNow(new DownloadTaskQueued());
-  };
-
-  @Override
-  protected void onDispatch(DownloadTask task)
-  {
-    task.getLogPost().addEventNow(new DownloadTaskDispatching());
   }
 
   @Override

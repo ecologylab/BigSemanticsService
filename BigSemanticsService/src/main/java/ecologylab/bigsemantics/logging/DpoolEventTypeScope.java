@@ -18,7 +18,6 @@ public class DpoolEventTypeScope
     LogEventTypeScope.addEventClass(DownloadTaskCreated.class);
     LogEventTypeScope.addEventClass(DownloadTaskDied.class);
     LogEventTypeScope.addEventClass(DownloadTaskDispatched.class);
-    LogEventTypeScope.addEventClass(DownloadTaskDispatching.class);
     LogEventTypeScope.addEventClass(DownloadTaskFailed.class);
     LogEventTypeScope.addEventClass(DownloadTaskQueued.class);
     LogEventTypeScope.addEventClass(DownloadTaskSucceeded.class);
