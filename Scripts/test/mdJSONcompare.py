@@ -64,7 +64,7 @@ def nestedCheck(serv, client, parentLocation):
                 nestedMatchCount += 1
             elif k in client and (serv[k] == client[k] or nestedCheck(serv[k], client[k], "")):
                 nestedMatchCount += 1
-            else:
+            elif k not in client:
                 nestedMissing[k + " not in composite of"] = parentLocation
         if len(serv.keys()) == nestedMatchCount:
             return True
@@ -75,6 +75,8 @@ def nestedCheck(serv, client, parentLocation):
             if isinstance(serv[i], dict):
                 for k in serv[i]:
                     if k == "download_status":
+                        nestedMatchCount += 1
+                    elif k == "meta_metadata_name":
                         nestedMatchCount += 1
                     elif i < len(client) and k in client[i]:
                         if sanitizedStrCheck(serv[i][k], client[i][k], "hodor") or nestedCheck(serv[i][k], client[i][k], parentLocation):
@@ -100,20 +102,12 @@ clientList = []
 firstLine = True
 
 for line in fileS:
-    if firstLine:
-        firstLine = False
-        servList.append(json.loads(line))
-        continue
     if len(line)>1:
         servList.append(json.loads(line))
 
 firstLine = True
 
 for line in fileC:
-    if firstLine:
-        firstLine = False
-        clientList.append(json.loads(line))
-        continue
     if len(line)>1:
         clientList.append(json.loads(line))
 
@@ -201,15 +195,15 @@ for x in range(0, len(clientList)):
 #pretty print some so we know what doesn't match
 i = 0
 for metadataServ in servList2:
-    if i >= 0 and i < 300:
-        for metadataClient in clientList2:
-            curKey = metadataServ.keys()[0]
-            if curKey in metadataClient.keys():
-                if metadataServ[curKey]['location'] == metadataClient[curKey]['location'] and metadataClient[curKey]['location'] == "http://rhizome.org/artbase/tag/nostalgia/":
-                    print "SERVER"
-                    prettyPrint(metadataServ)
-                    print "CLIENT"
-                    prettyPrint(metadataClient)
+    #if i >= 0 and i < 300:
+    for metadataClient in clientList2:
+        curKey = metadataServ.keys()[0]
+        if curKey in metadataClient.keys():
+            if metadataServ[curKey]['location'] == metadataClient[curKey]['location'] and metadataClient[curKey]['location'] == "http://dl.acm.org/author_page.cfm?id=81100203284":
+                print "SERVER"
+                prettyPrint(metadataServ)
+                print "CLIENT"
+                prettyPrint(metadataClient)
     i+=1
 
 nestedCounter = 0

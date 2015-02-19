@@ -14,7 +14,7 @@ examples2 = ["http://www.pinterest.com/search/pins/?q=pencil", "http://en.m.wiki
 d = DesiredCapabilities.CHROME
 d['loggingPrefs'] = { 'browser':'ALL' }
 
-extLoc = 'C:/Users/Kade/git/bigsemantics/BigSemanticsJavaScript/plugin.crx'
+extLoc = 'C:/Users/Kade/git/bigsemantics/ExtractionExtension/extractionExtension.crx'
 
 chrome_options = Options()
 chrome_options.add_extension(extLoc)
