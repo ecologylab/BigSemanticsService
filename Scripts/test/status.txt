@@ -1,15 +1,15 @@
 
 ===================Cases where server gets a field that client doesn't have at all
 
-champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/diana/
-champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/caitlyn/
-authors not in research_gate_article              http://www.researchgate.net/publication/228563675_A_formula_for_the_volume_of_a_hyperbolic_tetrahedon
-description_section not in wikipedia_mobile_page  http://en.m.wikipedia.org/wiki/Nuon_Chea
+(Fixed in wrapper)      champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/diana/
+(Fixed in wrapper)      champion_spotlight not in league_champion         http://gameinfo.na.leagueoflegends.com/en/game-info/champions/caitlyn/
+(OK: error in service)  authors not in research_gate_article              http://www.researchgate.net/publication/228563675_A_formula_for_the_volume_of_a_hyperbolic_tetrahedon
+(OK: error in service)  description_section not in wikipedia_mobile_page  http://en.m.wikipedia.org/wiki/Nuon_Chea
 
-description not in composite of                   http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
-authors not in collection of                      http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
-comments not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
-description not in collection of                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
+(OK: error in service)  description not in composite of                   http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
+(Semantic actions?)     authors not in collection of                      http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
+(Hard to debug. later)  comments not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+(Works)	                description not in collection of                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
 text_keywords not in composite of                 http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
 rhizome_artwork not in collection of              http://rhizome.org/artbase/tag/nostalgia/
 examples not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
