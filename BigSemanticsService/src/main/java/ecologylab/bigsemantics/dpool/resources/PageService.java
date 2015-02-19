@@ -22,6 +22,7 @@ import ecologylab.bigsemantics.dpool.DownloadTask;
 import ecologylab.bigsemantics.dpool.DpoolConfigNames;
 import ecologylab.bigsemantics.httpclient.SimplHttpResponse;
 import ecologylab.bigsemantics.logging.DownloadTaskCreated;
+import ecologylab.bigsemantics.logging.DownloadTaskQueued;
 import ecologylab.generic.StringBuilderBaseUtils;
 import ecologylab.serialization.formatenums.StringFormat;
 
@@ -127,6 +128,7 @@ public class PageService implements Configurable, DpoolConfigNames
       logger.debug("DownloadTask created: {}", task);
 
       controller.getDispatcher().queueTask(task, null);
+      task.getLogPost().addEventNow(new DownloadTaskQueued());
       logger.debug("DownloadTask queued: {}", task);
 
       task.waitForDone(timeout);

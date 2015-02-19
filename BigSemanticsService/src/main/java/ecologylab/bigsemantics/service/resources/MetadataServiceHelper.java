@@ -1,14 +1,11 @@
 package ecologylab.bigsemantics.service.resources;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.collecting.DownloadStatus;
 import ecologylab.bigsemantics.documentcache.PersistentDocumentCache;
-import ecologylab.bigsemantics.exceptions.DocumentRecycled;
 import ecologylab.bigsemantics.exceptions.ProcessingUnfinished;
 import ecologylab.bigsemantics.logging.MemoryCacheHit;
 import ecologylab.bigsemantics.logging.MemoryCacheMiss;
@@ -53,7 +50,13 @@ public class MetadataServiceHelper extends Debug
 
   ServiceLogRecord      logRecord;
 
+  ParsedURL             docPurl;
+
   Document              document;
+
+  DocumentClosure       closure;
+
+  MetaMetadata          metaMetadata;
 
   String                errorMessage;
 
@@ -72,103 +75,131 @@ public class MetadataServiceHelper extends Debug
 
   /**
    * @return Status code.
-   * @throws Exception 
+   * @throws Exception
    */
   public int getMetadata() throws Exception
   {
-    ParsedURL docPurl = metadataService.docPurl;
+    // initialize
+    docPurl = metadataService.docPurl;
     document = semanticsServiceScope.getOrConstructDocument(docPurl);
     if (document == null)
     {
-      throw new NullPointerException("WEIRD: Null Document returned from SemanticsServiceScope!");
+      throw new NullPointerException("WEIRD: Got null from SemanticsServiceScope for " + docPurl);
     }
-    logger.info("{} returned from SemanticsServiceScope.", document);
-
-    boolean reload = metadataService.reload;
-    MetaMetadata mmd = (MetaMetadata) document.getMetaMetadata();
-    boolean noCache = mmd.isNoCache();
-
-    DownloadStatus docStatus = document.getDownloadStatus();
-    boolean errorBefore =
-        docStatus == DownloadStatus.RECYCLED || docStatus == DownloadStatus.IOERROR;
-    if (reload || noCache || errorBefore)
-    {
-      document.resetRecycleStatus();
-      removeFromLocalDocumentCollection(docPurl);
-      removeFromPersistentDocumentCache(docPurl);
-    }
-
-    docStatus = document.getDownloadStatus();
-    if (docStatus == DownloadStatus.DOWNLOAD_DONE)
-    {
-      logger.info("{} found in service in-mem document cache", document);
-      logRecord.logPost().addEventNow(new MemoryCacheHit());
-    }
-    else
-    {
-      logRecord.logPost().addEventNow(new MemoryCacheMiss());
-    }
-
-    document.setLogRecord(logRecord);
-
-    DocumentClosure closure = document.getOrConstructClosure();
+    closure = document.getOrConstructClosure();
     if (closure == null)
     {
       throw new NullPointerException("DocumentClosure is null: " + document);
     }
+    metaMetadata = (MetaMetadata) document.getMetaMetadata();
+    if (metaMetadata == null)
+    {
+      throw new NullPointerException("MetaMetadata is null: " + document);
+    }
+
+    // deal with special flags
+    boolean reload = metadataService.reload;
+    boolean noCache = metaMetadata.isNoCache();
     if (reload || noCache)
     {
-      closure.setReload(true);
+      prepForReload(docPurl, closure);
+      return downloadAndFinish(reload);
     }
 
-    download(closure);
-
-    if (document == null)
+    // take actions based on download status
+    DownloadStatus downloadStatus = document.getDownloadStatus();
+    switch (downloadStatus)
     {
-      throw new NullPointerException("Null Document after downloading and parsing: " + docPurl);
+    case DOWNLOAD_DONE:
+    {
+      logger.info("{} found in service in-mem document cache", document);
+      logRecord.logPost().addEventNow(new MemoryCacheHit());
+      return 200;
     }
+    case IOERROR:
+    case RECYCLED:
+    {
+      prepForReload(docPurl, closure);
+      // intentionally fall through
+    }
+    case UNPROCESSED:
+    {
+      logRecord.logPost().addEventNow(new MemoryCacheMiss());
+      // intentionally fall through
+    }
+    case QUEUED:
+    case CONNECTING:
+    case PARSING:
+    {
+      return downloadAndFinish(false);
+    }
+    default:
+    {
+      errorMessage = "Unexpected closure download status: " + downloadStatus;
+      logger.error(errorMessage);
+      return 500;
+    }
+    }
+  }
 
-    docStatus = document.getDownloadStatus();
-    switch (docStatus)
+  private void prepForReload(ParsedURL docPurl, DocumentClosure closure)
+  {
+    document.resetRecycleStatus();
+    removeFromLocalDocumentCollection(docPurl);
+    removeFromPersistentDocumentCache(docPurl);
+  }
+
+  private int downloadAndFinish(boolean reload) throws Exception
+  {
+    int result = 500;
+
+    document.setLogRecord(logRecord);
+    logger.info("performing downloading on {}", document);
+    DownloadStatus downloadStatus = closure.performDownloadSynchronously(reload, false);
+    logger.info("resulting status of downloading {}: {}", document, downloadStatus);
+    switch (downloadStatus)
     {
     case UNPROCESSED:
     case QUEUED:
     case CONNECTING:
     case PARSING:
+    {
       throw new ProcessingUnfinished("Returned before finishing downloading and parsing: "
-                                     + document + ", status: " + docStatus);
+                                     + document + ", status: " + downloadStatus);
+    }
     case DOWNLOAD_DONE:
+    {
+      Document newDoc = closure.getDocument();
+      if (newDoc == null)
+      {
+        throw new NullPointerException("Null Document after downloading and parsing: " + docPurl);
+      }
+      if (document != newDoc)
+      {
+        logger.info("Remapping old {} to new {}", document, newDoc);
+        semanticsServiceScope.getLocalDocumentCollection().addMapping(docPurl, newDoc);
+      }
+      document = newDoc;
       logger.info("{} downloaded and parsed.", document);
+      result = 200;
       break;
+    }
     case IOERROR:
+    {
       errorMessage = "I/O error when downloading " + document;
-      return 404;
+      logger.warn(errorMessage);
+      break;
+    }
     case RECYCLED:
-      throw new DocumentRecycled("Document is recycled after downloading and parsing: " + document);
+    {
+      errorMessage = "Document is recycled after downloading and parsing: " + document;
+      logger.warn(errorMessage);
+      break;
+    }
     }
 
     perfLogger.info(Utils.serializeToString(logRecord, StringFormat.JSON));
-
-    return 200;
-  }
-
-  private void download(DocumentClosure closure) throws IOException
-  {
-    logger.info("performing downloading on {}", document);
-
-    closure.performDownloadSynchronously();
-    Document newDoc = closure.getDocument();
-    logger.info("download status of {}: {}", document, closure.getDownloadStatus());
-    if (document != null && document != newDoc)
-    {
-      logger.info("Remapping old {} to new {}", document, newDoc);
-      semanticsServiceScope.getLocalDocumentCollection().remap(document, newDoc);
-      document = newDoc;
-    }
-    if (closure.getDownloadStatus() == DownloadStatus.IOERROR)
-    {
-      logger.warn("I/O error when downloading {}", document);
-    }
+    return result;
   }
 
   /**
