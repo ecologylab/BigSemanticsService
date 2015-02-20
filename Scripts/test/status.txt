@@ -7,18 +7,18 @@
 (OK: error in service)  description_section not in wikipedia_mobile_page  http://en.m.wikipedia.org/wiki/Nuon_Chea
 
 (OK: error in service)  description not in composite of                   http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
-(Semantic actions?)     authors not in collection of                      http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
-(Hard to debug. later)  comments not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
-(Works)	                description not in collection of                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
-text_keywords not in composite of                 http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
-rhizome_artwork not in collection of              http://rhizome.org/artbase/tag/nostalgia/
-examples not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
-paragraphs not in collection of                   http://en.wikipedia.org/wiki/Type_system
-newmuseum_artwork not in collection of            http://archive.newmuseum.org/index.php/Browse/modifyCriteria/facet/type_facet/id/12/mod_id/0
-price not in collection of                        http://www.amazon.com/gp/bestsellers/books/6
-citeseerx_summary not in collection of            http://citeseerx.ist.psu.edu/showciting?doi=10.1.1.31.1768
-rating not in collection of                       http://www.amazon.com/Twilight-Saga-Breaking-Two-Disc-Special/dp/B002BWP49C
-overall_rating not in collection of               http://www.amazon.co.uk/gp/bestsellers/books/515344
+(Semantic actions)      authors not in collection of                      http://science.slashdot.org/story/12/09/14/1834239/smooth-high-definition-video-of-curiositys-landing-on-mars
+(Too big to display)    comments not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+(OK: error in compare)	description not in collection of                  http://www.anandtech.com/print/7603/mac-pro-review-late-2013
+(OK: error in service)  text_keywords not in composite of                 http://www.ebay.com/itm/HomCom-Brown-Square-Microfiber-Storage-Ottoman-Footstool-Foot-Rest-Stool-Cube-/111078764834
+(Generic Type Var)      rhizome_artwork not in collection of              http://rhizome.org/artbase/tag/nostalgia/
+(Too big to display)    examples not in collection of                     http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+(Extract on service)    paragraphs not in collection of                   http://en.wikipedia.org/wiki/Type_system
+(Generic Type Var)      newmuseum_artwork not in collection of            http://archive.newmuseum.org/index.php/Browse/modifyCriteria/facet/type_facet/id/12/mod_id/0
+(OK)                    price not in collection of                        http://www.amazon.com/gp/bestsellers/books/6
+(Generic Type Var)      citeseerx_summary not in collection of            http://citeseerx.ist.psu.edu/showciting?doi=10.1.1.31.1768
+(OK)                    rating not in collection of                       http://www.amazon.com/Twilight-Saga-Breaking-Two-Disc-Special/dp/B002BWP49C
+(OK)                    overall_rating not in collection of               http://www.amazon.co.uk/gp/bestsellers/books/515344
 title not in collection of                        http://en.m.wikipedia.org/wiki/Nuon_Chea
 guggen_artwork not in collection of               http://www.guggenheim.org/new-york/collections/collection-online/artists/1529/Vito%20Acconci
 overall_rating not in composite of                http://www.amazon.com/Discovery-Daft-Punk/dp/B000059MEK
@@ -27,13 +27,13 @@ reviews_location not in collection of             http://www.amazon.com/Discover
 anchors not in collection of                      http://en.m.wikipedia.org/wiki/Nuon_Chea
 main_images not in composite of                   http://www.tv.com/shows/house/
 favicon not in composite of                       http://www.citeulike.org/user/laurapapaleo/article/2901818
-example_tropes not in collection of               http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
+(Too big to display)    example_tropes not in collection of               http://tvtropes.org/pmwiki/pmwiki.php/Main/ImprobableAimingSkills
 main_images not in collection of                  http://www.amazon.com/gp/bestsellers/books/6
 site_name not in composite of                     http://www.tv.com/shows/house/
 image_search_result not in collection of          http://imgur.com/search?q=league%20of%20legends
 citeulike_paper not in collection of              http://www.citeulike.org/search/all?q=latent%20semantic
 ieee_xplore_article not in collection of          http://ieeexplore.ieee.org:80/search/searchresult.jsp?searchWithin=Search_Index_Terms%3Aart+pop&reload=true
-all_linked_tropes not in collection of            http://tvtropes.org/pmwiki/pmwiki.php/Main/TheGunslinger
+(Too big to display)    all_linked_tropes not in collection of            http://tvtropes.org/pmwiki/pmwiki.php/Main/TheGunslinger
 social_media_search_result not in collection of   http://slashdot.org/index2.pl?fhfilter=test
 
 ===================Status of each document with mismatches
