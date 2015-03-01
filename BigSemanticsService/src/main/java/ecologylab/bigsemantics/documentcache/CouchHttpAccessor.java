@@ -15,10 +15,11 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ecologylab.bigsemantics.httpclient.HttpClientFactory;
 
 /**
  * This class uses apache's httpclient version 4.2 to interface with a couchdb instance.
@@ -28,12 +29,20 @@ import org.slf4j.LoggerFactory;
 public class CouchHttpAccessor implements CouchAccessor
 {
 
-  private static Logger logger     = LoggerFactory.getLogger(CouchHttpAccessor.class);
+  private final static Logger            logger;
+
+  private final static HttpClientFactory httpClientFactory;
+
+  static
+  {
+    logger = LoggerFactory.getLogger(CouchHttpAccessor.class);
+    httpClientFactory = new HttpClientFactory();
+  }
 
   // Where the database service is
-  private String        databaseUrl;
+  private String                         databaseUrl;
 
-  private HttpClient    httpclient = new DefaultHttpClient();
+  private HttpClient                     httpclient = httpClientFactory.create();
 
   public CouchHttpAccessor(String databaseUrl)
   {

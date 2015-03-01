@@ -50,7 +50,7 @@ public class CouchPersistentDocumentCache
 
   private SemanticsGlobalScope semanticsScope;
 
-  private CouchAccessor       couchInterface;
+  private CouchAccessor        couchInterface;
 
   public CouchPersistentDocumentCache(SemanticsGlobalScope semanticsScope)
   {
