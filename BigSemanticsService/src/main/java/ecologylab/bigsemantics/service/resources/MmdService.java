@@ -2,6 +2,8 @@ package ecologylab.bigsemantics.service.resources;
 
 import java.net.URI;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -25,6 +27,8 @@ import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.bigsemantics.service.ServiceUtils;
 import ecologylab.net.ParsedURL;
+import ecologylab.serialization.SIMPLTranslationException;
+import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -37,40 +41,46 @@ import ecologylab.serialization.formatenums.StringFormat;
 public class MmdService
 {
 
-  static final String   NAME     = "name";
+  static final String        NAME       = "name";
 
-  static final String   URL      = "url";
+  static final String        URL        = "url";
 
-  static final String   CALLBACK = "callback";
+  static final String        CALLBACK   = "callback";
 
-  static final String   WITH_URL = "withurl";
+  static final String        WITH_URL   = "withurl";
 
-  static Logger         logger   = LoggerFactory.getLogger(MmdService.class);
+  static Logger              logger     = LoggerFactory.getLogger(MmdService.class);
+
+  /**
+   * key: (mmd_name)$(format), e.g. rich_document$JSON, scholarly_article$XML. value: serialized
+   * mmd.
+   */
+  static Map<String, String> cachedMmds = new HashMap<String, String>();
 
   @Inject
-  SemanticsServiceScope semanticsServiceScope;
+  SemanticsServiceScope      semanticsServiceScope;
 
   // request specific UriInfo object to get absolute query path
   @Context
-  UriInfo               uriInfo;
+  UriInfo                    uriInfo;
 
   @QueryParam(URL)
-  String                url;
+  String                     url;
 
   @QueryParam(NAME)
-  String                name;
+  String                     name;
 
   @QueryParam(CALLBACK)
-  String                callback;
+  String                     callback;
 
   @QueryParam(WITH_URL)
-  String                withUrl;
+  String                     withUrl;
 
-  Response getMmdResponse(StringFormat format, String mediaType)
+  Response getMmdResponse(StringFormat format, String mediaType) throws SIMPLTranslationException
   {
     NDC.push("MMD REQ format: " + format + " | url:" + url + " | name:" + name);
     long requestTime = System.currentTimeMillis();
-    logger.debug("Requested at: " + (new Date(requestTime)));
+    logger.info("Requested at: " + (new Date(requestTime)));
 
     Response resp = null;
     if (url != null)
@@ -101,20 +111,19 @@ public class MmdService
     }
     else if (name != null)
     {
-      MetaMetadata mmd = getMmdByName(name);
-      if (mmd != null)
+      String serializedMmd = getSerializedMmd(name, format);
+      if (serializedMmd != null)
       {
-        String mmdJson = ServiceUtils.serialize(mmd, format);
-        String respString = mmdJson;
+        String respString = serializedMmd;
         if (callback != null)
         {
           String locParam = "";
           if (withUrl != null)
           {
-            logger.info("withUrl = {}", withUrl);
+            logger.debug("withUrl = {}", withUrl);
             locParam = "\"" + withUrl + "\", ";
           }
-          respString = callback + "(" + locParam + mmdJson + ");";
+          respString = callback + "(" + locParam + serializedMmd + ");";
         }
         resp = Response.status(Status.OK).entity(respString).type(mediaType).build();
       }
@@ -137,10 +146,31 @@ public class MmdService
           .build();
     }
 
-    logger.debug("Time taken (ms): " + (System.currentTimeMillis() - requestTime));
+    logger.info("Time taken (ms): " + (System.currentTimeMillis() - requestTime));
     NDC.remove();
 
     return resp;
+  }
+
+  String getSerializedMmd(String name, StringFormat format) throws SIMPLTranslationException
+  {
+    String cacheKey = name + "$" + format.toString();
+    if (!cachedMmds.containsKey(cacheKey))
+    {
+      synchronized (cachedMmds)
+      {
+        if (!cachedMmds.containsKey(cacheKey))
+        {
+          MetaMetadata mmd = getMmdByName(name);
+          if (mmd != null)
+          {
+            String serializedMmd = SimplTypesScope.serialize(mmd, format).toString();
+            cachedMmds.put(cacheKey, serializedMmd);
+          }
+        }
+      }
+    }
+    return cachedMmds.get(cacheKey);
   }
 
   MetaMetadata getMmdByName(String mmdName)
@@ -157,7 +187,7 @@ public class MmdService
   @Path("/mmd.jsonp")
   @GET
   @Produces("application/javascript")
-  public Response getJsonp()
+  public Response getJsonp() throws SIMPLTranslationException
   {
     Response resp = getMmdResponse(StringFormat.JSON, "application/javascript");
     return resp;
@@ -166,7 +196,7 @@ public class MmdService
   @Path("/mmd.json")
   @GET
   @Produces("application/json")
-  public Response getJson()
+  public Response getJson() throws SIMPLTranslationException
   {
     Response resp = getMmdResponse(StringFormat.JSON, "application/json");
     return resp;
@@ -175,7 +205,7 @@ public class MmdService
   @Path("/mmd.xml")
   @GET
   @Produces("application/xml")
-  public Response getMmd()
+  public Response getMmd() throws SIMPLTranslationException
   {
     Response resp = getMmdResponse(StringFormat.XML, "application/xml");
     return resp;

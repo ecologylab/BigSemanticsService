@@ -176,4 +176,10 @@ public class DPoolDownloadController extends AbstractDownloadController
     return null;
   }
 
+  public void recycle()
+  {
+    super.recycle();
+    this.closure = null;
+  }
+
 }
