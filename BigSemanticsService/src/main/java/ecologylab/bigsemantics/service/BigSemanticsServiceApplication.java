@@ -91,8 +91,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
       {
         for (Site site : siteMap.values())
         {
-          DomainInfo domainInfo = new DomainInfo(site.domain());
-          domainInfo.setMinDelay(site.getDownloadInterval() / 1000f);
+          DomainInfo domainInfo = new DomainInfo(site);
           dispatcher.addDomainInfoIfAbsent(domainInfo);
         }
       }

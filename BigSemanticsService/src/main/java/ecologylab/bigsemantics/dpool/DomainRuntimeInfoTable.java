@@ -47,4 +47,15 @@ public class DomainRuntimeInfoTable
     return result;
   }
 
+  public void releaseAllTokens()
+  {
+    for (DomainRuntimeInfo domainRuntimeInfo : table.values())
+    {
+      if (domainRuntimeInfo.isHoldingToken())
+      {
+        domainRuntimeInfo.getDomainInfo().releaseToken();
+      }
+    }
+  }
+
 }

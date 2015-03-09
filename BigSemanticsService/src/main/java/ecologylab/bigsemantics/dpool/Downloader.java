@@ -77,6 +77,7 @@ public abstract class Downloader extends Worker<DownloadTask>
 
   public Result performDownload(DownloadTask task)
   {
+    logger.info("Performing task: " + task);
     DomainRuntimeInfo domainRuntimeInfo = null;
     try
     {
@@ -141,6 +142,12 @@ public abstract class Downloader extends Worker<DownloadTask>
   {
     DomainRuntimeInfo domainRuntimeInfo = getDomainRuntimeInfo(task);
     return domainRuntimeInfo.canAccess();
+  }
+
+  @Override
+  protected void onRemoval()
+  {
+    domainInfoTable.releaseAllTokens();
   }
 
 }

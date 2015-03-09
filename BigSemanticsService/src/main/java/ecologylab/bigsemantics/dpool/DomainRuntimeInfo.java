@@ -2,7 +2,9 @@ package ecologylab.bigsemantics.dpool;
 
 import java.util.Random;
 
-import ecologylab.concurrent.Site;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ecologylab.serialization.annotations.simpl_composite;
 import ecologylab.serialization.annotations.simpl_scalar;
 
@@ -13,19 +15,23 @@ import ecologylab.serialization.annotations.simpl_scalar;
 public class DomainRuntimeInfo
 {
 
-  static Random      rand = new Random(System.currentTimeMillis());
+  static final Logger logger = LoggerFactory.getLogger(DomainRuntimeInfo.class);
+
+  static Random       rand   = new Random(System.currentTimeMillis());
 
   @simpl_composite
-  private DomainInfo domainInfo;
+  private DomainInfo  domainInfo;
 
   @simpl_scalar
-  private long       currentDelay;
+  private long        currentDelay;
 
   @simpl_scalar
-  private int        consecutiveFailures;
+  private int         consecutiveFailures;
 
   @simpl_scalar
-  private long       lastAccessTime;
+  private long        lastAccessTime;
+
+  private boolean     holdingToken;
 
   /**
    * for deserialization.
@@ -38,13 +44,6 @@ public class DomainRuntimeInfo
   public DomainRuntimeInfo(DomainInfo domainInfo)
   {
     this.domainInfo = domainInfo;
-  }
-
-  public DomainRuntimeInfo(Site site)
-  {
-    this();
-    domainInfo = new DomainInfo(site.domain());
-    domainInfo.setMinDelay(site.getDownloadInterval());
   }
 
   public DomainInfo getDomainInfo()
@@ -93,6 +92,11 @@ public class DomainRuntimeInfo
     return 0;
   }
 
+  public boolean isHoldingToken()
+  {
+    return holdingToken;
+  }
+
   public synchronized void beginAccess()
   {
     // no op
@@ -138,7 +142,35 @@ public class DomainRuntimeInfo
 
   public boolean canAccess()
   {
-    return getCurrentTime() - lastAccessTime > currentDelay;
+    if (getCurrentTime() - lastAccessTime <= currentDelay)
+    {
+      return false;
+    }
+
+    if (holdingToken)
+    {
+      // if this downloader is holding the token, release it, and give next downloader a chance.
+      domainInfo.releaseToken();
+      holdingToken = false;
+      logger.debug("[{}] \t token released", domainInfo.getDomain());
+      return false;
+    }
+    else
+    {
+      // if this downloader is not holding the token, try to get it and do the work.
+      holdingToken = domainInfo.acquireToken();
+      if (holdingToken)
+      {
+        logger.debug("[{}] \t token acquired", domainInfo.getDomain());
+      }
+      return holdingToken;
+    }
+  }
+
+  @Override
+  public String toString()
+  {
+    return DomainRuntimeInfo.class.getSimpleName() + "[" + domainInfo.getDomain() + "]";
   }
 
 }
