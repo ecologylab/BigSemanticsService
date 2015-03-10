@@ -70,6 +70,15 @@ public class DomainInfo
     setMaxTokens(site.getMaxDownloaders());
   }
 
+  public DomainInfo(String domain, DomainInfo copy)
+  {
+    this.setDomain(domain);
+    this.setMinDelay(copy.getMinDelay());
+    this.setLongDelay(copy.getLongDelay());
+    this.setLongDelayThreshold(copy.getLongDelayThreshold());
+    this.setMaxTokens(copy.getMaxTokens());
+  }
+
   public String getDomain()
   {
     return domain;

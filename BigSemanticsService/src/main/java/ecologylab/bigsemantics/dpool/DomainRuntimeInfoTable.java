@@ -9,9 +9,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DomainRuntimeInfoTable
 {
 
+  public static final String                           DEFAULT_DOMAIN = "DEFAULT";
+
   private ConcurrentHashMap<String, DomainInfo>        domainInfos;
 
   private ConcurrentHashMap<String, DomainRuntimeInfo> table;
+
+  private DomainInfo                                   defaultDomainInfo;
 
   public DomainRuntimeInfoTable()
   {
@@ -23,26 +27,30 @@ public class DomainRuntimeInfoTable
     super();
     this.domainInfos =
         domainInfos == null ? new ConcurrentHashMap<String, DomainInfo>() : domainInfos;
-    table = new ConcurrentHashMap<String, DomainRuntimeInfo>();
+    this.table = new ConcurrentHashMap<String, DomainRuntimeInfo>();
+    this.defaultDomainInfo = domainInfos.getOrDefault(DEFAULT_DOMAIN, null);
   }
 
   public DomainRuntimeInfo getOrCreate(String domain)
   {
-    DomainInfo domainInfo = domainInfos.get(domain);
-    if (domainInfo == null)
-    {
-      return new DomainRuntimeInfo(new DomainInfo(domain));
-    }
-
     DomainRuntimeInfo result = table.get(domain);
     if (result == null)
     {
-      DomainRuntimeInfo domainRuntimeInfo = new DomainRuntimeInfo(domainInfo);
-      result = table.putIfAbsent(domain, domainRuntimeInfo);
-      if (result == null)
+      // first, find or generate the DomainInfo
+      DomainInfo domainInfo = domainInfos.get(domain);
+      if (domainInfo == null)
       {
-        result = domainRuntimeInfo;
+        domainInfo = defaultDomainInfo == null
+            ? new DomainInfo(domain)
+            : new DomainInfo(domain, defaultDomainInfo);
+        DomainInfo existingDomainInfo = domainInfos.putIfAbsent(domain, domainInfo);
+        domainInfo = existingDomainInfo == null ? domainInfo : existingDomainInfo;
       }
+
+      // second, generate a DomainRuntimeInfo.
+      result = new DomainRuntimeInfo(domainInfo);
+      DomainRuntimeInfo existingDomainRuntimeInfo = table.putIfAbsent(domain, result);
+      result = existingDomainRuntimeInfo == null ? result : existingDomainRuntimeInfo;
     }
     return result;
   }
