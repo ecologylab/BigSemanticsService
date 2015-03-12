@@ -154,9 +154,13 @@ public class MetadataServiceHelper extends Debug
     int result = 500;
 
     document.setLogRecord(logRecord);
-    logger.info("performing downloading on {}", document);
-    DownloadStatus downloadStatus = closure.performDownloadSynchronously(reload, false);
-    logger.info("resulting status of downloading {}: {}", document, downloadStatus);
+    DownloadStatus downloadStatus = null;
+    synchronized (document)
+    {
+      logger.info("performing downloading on {}", document);
+      downloadStatus = closure.performDownloadSynchronously(reload, false);
+      logger.info("resulting status of downloading {}: {}", document, downloadStatus);
+    }
     switch (downloadStatus)
     {
     case UNPROCESSED:

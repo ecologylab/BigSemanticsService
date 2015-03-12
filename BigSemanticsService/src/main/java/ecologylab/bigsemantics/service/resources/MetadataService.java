@@ -20,8 +20,11 @@ import org.slf4j.LoggerFactory;
 import ecologylab.bigsemantics.Utils;
 import ecologylab.bigsemantics.logging.Phase;
 import ecologylab.bigsemantics.logging.ServiceLogRecord;
+import ecologylab.bigsemantics.metadata.builtins.Document;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
 import ecologylab.net.ParsedURL;
+import ecologylab.serialization.SIMPLTranslationException;
+import ecologylab.serialization.SimplTypesScope;
 import ecologylab.serialization.formatenums.StringFormat;
 
 /**
@@ -171,6 +174,67 @@ public class MetadataService
   {
     Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML);
     return resp;
+  }
+
+  Response getMetadataOrStubResponse(StringFormat format, String mediaType)
+  {
+    docPurl = ParsedURL.getAbsolute(docUrl);
+    if (docPurl != null)
+    {
+      try
+      {
+        Document doc = semanticsServiceScope.getOrConstructDocument(docPurl);
+        String xml = SimplTypesScope.serialize(doc, format).toString();
+        return Response.ok(xml).type(mediaType).build();
+      }
+      catch (SIMPLTranslationException e)
+      {
+        String errorMsg = String.format("Error serializing %s", docUrl);
+        logger.error(errorMsg, e);
+        return Response.serverError().entity(errorMsg).build();
+      }
+      catch (Exception e)
+      {
+        String errorMsg = String.format("Unknown exception when processing %s", docUrl);
+        logger.error(errorMsg, e);
+        return Response.serverError().entity(errorMsg).build();
+      }
+    }
+    String errorMsg = String.format("Invalid request parameter: %s", docUrl);
+    logger.error(errorMsg);
+    return Response.serverError().entity(errorMsg).build();
+  }
+
+  @Path("/metadata_or_stub.xml")
+  @GET
+  @Produces("application/xml")
+  public Response getMetadataOrStubXml()
+  {
+    return getMetadataOrStubResponse(StringFormat.XML, MediaType.APPLICATION_XML);
+  }
+
+  @Path("/metadata_or_stub.json")
+  @GET
+  @Produces("application/json")
+  public Response getMetadataOrStubJson()
+  {
+    return getMetadataOrStubResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
+  }
+
+  @Path("/metadata_or_stub.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getMetadataOrStubJsonp()
+  {
+    Response resp = getMetadataOrStubResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
+    int status = resp.getStatus();
+    if (status >= 400) // client or server error
+    {
+      return resp;
+    }
+    String respEntity = callback + "(" + ((String) resp.getEntity()) + ");";
+    Response jsonpResp = Response.status(resp.getStatus()).entity(respEntity).build();
+    return jsonpResp;
   }
 
 }
