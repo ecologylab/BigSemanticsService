@@ -28,7 +28,7 @@ public class DomainRuntimeInfoTable
     this.domainInfos =
         domainInfos == null ? new ConcurrentHashMap<String, DomainInfo>() : domainInfos;
     this.table = new ConcurrentHashMap<String, DomainRuntimeInfo>();
-    this.defaultDomainInfo = domainInfos.getOrDefault(DEFAULT_DOMAIN, null);
+    this.defaultDomainInfo = domainInfos.get(DEFAULT_DOMAIN);
   }
 
   public DomainRuntimeInfo getOrCreate(String domain)
