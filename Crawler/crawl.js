@@ -1,13 +1,21 @@
 // Script for crawling scholarly articles and their authors, references, and
 // citations.
 
-var EOL = require('os').EOL;
+var winston = require("winston");
+var logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.Console)(),
+    new (winston.transports.File)({filename: "crawler.log"}),
+  ]
+});
+logger.exitOnError = false;
+logger.emitErrs = false;
 
 function default_error_handler(err, result) {
   if (err) {
-    console.log("ERROR: " + err);
+    logger.warn(err);
   } else if (result) {
-    console.log("RESULT: " + result);
+    logger.info(result);
   }
 }
 
@@ -21,7 +29,8 @@ var db = new sqlite3.Database(db_file_name);
 function next_url(callback) {
   db.get("SELECT url FROM urls ORDER BY rowid LIMIT 1;", function(err, row) {
     if (err) {
-      callback("cannot read table 'urls': " + err, null);
+      logger.log("error", "cannot read table 'urls': %s", err);
+      process.exit(0);
     } else {
       if (row) {
         callback(null, row.url);
@@ -29,7 +38,8 @@ function next_url(callback) {
         stmt.run(row.url, default_error_handler);
         stmt.finalize();
       } else {
-        callback("no more URLs to process", null);
+        logger.error("no more URLs to process");
+        process.exit(0);
       }
     }
   });
@@ -38,6 +48,9 @@ function next_url(callback) {
 // callback :: (err, url) -> nil
 // where url will be the unvisited url, or null
 function is_visited(url, callback) {
+  if (!url) {
+    callback("is_visited(): url is null", null);
+  }
   var stmt = db.prepare("SELECT url FROM visited_urls WHERE url == ? LIMIT 1;");
   stmt.get(url, function(err, row) {
     if (err) {
@@ -54,7 +67,10 @@ function is_visited(url, callback) {
 }
 
 function new_url(url) {
-  console.log("  adding link: " + url);
+  if (!url) {
+    callback("new_url(): url is null", null);
+  }
+  logger.log("info", "  adding link: %s", url);
   var stmt = db.prepare("INSERT INTO urls VALUES(?, NULL);");
   stmt.run(url, default_error_handler);
   stmt.finalize();
@@ -69,6 +85,10 @@ var bss_base = "http://api.ecologylab.net/BigSemanticsService";
 
 // callback :: (err, metadata) -> nil
 function get_metadata(url, callback) {
+  if (!url) {
+    callback("get_metadata(): url is null", null);
+  }
+
   var options = {
     "method": "GET",
     "url": url,
@@ -107,6 +127,10 @@ function get_metadata(url, callback) {
 
 // callback :: (err, normalized_url) -> nil
 function normalize(doc_url, callback) {
+  if (!doc_url) {
+    callback("normalize(): doc_url is null", null);
+  }
+
   var bss_url = bss_base + "/metadata_or_stub.json?url=" + encodeURIComponent(doc_url);
   get_metadata(bss_url, function(err, metadata) {
     if (err) {
@@ -168,10 +192,18 @@ function get_links(metadata) {
 
 // callback :: (err, visited_url) -> nil
 function visit(doc_url, callback) {
+  if (!doc_url) {
+    callback("visit(): doc_url is null", null);
+  }
+
   var bss_url = bss_base + "/metadata.json?url=" + encodeURIComponent(doc_url);
   get_metadata(bss_url, function(err, metadata) {
     if (err) {
       callback("cannot visit " + doc_url + ": " + err, null);
+      logger.log("info", "putting %s back to task queue...", doc_url);
+      var stmt = db.prepare("INSERT INTO urls VALUES (?, \"retry\");");
+      stmt.run(doc_url, default_error_handler);
+      stmt.finalize();
     } else {
       var visited_url = metadata.location;
       if (visited_url) {
@@ -179,6 +211,7 @@ function visit(doc_url, callback) {
         for (var i in links) {
           new_url(links[i]);
         }
+        logger.log("info", "successfully processed %s\n", doc_url);
         callback(null, visited_url);
       } else {
         callback("cannot find location from " + JSON.stringify(metadata)
@@ -204,7 +237,7 @@ function bind(f, g) {
   return function(gin, callback) {
     g(gin, function(err, gout) {
       if (err) {
-        console.log("ERROR: " + err);
+        callback(err, gout);
       } else {
         f(gout, callback);
       }
@@ -212,51 +245,22 @@ function bind(f, g) {
   };
 }
 
-function finish_url(error, url) {
-  if (error) {
-    console.log("ERROR: failed to visit " + url
-                + ", putting back to task queue...");
-    var stmt = db.prepare("INSERT INTO urls VALUES (?, \"retry\");");
-    stmt.run(url, default_error_handler);
-    stmt.finalize();
-  } else {
-    console.log("successfully processed " + url);
-    var stmt = db.prepare("INSERT INTO visited_urls VALUES (?, ?, NULL);");
-    stmt.run(url, new Date(), default_error_handler);
-    stmt.finalize();
-  }
-  console.log(EOL);
-  console.log(EOL);
-}
-
 var process_one = bind(visit,
                   bind(is_visited,
                   bind(normalize, lift(next_url))));
 
-function main() {
-  function tick() {
-    process_one(null, function(err, url) {
-      if (err) {
-        if (err.indexOf("no more URLs to process") >= 0) {
-          process.exit(0);
-        } else {
-          console.log("ERROR: " + err + ", putting back to task queue...");
-          var stmt = db.prepare("INSERT INTO urls VALUES (?, \"retry\");");
-          stmt.run(url, default_error_handler);
-          stmt.finalize();
-        }
-      } else {
-        console.log("successfully processed " + url);
-        var stmt = db.prepare("INSERT INTO visited_urls VALUES (?, ?, NULL);");
-        stmt.run(url, new Date(), default_error_handler);
-        stmt.finalize();
-      }
-      process.nextTick(tick);
-    });
-  }
-
-  process.nextTick(tick);
+function tick() {
+  process_one(null, function(err, url) {
+    if (err) {
+      logger.warn(err);
+    } else {
+      var stmt = db.prepare("INSERT INTO visited_urls VALUES (?, ?, NULL);");
+      stmt.run(url, new Date(), default_error_handler);
+      stmt.finalize();
+    }
+    process.nextTick(tick);
+  });
 }
 
-main()
+process.nextTick(tick);
 
