@@ -9,8 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DomainRuntimeInfoTable
 {
 
-  public static final String                           DEFAULT_DOMAIN = "DEFAULT";
-
   private ConcurrentHashMap<String, DomainInfo>        domainInfos;
 
   private ConcurrentHashMap<String, DomainRuntimeInfo> table;
@@ -28,7 +26,7 @@ public class DomainRuntimeInfoTable
     this.domainInfos =
         domainInfos == null ? new ConcurrentHashMap<String, DomainInfo>() : domainInfos;
     this.table = new ConcurrentHashMap<String, DomainRuntimeInfo>();
-    this.defaultDomainInfo = domainInfos.get(DEFAULT_DOMAIN);
+    this.defaultDomainInfo = domainInfos.get(DomainInfo.DEFAULT_DOMAIN);
   }
 
   public DomainRuntimeInfo getOrCreate(String domain)

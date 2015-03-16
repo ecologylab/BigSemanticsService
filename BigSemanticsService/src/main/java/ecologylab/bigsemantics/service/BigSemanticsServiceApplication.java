@@ -94,6 +94,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
           DomainInfo domainInfo = new DomainInfo(site);
           dispatcher.addDomainInfoIfAbsent(domainInfo);
         }
+        dispatcher.configureDomainInfos();
       }
     }
 

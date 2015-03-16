@@ -77,6 +77,21 @@ public class DownloadDispatcher extends Dispatcher<DownloadTask, Downloader>
     return domainInfos.putIfAbsent(domainInfo.getDomain(), domainInfo);
   }
 
+  public void configureDomainInfos()
+  {
+    DomainInfo defaultDomainInfo = domainInfos.get(DomainInfo.DEFAULT_DOMAIN);
+    if (defaultDomainInfo != null)
+    {
+      for (DomainInfo domainInfo : domainInfos.values())
+      {
+        if (domainInfo != defaultDomainInfo)
+        {
+          domainInfo.copyFrom(defaultDomainInfo);
+        }
+      }
+    }
+  }
+
   @Override
   protected void onAddWorker(Downloader downloader)
   {

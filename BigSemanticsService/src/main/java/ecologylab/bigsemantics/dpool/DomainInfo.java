@@ -13,6 +13,8 @@ import ecologylab.serialization.annotations.simpl_scalar;
 public class DomainInfo
 {
 
+  public static final String  DEFAULT_DOMAIN               = "DEFAULT";
+
   private static final Logger logger;
 
   static
@@ -34,10 +36,10 @@ public class DomainInfo
    * Max number of consecutive failures before doing long delays.
    */
   @simpl_scalar
-  private int                 longDelayThreshold           = DEFAULT_LONG_DELAY_THRESHOLD;
+  private int                 longDelayThreshold;
 
   @simpl_scalar
-  private float               longDelay                    = DEFAULT_LONG_DELAY;
+  private float               longDelay;
 
   /**
    * One token for a downloading thread.
@@ -73,10 +75,27 @@ public class DomainInfo
   public DomainInfo(String domain, DomainInfo copy)
   {
     this.setDomain(domain);
-    this.setMinDelay(copy.getMinDelay());
-    this.setLongDelay(copy.getLongDelay());
-    this.setLongDelayThreshold(copy.getLongDelayThreshold());
-    this.setMaxTokens(copy.getMaxTokens());
+    copyFrom(copy);
+  }
+
+  public void copyFrom(DomainInfo copy)
+  {
+    if (this.minDelay == 0)
+    {
+      this.setMinDelay(copy.minDelay);
+    }
+    if (this.longDelay == 0)
+    {
+      this.setLongDelay(copy.longDelay);
+    }
+    if (this.longDelayThreshold == 0)
+    {
+      this.setLongDelayThreshold(copy.longDelayThreshold);
+    }
+    if (this.maxTokens == 0)
+    {
+      this.setMaxTokens(copy.maxTokens);
+    }
   }
 
   public String getDomain()
@@ -101,7 +120,7 @@ public class DomainInfo
 
   public int getLongDelayThreshold()
   {
-    return longDelayThreshold;
+    return longDelayThreshold == 0 ? DEFAULT_LONG_DELAY_THRESHOLD : longDelayThreshold;
   }
 
   public void setLongDelayThreshold(int longDelayThreshold)
@@ -111,7 +130,7 @@ public class DomainInfo
 
   public float getLongDelay()
   {
-    return longDelay;
+    return longDelay == 0 ? DEFAULT_LONG_DELAY : longDelay;
   }
 
   public void setLongDelay(float longDelay)
