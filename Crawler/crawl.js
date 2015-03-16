@@ -200,6 +200,7 @@ function visit(doc_url, callback) {
   get_metadata(bss_url, function(err, metadata) {
     if (err) {
       callback("cannot visit " + doc_url + ": " + err, null);
+      logger.log("info", "putting %s back to task queue...", doc_url);
       var stmt = db.prepare("INSERT INTO urls VALUES (?, \"retry\");");
       stmt.run(doc_url, default_error_handler);
       stmt.finalize();
@@ -236,7 +237,6 @@ function bind(f, g) {
   return function(gin, callback) {
     g(gin, function(err, gout) {
       if (err) {
-        logger.warn(err);
         callback(err, gout);
       } else {
         f(gout, callback);
@@ -252,7 +252,7 @@ var process_one = bind(visit,
 function tick() {
   process_one(null, function(err, url) {
     if (err) {
-      logger.log("warn", "%s; putting task back to queue...\n", err);
+      logger.warn(err);
     } else {
       var stmt = db.prepare("INSERT INTO visited_urls VALUES (?, ?, NULL);");
       stmt.run(url, new Date(), default_error_handler);
