@@ -30,8 +30,6 @@ class ServiceBuilder:
     self.bs_repo = join(self.code_dir, "BigSemantics")
     self.service_proj = join(self.bs_repo, "BigSemanticsService", "BigSemanticsService")
     self.service_build = join(self.service_proj, "build")
-    self.onto_vis_dir = join(self.bs_repo, "BigSemanticsWrapperRepository",
-                             "BigSemanticsWrappers", "OntoViz")
     self.bsjs_repo = join(self.bs_repo, "BigSemanticsJavaScript")
 
     # deployment related paths:
@@ -42,8 +40,6 @@ class ServiceBuilder:
     self.prod_static_dir = config["prod_static_dir"]
 
     # data:
-    self.example_table_script = config["example_table_script"]
-    self.example_table_data_file = config["example_table_data_file"]
     self.max_archives = config["max_archives"]
     self.prod_host = config["prod_host"]
     self.prod_user = config["prod_user"]
@@ -102,17 +98,9 @@ class ServiceBuilder:
          wd=self.bs_repo)
     check_call(["ant", "clean"], wd=self.service_proj)
     check_call(["ant", "main"], wd=self.service_proj)
-    cmds = ["python", self.example_table_script,
-            "--out", self.example_table_data_file]
-    check_call(cmds, wd = self.onto_vis_dir)
 
   def release_service(self, deploy_dir, host = None, user = None, login = None):
     self.copy_file("BigSemanticsService.jar", self.service_build, deploy_dir,
-                   None, host, user, login)
-    static_dir = join(deploy_dir, "static")
-    self.copy_file("mmd_repo.json", self.onto_vis_dir, static_dir,
-                   None, host, user, login)
-    self.copy_file(self.example_table_data_file, self.onto_vis_dir, static_dir,
                    None, host, user, login)
 
   def start_local_service(self):
