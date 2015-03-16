@@ -39,6 +39,7 @@ import ecologylab.bigsemantics.generated.library.RepositoryMetadataTypesScope;
 import ecologylab.bigsemantics.service.resources.MetadataService;
 import ecologylab.bigsemantics.service.resources.MmdRepoService;
 import ecologylab.bigsemantics.service.resources.MmdService;
+import ecologylab.bigsemantics.service.resources.OntoVizService;
 import ecologylab.concurrent.Site;
 
 /**
@@ -187,6 +188,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     config.register(MetadataService.class);
     config.register(MmdService.class);
     config.register(MmdRepoService.class);
+    config.register(OntoVizService.class);
     config.register(new AbstractBinder()
     {
       @Override
