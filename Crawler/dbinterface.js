@@ -5,9 +5,7 @@ module.exports = {
 	frontier_count : frontier_count,
 };
 
-
-
-var db_file_name = "init_urls.db";
+var db_file_name = "urls.db";
 var sqlite3 = require("sqlite3");
 var db = new sqlite3.Database(db_file_name);
 
@@ -37,3 +35,4 @@ function frontier_count(callback){
 		}  	
   	});
 };
+

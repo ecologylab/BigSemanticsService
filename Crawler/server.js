@@ -1,4 +1,4 @@
-//server.js
+// server.js
 var db = require('./dbinterface');
 var express = require('express.io');
 var app     = express();
@@ -9,7 +9,6 @@ app.use(express.static('public'));
 app.get('/' , function( req, res ){
 	res.send('GET request to the homepage');
 });
-
 
 app.io.route('DB' , {
 	frontier: function(req){
@@ -38,15 +37,16 @@ app.io.route('DB' , {
 
 var host = '127.0.0.1'
 var port = 3000
-if( process.argv.length == 3)
-	host = process.arve[2]
-if( process.argv.length == 4 )
+if( process.argv.length == 3) {
+	host = process.argv[2]
+}
+if( process.argv.length == 4 ) {
+	host = process.argv[2]
 	port = process.argv[3]
+}
 var server = app.listen(port,host ,function() {
-
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log("Crawler Report server running at http://%s:%s" , host , port);
-
 });
 
