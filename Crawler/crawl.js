@@ -1,5 +1,5 @@
 // Script for crawling scholarly articles and their authors, references, and
-// citations.
+// citations.l
 
 var winston = require("winston");
 var logger = new (winston.Logger)({
@@ -20,29 +20,12 @@ function default_error_handler(err, result) {
 }
 
 // database related functions
-
-var db_file_name = "urls.db";
+var db_file_name = "init_urls.db";
 var sqlite3 = require("sqlite3");
 var db = new sqlite3.Database(db_file_name);
 
-// callback :: (err, url) -> nil
 function next_url(callback) {
-  db.get("SELECT url FROM urls ORDER BY rowid LIMIT 1;", function(err, row) {
-    if (err) {
-      logger.log("error", "cannot read table 'urls': %s", err);
-      process.exit(0);
-    } else {
-      if (row) {
-        callback(null, row.url);
-        var stmt = db.prepare("DELETE FROM urls WHERE url = ?;");
-        stmt.run(row.url, default_error_handler);
-        stmt.finalize();
-      } else {
-        logger.error("no more URLs to process");
-        process.exit(0);
-      }
-    }
-  });
+  callback(null , pool.pop() );
 }
 
 // callback :: (err, url) -> nil
@@ -195,7 +178,6 @@ function visit(doc_url, callback) {
   if (!doc_url) {
     callback("visit(): doc_url is null", null);
   }
-
   var bss_url = bss_base + "/metadata.json?url=" + encodeURIComponent(doc_url);
   get_metadata(bss_url, function(err, metadata) {
     if (err) {
@@ -211,6 +193,9 @@ function visit(doc_url, callback) {
         for (var i in links) {
           new_url(links[i]);
         }
+        stmt = db.prepare("INSERT INTO visited_urls VALUES (? , ? , NULL)");
+        stmt.run( doc_url , Date.now() , default_error_handler);
+        stmt.finalize();
         logger.log("info", "successfully processed %s\n", doc_url);
         callback(null, visited_url);
       } else {
@@ -249,18 +234,85 @@ var process_one = bind(visit,
                   bind(is_visited,
                   bind(normalize, lift(next_url))));
 
-function tick() {
-  process_one(null, function(err, url) {
-    if (err) {
-      logger.warn(err);
-    } else {
-      var stmt = db.prepare("INSERT INTO visited_urls VALUES (?, ?, NULL);");
-      stmt.run(url, new Date(), default_error_handler);
-      stmt.finalize();
-    }
-    process.nextTick(tick);
+function process_mock( err , callback ){
+  var time = Math.random() * 10000;
+  time = 5000;
+  setTimeout(function() { callback(null , Date.now()); }  , time);
+}
+
+function dispatch(func) {
+  func( null , function( err , url ) {
+    report_back();
   });
 }
 
-process.nextTick(tick);
+function report_back(){
+    sem++;
+    //Check if this was the last agent
+    if( toDo <= 0 && sem == MAX_SEM){
+      end_test();
+      return; 
+    }
+    else
+      setImmediate(tick);
+}
 
+function tick(){
+  if( sem >  0){
+    var available = Math.min(toDo , sem);
+    if( toDo > 0 ){
+      sem -= available;
+      toDo-=available;
+      fill_pool( available , function(err, url) { 
+        pool.push( url );
+        dispatch(process_one); 
+      });
+    }
+  }
+}
+
+var toDo = 100;
+var MAX_SEM = 5;
+var sem  = MAX_SEM;
+var start_time = 0;
+
+function start_test()
+{
+  start_time = Date.now();
+  setImmediate(tick);
+}
+
+function end_test()
+{
+  var end_time  = Date.now();
+  var total_time = end_time - start_time;
+  console.log("Test completed");
+  console.log("Total time");
+  console.log("start");
+  console.log(start_time);
+  console.log("end");
+  console.log(end_time);
+  console.log(total_time);
+}
+
+start_test();
+
+var pool = [];
+function fill_pool(available , callback){
+  db.each("SELECT url FROM urls ORDER BY rowid LIMIT " + available +";", function(err, row) {
+    if (err) {
+      logger.log("error", "cannot read table 'urls': %s", err);
+      process.exit(0);
+    } else {
+      if (row) {
+        callback(null, row.url);
+        var stmt = db.prepare("DELETE FROM urls WHERE url = ?;");
+        stmt.run(row.url, default_error_handler);
+        stmt.finalize();
+      } else {
+        logger.error("no more URLs to process");
+        process.exit(0);
+      }
+    }
+  });
+}
