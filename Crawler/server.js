@@ -82,7 +82,7 @@ function periodicUpdate(){
 
 function tick(){
 	periodicUpdate();
-	setTimeout(tick , 10000);
+	setTimeout(tick , 5000);
 }
 
 tick();
