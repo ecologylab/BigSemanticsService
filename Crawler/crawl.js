@@ -250,7 +250,7 @@ function report_back(){
     sem++;
     //Check if this was the last agent
     if( toDo <= 0 && sem == MAX_SEM){
-      end_test();
+      //end_test();
       return; 
     }
     else
@@ -262,7 +262,7 @@ function tick(){
     var available = Math.min(toDo , sem);
     if( toDo > 0 ){
       sem -= available;
-      toDo-=available;
+      //toDo-=available;
       fill_pool( available , function(err, url) { 
         pool.push( url );
         dispatch(process_one); 
@@ -271,17 +271,19 @@ function tick(){
   }
 }
 
-var toDo = 100;
+var toDo = 10;
 var MAX_SEM = 5;
 var sem  = MAX_SEM;
 var start_time = 0;
 
-function start_test()
+setImmediate(tick);
+/*function start_test()
 {
   start_time = Date.now();
   setImmediate(tick);
 }
-
+*/
+/*
 function end_test()
 {
   var end_time  = Date.now();
@@ -294,8 +296,8 @@ function end_test()
   console.log(end_time);
   console.log(total_time);
 }
-
-start_test();
+*/
+//start_test();
 
 var pool = [];
 function fill_pool(available , callback){
