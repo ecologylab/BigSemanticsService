@@ -2,7 +2,7 @@
 var db = require('./dbinterface');
 var express = require('express.io');
 var app     = express();
-app.http().io()
+app.http().io();
 
 app.use(express.static('public'));
 
@@ -36,18 +36,19 @@ app.io.route('DB' , {
 	}
 });
 
-var host = '127.0.0.1'
-var port = 3000
-if( process.argv.length == 3)
-	host = process.arve[2]
-if( process.argv.length == 4 )
-	port = process.argv[3]
+var host = '0.0.0.0';
+var port = 8003;
+if( process.argv.length == 3) {
+	host = process.argv[2];
+}
+if( process.argv.length == 4 ) {
+	host = process.argv[2];
+	port = process.argv[3];
+}
 var server = app.listen(port,host ,function() {
-
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log("Crawler Report server running at http://%s:%s" , host , port);
-
 });
 
 
