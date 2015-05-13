@@ -8,7 +8,13 @@ import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.Slf4jRequestLog;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AllowSymLinkAliasChecker;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -17,6 +23,7 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -148,6 +155,26 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     int nAcceptors = configs.getInt(NUM_ACCEPTORS, cores - 1);
     int nSelectors = configs.getInt(NUM_SELECTORS, -1);
     super.setupServer(new ServiceParams(maxThreads, minThreads, port, nAcceptors, nSelectors));
+    
+    int securePort = configs.getInt(SECURE_PORT, -1);
+    if (securePort > 0)
+    {
+      SslContextFactory sslContextFactory = new SslContextFactory();
+      sslContextFactory.setKeyStorePath(configs.getString(KEYSTORE_PATH));
+      sslContextFactory.setKeyStorePassword(configs.getString(KEYSTORE_PASSWORD));
+      sslContextFactory.setKeyManagerPassword(configs.getString(KEYMANAGER_PASSWORD));
+      SslConnectionFactory sslConnFactory = new SslConnectionFactory(sslContextFactory, "HTTP/1.1");
+
+      HttpConfiguration httpsConfig = new HttpConfiguration();
+      httpsConfig.addCustomizer(new SecureRequestCustomizer());
+      HttpConnectionFactory httpConnFactory = new HttpConnectionFactory(httpsConfig);
+
+      Server server = getServer();
+      ServerConnector secureConnector =
+          new ServerConnector(server, nAcceptors, nSelectors, sslConnFactory, httpConnFactory);
+      secureConnector.setPort(securePort);
+      server.addConnector(secureConnector);
+    }
 
     adminApp.setupServer();
   }

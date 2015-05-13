@@ -20,6 +20,14 @@ public interface SemanticsServiceConfigNames
 
   static final String STATIC_DIR                = "service.static_dir";
 
+  static final String SECURE_PORT               = "service.secure_port";
+
+  static final String KEYSTORE_PATH             = "service.keystore_path";
+
+  static final String KEYSTORE_PASSWORD         = "service.keystore_password";
+
+  static final String KEYMANAGER_PASSWORD       = "service.keymanager_password";
+
   static final String PERSISTENT_CACHE_CLASS    = "service.persistent_cache.class";
 
   static final String PERSISTENT_CACHE_DIR      = "service.persistent_cache.dir";
