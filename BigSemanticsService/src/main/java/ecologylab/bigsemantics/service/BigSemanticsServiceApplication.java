@@ -163,6 +163,10 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
       sslContextFactory.setKeyStorePath(configs.getString(KEYSTORE_PATH));
       sslContextFactory.setKeyStorePassword(configs.getString(KEYSTORE_PASSWORD));
       sslContextFactory.setKeyManagerPassword(configs.getString(KEYMANAGER_PASSWORD));
+      sslContextFactory.setIncludeCipherSuites("TLS_DHE_RSA.*", "TLS_ECDHE.*");
+      sslContextFactory.setExcludeCipherSuites(".*NULL.*", ".*RC4.*", ".*MD5.*", ".*DES.*", ".*DSS.*");
+      sslContextFactory.setExcludeProtocols("SSLv3");
+      sslContextFactory.setRenegotiationAllowed(false);
       SslConnectionFactory sslConnFactory = new SslConnectionFactory(sslContextFactory, "HTTP/1.1");
 
       HttpConfiguration httpsConfig = new HttpConfiguration();
