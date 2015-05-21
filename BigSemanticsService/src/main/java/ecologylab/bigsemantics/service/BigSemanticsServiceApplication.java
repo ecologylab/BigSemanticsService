@@ -283,6 +283,10 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     super.start();
     adminApp.start();
     logger.info("BigSemantics Service up and running.");
+    if (configs.containsKey(POST_STARTUP_MESSAGE))
+    {
+      logger.info(configs.getString(POST_STARTUP_MESSAGE));
+    }
   }
 
   public void stop() throws Exception

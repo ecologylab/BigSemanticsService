@@ -46,5 +46,22 @@
   <target name="main">
     <antcall target="depend.${ant.project.name}" />
   </target>
+	
+	<target name="update-and-run-service" depends="depend.BigSemanticsWrappers,compile">
+		<path id="service_classpath">
+		  <pathelement path="${classes.dir}" />
+			<path refid="classpath" />
+		</path>
+
+		<pathconvert property="service_classpath_prop" refid="service_classpath" />
+		<echo message="Service classpath: ${service_classpath_prop}" />
+		
+		<java classname="ecologylab.bigsemantics.service.BigSemanticsServiceApplication"
+		      classpathref="service_classpath" fork="yes" failonerror="true">
+		  <arg value="--service.static_dir=../../BigSemanticsJavaScript" />
+			<arg value="--service.post_startup_message=Point your browser to http://localhost:8080/static/houseMICE for the MICE interface." />
+			<jvmarg value="-Xms512m" />
+		</java>
+	</target>
 
 </project>

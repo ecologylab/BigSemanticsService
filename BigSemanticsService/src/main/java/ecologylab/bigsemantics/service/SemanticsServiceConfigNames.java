@@ -43,5 +43,7 @@ public interface SemanticsServiceConfigNames
   static final String DPOOL_HOST                = "service.dpool.host";
 
   static final String DPOOL_PORT                = "service.dpool.port";
+  
+  static final String POST_STARTUP_MESSAGE      = "service.post_startup_message";
 
 }
