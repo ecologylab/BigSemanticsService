@@ -5,16 +5,22 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.Slf4jRequestLog;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.AllowSymLinkAliasChecker;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -195,9 +201,29 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     ServletContextHandler bssHandler = createBSSHandler();
 
     ContextHandler staticResourceHandler = createStaticResourceHandler();
+    
+    Handler webRootHandler = new AbstractHandler()
+    {
+      @Override
+      public void handle(String target,
+                         Request baseRequest,
+                         HttpServletRequest request,
+                         HttpServletResponse response)
+          throws IOException, ServletException
+      {
+        if ("/".equals(target))
+        {
+          String wikiUrl = configs.getString(WIKI_URL);
+          logger.debug("Redirecting to Wiki at {} ...", wikiUrl);
+          response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+          response.setHeader("Location", wikiUrl);
+          response.flushBuffer();
+        }
+      }
+    };
 
     RequestLogHandler requestLogHandler = createRequestLogHandler();
-
+    
     HandlerCollection handlerCollection = new HandlerCollection();
     if (dpoolHandler != null)
     {
@@ -205,6 +231,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     }
     handlerCollection.addHandler(bssHandler);
     handlerCollection.addHandler(staticResourceHandler);
+    handlerCollection.addHandler(webRootHandler);
     handlerCollection.addHandler(requestLogHandler);
     return handlerCollection;
   }

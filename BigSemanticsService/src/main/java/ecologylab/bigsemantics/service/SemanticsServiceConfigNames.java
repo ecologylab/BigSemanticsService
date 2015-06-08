@@ -31,6 +31,8 @@ public interface SemanticsServiceConfigNames
   static final String PERSISTENT_CACHE_CLASS    = "service.persistent_cache.class";
 
   static final String PERSISTENT_CACHE_DIR      = "service.persistent_cache.dir";
+  
+  static final String WIKI_URL                  = "service.wiki_url";
 
   static final String COUCHDB_URL               = "service.persistent_cache.couchdb.url";
 
