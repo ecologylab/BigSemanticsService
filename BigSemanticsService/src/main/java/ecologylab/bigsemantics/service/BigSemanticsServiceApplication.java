@@ -336,6 +336,8 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
 
   public static void main(String[] args) throws Exception
   {
+    System.setProperty("jdk.tls.ephemeralDHKeySize", "2048");
+    
     Map<String, String> flags = new HashMap<String, String>();
     Utils.parseCommandlineFlags(flags, args);
     Configuration appConfigs = Configs.loadProperties("service.properties");
