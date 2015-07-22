@@ -4,7 +4,7 @@
   <artifactId>BigSemanticsServiceNew</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <properties>
-    <jetty-version>9.2.10.v20150310</jetty-version>
+    <jetty-version>9.3.1.v20150714</jetty-version>
     <jersey-version>2.17</jersey-version>
     <slf4j-version>1.7.12</slf4j-version>
     <httpclient-version>4.2.5</httpclient-version>
@@ -75,6 +75,11 @@
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
       <version>0.1.51</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.eclipse.jetty</groupId>
+    	<artifactId>jetty-servlets</artifactId>
+    	<version>${jetty-version}</version>
     </dependency>
   </dependencies>
 </project>

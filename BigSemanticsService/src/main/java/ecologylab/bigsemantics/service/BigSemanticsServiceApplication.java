@@ -2,9 +2,11 @@ package ecologylab.bigsemantics.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,8 +28,10 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -200,7 +204,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
       dpoolHandler = (ServletContextHandler) dpoolApp.createHandler();
     }
 
-    ServletContextHandler bssHandler = createBSSHandler();
+    Handler bssHandler = createBSSHandler();
 
     ContextHandler staticResourceHandler = createStaticResourceHandler();
     
@@ -238,7 +242,7 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     return handlerCollection;
   }
 
-  public ServletContextHandler createBSSHandler() throws Exception
+  public Handler createBSSHandler() throws Exception
   {
     // set up jersey servlet
     ResourceConfig config = new ResourceConfig();
@@ -261,6 +265,11 @@ public class BigSemanticsServiceApplication extends AbstractServiceApplication
     ServletContextHandler handler = new ServletContextHandler();
     handler.setContextPath("/BigSemanticsService");
     handler.addServlet(new ServletHolder(container), "/*");
+    FilterHolder cors = handler.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+    cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+    cors.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
+    cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,HEAD");
+    cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "X-Requested-With,Content-Type,Accept,Origin");
     return handler;
   }
 
