@@ -20,6 +20,7 @@ import org.apache.commons.configuration.Configuration;
 import ecologylab.bigsemantics.documentcache.EhCacheMan;
 import ecologylab.bigsemantics.service.SemanticsServiceConfigNames;
 import ecologylab.collections.FilteredIterator;
+import ecologylab.net.ParsedURL;
 
 /**
  * 
@@ -111,8 +112,16 @@ public class LogStore implements SemanticsServiceConfigNames
         @Override
         protected boolean keepElement(ServiceLogRecord logRecord)
         {
-          String docUrl = logRecord.getDocumentLocation().toString().toLowerCase();
-          return docUrl.contains(urlFrag.toLowerCase());
+          String docUrl = null;
+          if (logRecord != null)
+          {
+            ParsedURL docLoc = logRecord.getDocumentLocation();
+            if (docLoc != null)
+            {
+              docUrl = docLoc.toString().toLowerCase();
+            }
+          }
+          return docUrl != null && docUrl.contains(urlFrag.toLowerCase());
         }
       };
       result = newIter;
