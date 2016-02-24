@@ -100,7 +100,7 @@ public class DPoolDownloadController extends AbstractDownloadController
     Map<String, String> params = new HashMap<String, String>();
     params.put("url", origLoc.toString());
     params.put("agent", userAgentString);
-    params.put("t", "60000");
+    // params.put("timeout", "60000");
     try
     {
       SimplHttpResponse dpoolResp = HttpClientUtils.doGet(userAgentString, dpoolServiceUrl, params);
