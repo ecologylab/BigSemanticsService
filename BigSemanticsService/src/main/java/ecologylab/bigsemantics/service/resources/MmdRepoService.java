@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ecologylab.bigsemantics.Utils;
-import ecologylab.bigsemantics.metametadata.MetaMetadataRepository;
 import ecologylab.bigsemantics.namesandnums.SemanticsAssetVersions;
 import ecologylab.bigsemantics.service.SemanticsServiceErrorMessages;
 import ecologylab.bigsemantics.service.SemanticsServiceScope;
@@ -33,7 +32,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author quyin
  */
 @Path("/")
-public class MmdRepoService
+public class MmdRepoService extends BaseService
 {
 
   static Logger                    logger      = LoggerFactory.getLogger(MmdRepoService.class);
@@ -46,7 +45,7 @@ public class MmdRepoService
   @Inject
   SemanticsServiceScope            semanticsServiceScope;
 
-  public Response getMmdRepository(StringFormat format, String mediaType)
+  public Response getResponse(StringFormat format, String mediaType, int ver)
   {
     NDC.push("mmdrepository | format: " + format);
     long requestTime = System.currentTimeMillis();
@@ -57,28 +56,30 @@ public class MmdRepoService
     Status status = Status.NOT_FOUND;
     String msg = SemanticsServiceErrorMessages.METAMETADATA_NOT_FOUND;
 
-    MetaMetadataRepository mmdRepository = semanticsServiceScope.getMetaMetadataRepository();
-    if (mmdRepository != null)
+    if (semanticsServiceScope.getMetaMetadataRepository() != null)
     {
       try
       {
-        if (!cachedRepos.containsKey(format))
-        {
-          synchronized (cachedRepos)
-          {
-            if (!cachedRepos.containsKey(format))
-            {
-              String repoString = SimplTypesScope.serialize(mmdRepository, format).toString();
-              cachedRepos.put(format, repoString);
-            }
-          }
+        String repoStr = getCachedRepoStr(format);
+        
+        String respBody = "";
+        if (ver == 2) {
+          respBody = repoStr;
+        } else if (ver == 3) {
+          if (format == StringFormat.XML)
+            throw new RuntimeException("V3 XML support is not implemented");
+          respBody = "{" + join(new String[] {
+            keyValuePair("request", reqStr(), false),
+            keyValuePair("repository", repoStr, false),
+          }, ",") + "}";
+        } else {
+          throw new IllegalArgumentException("Unrecognized version: " + ver);
         }
-        String respBody = cachedRepos.get(format);
         resp = Response.status(Status.OK).entity(respBody).type(mediaType).build();
       }
-      catch (SIMPLTranslationException e)
+      catch (Exception e)
       {
-        logger.error("Cannot serialize mmd repository!", e);
+        logger.error("Cannot serve mmd repository!", e);
         status = Status.INTERNAL_SERVER_ERROR;
         msg = SemanticsServiceErrorMessages.SERVICE_UNAVAILABLE;
         msg += "\nDetails: " + e.getMessage() + "\n" + Utils.getStackTraceAsString(e);
@@ -96,34 +97,93 @@ public class MmdRepoService
     return resp;
   }
 
-  @Path("/mmdrepository.jsonp")
-  @GET
-  @Produces("application/javascript")
-  public Response getJsonp()
+  private String getCachedRepoStr(StringFormat format) throws SIMPLTranslationException
   {
-    Response resp = getMmdRepository(StringFormat.JSON, "application/javascript");
+    if (!cachedRepos.containsKey(format))
+    {
+      synchronized (cachedRepos)
+      {
+        if (!cachedRepos.containsKey(format))
+        {
+          String repoBody = SimplTypesScope.serialize(semanticsServiceScope.getMetaMetadataRepository(), format).toString();
+          cachedRepos.put(format, repoBody);
+        }
+      }
+    }
+    return cachedRepos.get(format);
+  }
+
+  public Response getJsonp(int ver)
+  {
+    Response resp = getResponse(StringFormat.JSON, "application/javascript", ver);
+    if (resp.getStatus() >= 400) // client or server error
+    {
+      return resp;
+    }
     String respEntity = callback + "(" + (String) resp.getEntity() + ");";
     Response jsonpResp =
         Response.status(resp.getStatus()).entity(respEntity).type("application/javascript").build();
     return jsonpResp;
   }
 
+  @Path("/mmdrepository.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getJsonpV2()
+  {
+    return getJsonp(2);
+  }
+
+  @Path("/v3/{name:repository|mmdrepository}.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getJsonpV3()
+  {
+    return getJsonp(3);
+  }
+  
+  public Response getJson(int ver)
+  {
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON, ver);
+    return resp;
+  }
+
   @Path("/mmdrepository.json")
   @GET
   @Produces("application/json")
-  public Response getJson()
+  public Response getJsonV2()
   {
-    Response resp = getMmdRepository(StringFormat.JSON, MediaType.APPLICATION_JSON);
+    return getJson(2);
+  }
+
+  @Path("/v3/{name:repository|mmdrepository}.json")
+  @GET
+  @Produces("application/json")
+  public Response getJsonV3()
+  {
+    return getJson(3);
+  }
+
+  public Response getXml(int ver)
+  {
+    Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML, ver);
     return resp;
   }
 
   @Path("/mmdrepository.xml")
   @GET
   @Produces("application/xml")
-  public Response getXml()
+  public Response getXmlV2()
   {
-    Response resp = getMmdRepository(StringFormat.XML, MediaType.APPLICATION_XML);
-    return resp;
+    return getXml(2);
+  }
+
+  @Path("/v3/{name:repository|mmdrepository}.xml")
+  @GET
+  @Produces("application/xml")
+  public Response getXmlV3()
+  {
+    return getXml(3);
   }
 
   @Path("/mmdrepository.version")

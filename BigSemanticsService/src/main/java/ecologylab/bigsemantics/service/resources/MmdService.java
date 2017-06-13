@@ -38,7 +38,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author quyin
  */
 @Path("/")
-public class MmdService
+public class MmdService extends BaseService
 {
 
   static final String        NAME       = "name";
@@ -46,8 +46,6 @@ public class MmdService
   static final String        URL        = "url";
 
   static final String        CALLBACK   = "callback";
-
-  static final String        WITH_URL   = "withurl";
 
   static Logger              logger     = LoggerFactory.getLogger(MmdService.class);
 
@@ -64,6 +62,18 @@ public class MmdService
   @Context
   UriInfo                    uriInfo;
 
+  @QueryParam("aid")
+  String                     appId;
+
+  @QueryParam("aver")
+  String                     appVer;
+
+  @QueryParam("uid")
+  String                     userId;
+
+  @QueryParam("sid")
+  String                     sessionId;
+
   @QueryParam(URL)
   String                     url;
 
@@ -73,10 +83,7 @@ public class MmdService
   @QueryParam(CALLBACK)
   String                     callback;
 
-  @QueryParam(WITH_URL)
-  String                     withUrl;
-
-  Response getMmdResponse(StringFormat format, String mediaType) throws SIMPLTranslationException
+  Response getResponse(StringFormat format, String mediaType, int ver) throws SIMPLTranslationException
   {
     NDC.push("MMD REQ format: " + format + " | url:" + url + " | name:" + name);
     long requestTime = System.currentTimeMillis();
@@ -96,13 +103,6 @@ public class MmdService
           if (callback != null)
           {
             uriBuilder = uriBuilder.queryParam(CALLBACK, callback);
-            if (withUrl != null)
-            {
-              // Here, note that whatever the value of withurl is, in the redirection we use the
-              // real URL. in this way you don't need to repeat the URL, since it is already
-              // available through the url parameter.
-              uriBuilder = uriBuilder.queryParam(WITH_URL, ServiceUtils.urlencode(url));
-            }
           }
           URI nameURI = uriBuilder.build();
           resp = Response.status(Status.SEE_OTHER).location(nameURI).build();
@@ -114,18 +114,20 @@ public class MmdService
       String serializedMmd = getSerializedMmd(name, format);
       if (serializedMmd != null)
       {
-        String respString = serializedMmd;
-        if (callback != null)
-        {
-          String locParam = "";
-          if (withUrl != null)
-          {
-            logger.debug("withUrl = {}", withUrl);
-            locParam = "\"" + withUrl + "\", ";
-          }
-          respString = callback + "(" + locParam + serializedMmd + ");";
+        String respBody = "";
+        if (ver == 2) {
+          respBody = serializedMmd;
+        } else if (ver == 3) {
+          if (format == StringFormat.XML)
+            throw new RuntimeException("V3 XML support is not implemented");
+          respBody = "{" + join(new String[] {
+            keyValuePair("request", reqStr(), false),
+            keyValuePair("wrapper", serializedMmd, false),
+          }, ",") + "}";
+        } else {
+          throw new IllegalArgumentException("Unrecognized version: " + ver);
         }
-        resp = Response.status(Status.OK).entity(respString).type(mediaType).build();
+        resp = Response.status(Status.OK).entity(respBody).type(mediaType).build();
       }
     }
     else
@@ -184,31 +186,77 @@ public class MmdService
     return semanticsServiceScope.getOrConstructDocument(requestedUrl);
   }
 
+  public Response getJsonp(int ver) throws SIMPLTranslationException
+  {
+    Response resp = getResponse(StringFormat.JSON, "application/javascript", ver);
+    if (resp.getStatus() >= 400) // client or server error
+    {
+      return resp;
+    }
+    String respEntity = callback + "(" + (String) resp.getEntity() + ");";
+    Response jsonpResp =
+        Response.status(resp.getStatus()).entity(respEntity).type("application/javascript").build();
+    return jsonpResp;
+  }
+
   @Path("/mmd.jsonp")
   @GET
   @Produces("application/javascript")
-  public Response getJsonp() throws SIMPLTranslationException
+  public Response getJsonpV2() throws SIMPLTranslationException
   {
-    Response resp = getMmdResponse(StringFormat.JSON, "application/javascript");
+    return getJsonp(2);
+  }
+
+  @Path("/v3/{name:wrapper|mmd|meta_metadata}.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getJsonpV3() throws SIMPLTranslationException
+  {
+    return getJsonp(3);
+  }
+
+  public Response getJson(int ver) throws SIMPLTranslationException
+  {
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON, ver);
     return resp;
   }
 
   @Path("/mmd.json")
   @GET
   @Produces("application/json")
-  public Response getJson() throws SIMPLTranslationException
+  public Response getJsonV2() throws SIMPLTranslationException
   {
-    Response resp = getMmdResponse(StringFormat.JSON, "application/json");
+    return getJson(2);
+  }
+
+  @Path("/v3/{name:wrapper|mmd|meta_metadata}.json")
+  @GET
+  @Produces("application/json")
+  public Response getJsonV3() throws SIMPLTranslationException
+  {
+    return getJson(3);
+  }
+  
+  public Response getMmd(int ver) throws SIMPLTranslationException
+  {
+    Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML, ver);
     return resp;
   }
 
   @Path("/mmd.xml")
   @GET
   @Produces("application/xml")
-  public Response getMmd() throws SIMPLTranslationException
+  public Response getMmdV2() throws SIMPLTranslationException
   {
-    Response resp = getMmdResponse(StringFormat.XML, "application/xml");
-    return resp;
+    return getMmd(2);
+  }
+  
+  @Path("/v3/{name:wrapper|mmd|meta_metadata}.xml")
+  @GET
+  @Produces("application/xml")
+  public Response getMmdV3() throws SIMPLTranslationException
+  {
+    return getMmd(3);
   }
 
 }

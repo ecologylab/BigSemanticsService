@@ -34,7 +34,7 @@ import ecologylab.serialization.formatenums.StringFormat;
  * @author quyin
  */
 @Path("/")
-public class MetadataService
+public class MetadataService extends BaseService
 {
 
   static Logger         logger = LoggerFactory.getLogger(MetadataService.class);
@@ -43,6 +43,18 @@ public class MetadataService
   HttpServletRequest    request;
 
   String                clientIp;
+
+  @QueryParam("aid")
+  String                appId;
+
+  @QueryParam("aver")
+  String                appVer;
+
+  @QueryParam("uid")
+  String                userId;
+
+  @QueryParam("sid")
+  String                sessionId;
 
   @QueryParam("url")
   String                docUrl;
@@ -73,7 +85,7 @@ public class MetadataService
    * @param mediaType
    * @return
    */
-  Response getResponse(StringFormat format, String mediaType)
+  Response getResponse(StringFormat format, String mediaType, int ver)
   {
     clientIp = request.getRemoteAddr();
     String msg =
@@ -102,7 +114,21 @@ public class MetadataService
         int statusCode = helper.getMetadata();
         if (statusCode == 200)
         {
-          String respBody = helper.serializeResultDocument(format);
+          String serializedMetadata = helper.serializeResultDocument(format);
+
+          String respBody = "";
+          if (ver == 2) {
+            respBody = serializedMetadata;
+          } else if (ver == 3) {
+            if (format == StringFormat.XML)
+              throw new RuntimeException("V3 XML support is not implemented");
+            respBody = "{" + join(new String[] {
+              keyValuePair("request", reqStr(), false),
+              keyValuePair("metadata", serializedMetadata, false),
+            }, ",") + "}";
+          } else {
+            throw new IllegalArgumentException("Unrecognized version: " + ver);
+          }
           resp = Response.status(Status.OK).entity(respBody).type(mediaType).build();
         }
         else
@@ -142,14 +168,10 @@ public class MetadataService
     return resp;
   }
 
-  @Path("/metadata.jsonp")
-  @GET
-  @Produces("application/javascript")
-  public Response getJsonp()
+  public Response getJsonp(int ver)
   {
-    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
-    int status = resp.getStatus();
-    if (status >= 400) // client or server error
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON, ver);
+    if (resp.getStatus() >= 400) // client or server error
     {
       return resp;
     }
@@ -157,23 +179,59 @@ public class MetadataService
     Response jsonpResp = Response.status(resp.getStatus()).entity(respEntity).build();
     return jsonpResp;
   }
+  @Path("/metadata.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getJsonpV2()
+  {
+    return getJsonp(2);
+  }
+  @Path("/v3/{name:metadata|semantics}.jsonp")
+  @GET
+  @Produces("application/javascript")
+  public Response getJsonpV3()
+  {
+    return getJsonp(3);
+  }
 
+  public Response getJson(int ver)
+  {
+    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON, ver);
+    return resp;
+  }
   @Path("/metadata.json")
   @GET
   @Produces("application/json")
-  public Response getJson()
+  public Response getJsonV2()
   {
-    Response resp = getResponse(StringFormat.JSON, MediaType.APPLICATION_JSON);
-    return resp;
+    return getJson(2);
+  }
+  @Path("/v3/{name:metadata|semantics}.json")
+  @GET
+  @Produces("application/json")
+  public Response getJsonV3()
+  {
+    return getJson(3);
   }
 
+  public Response getXml(int ver)
+  {
+    Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML, ver);
+    return resp;
+  }
   @Path("/metadata.xml")
   @GET
   @Produces("application/xml")
-  public Response getXml()
+  public Response getXmlV2()
   {
-    Response resp = getResponse(StringFormat.XML, MediaType.APPLICATION_XML);
-    return resp;
+    return getXml(2);
+  }
+  @Path("/v3/{name:metadata|semantics}.xml")
+  @GET
+  @Produces("application/xml")
+  public Response getXmlV3()
+  {
+    return getXml(3);
   }
 
   Response getMetadataOrStubResponse(StringFormat format, String mediaType)
